@@ -1,5 +1,5 @@
 import app from "./src/app.js";
-import { connectDB, disconnectDB } from "./src/config/database.js";
+import connectToDB from "./src/config/database.js";
 import http from "http";
 import { initSocket } from "./src/sockets/server.socket.js";
 
@@ -25,7 +25,7 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     console.log("🔗 Connecting to MongoDB...");
-    await connectDB();
+    await connectToDB();
 
     // Start HTTP server
     server = httpServer.listen(PORT, () => {
@@ -93,3 +93,4 @@ process.on("uncaughtException", (error) => {
 // ============================================
 // Start the server
 // ============================================
+startServer();

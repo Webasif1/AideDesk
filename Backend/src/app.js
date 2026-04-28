@@ -54,6 +54,12 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Welcome to AideDesk API",
+  });
+});
 // ============================================
 // Health Check Endpoint
 // ============================================
