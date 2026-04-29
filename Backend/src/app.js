@@ -1,12 +1,12 @@
-import express from "express";
-import cookieParser from "cookie-parser";
-import cors from "cors";
-import morgan from "morgan";
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import morgan from 'morgan';
 
 // ============================================
 // Import Routes
 // ============================================
-import authRoutes from "./routes/auth.routes.js";
+import authRoutes from './routes/auth.routes.js';
 
 // ============================================
 // Import Middleware & Error Handlers
@@ -33,16 +33,16 @@ app.use(
       process.env.FRONTEND_URL ||
       `http://localhost:${process.env.FRONTEND_PORT}`,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
 );
 
 // ============================================
 // Setting up logger for info
 // ============================================
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 
 /**
@@ -51,14 +51,14 @@ if (process.env.NODE_ENV === "development") {
  * - Parses incoming form-encoded request bodies
  * - Parses cookies from Cookie header
  */
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to AideDesk API",
+    message: 'Welcome to AideDesk API'
   });
 });
 // ============================================
@@ -71,12 +71,12 @@ app.get("/", (req, res) => {
  * - Used for monitoring and tests
  * Endpoint: GET /api/health
  */
-app.get("/api/health", (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: "✅ Server is running",
+    message: '✅ Server is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: process.uptime()
   });
 });
 
