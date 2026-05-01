@@ -1,17 +1,17 @@
-import { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 
-const TicketSchema = new Schema(
+const TicketSchema = new mongoose.Schema(
   {
     // ─── Multi-tenant isolation (PDF: companyId on every doc) ───
     companyId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Organization',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CompanyAdmin',
       required: true
     },
 
     // ─── Customer who raised the ticket ───
     customerId: {
-      type: Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
       required: true
     },
@@ -19,21 +19,14 @@ const TicketSchema = new Schema(
 
     // ─── Agent assignment ───
     assignedTo: {
-      type: Schema.Types.ObjectId,
-      ref: 'Agent',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'agent',
       default: null
     },
 
     // ─── Core content ───
     title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
-
-    // ─── Channel source (PDF: email/chat/social/phone/form) ───
-    channel: {
-      type: String,
-      enum: ['email', 'chat', 'social', 'phone', 'form'],
-      required: true
-    },
 
     // ─── Lifecycle status (PDF: open→in_progress→resolved→closed) ───
     status: {
@@ -45,8 +38,8 @@ const TicketSchema = new Schema(
     // ─── Priority (used by SLA engine) ───
     priority: {
       type: String,
-      enum: ['urgent', 'high', 'normal', 'low'],
-      default: 'normal'
+      enum: ['low', 'medium', 'urgent'],
+      default: 'low'
     },
 
     // ─── AI intent classifier (PDF: 5 intent buckets) ───
@@ -60,15 +53,14 @@ const TicketSchema = new Schema(
           'escalate_human',
           'feedback'
         ]
-      },
-      confidence: { type: Number, min: 0, max: 1 }
+      }
     },
 
     // ─── AI sentiment score (PDF: 1–5 frustration scale) ───
     sentimentScore: {
       type: Number,
       min: 1,
-      max: 5,
+      max: 10,
       default: 1
     },
 
@@ -101,38 +93,17 @@ const TicketSchema = new Schema(
     // ─── Timestamps for analytics (PDF: response time, resolution time) ───
     resolvedAt: { type: Date },
     closedAt: { type: Date },
-    reopenedAt: { type: Date },
-
-    // ─── CSAT survey (PDF: post-resolution feedback) ───
-    csat: {
-      score: { type: Number, min: 1, max: 5 },
-      comment: { type: String },
-      submittedAt: { type: Date }
-    },
-
-    // ─── Metadata ───
-    isDeleted: { type: Boolean, default: false }
+    reopenedAt: { type: Date }
   },
   { timestamps: true }
 );
 
 // ─── Critical indexes (PDF: tickets(companyId, status, createdAt)) ───
 TicketSchema.index({ companyId: 1, status: 1, createdAt: -1 });
-TicketSchema.index({ companyId: 1, sentimentScore: -1, priority: 1 });
 TicketSchema.index({ assignedTo: 1, status: 1 });
 TicketSchema.index({ customerId: 1 });
 TicketSchema.index({ 'sla.dueAt': 1, 'sla.breached': 1 });
 
-// ─── Auto-set SLA deadline on create (from OrgSettings) ───
-TicketSchema.pre('save', async function () {
-  if (this.isNew) {
-    const OrgSettings = require('./orgSettings.model');
-    const settings = await OrgSettings.findOne({ orgId: this.companyId });
-    if (settings) {
-      const hours = settings.sla[this.priority] || 8;
-      this.sla.dueAt = new Date(Date.now() + hours * 3600000);
-    }
-  }
-});
+const ticketModel = mongoose.model('Ticket', TicketSchema);
 
-module.exports = model('Ticket', TicketSchema);
+export default ticketModel;

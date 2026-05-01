@@ -1,4 +1,5 @@
 // import files and modules
+<<<<<<< HEAD
 import userModel from "../models/user.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
@@ -7,6 +8,16 @@ import { sendVerificationEmail } from "../utils/email.js";
 import { config } from "../config/config.js";
 import { getVerificationHTML } from "../utils/verificationTemplate.js";
 import jwt from "jsonwebtoken";
+=======
+import userModel from '../models/user.model.js';
+import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
+import { AppError, asyncHandler } from '../utils/errorHandler.js';
+import { generateToken } from '../utils/tokens.js';
+import { sendVerificationEmail } from '../utils/email.js';
+import { config } from '../config/config.js';
+
+const recieverEmail = 'huzaifaquadri1853@gmail.com';
+>>>>>>> feature/schemas
 
 // ============================================
 // Register User
@@ -23,13 +34,13 @@ export const registerController = asyncHandler(async (req, res) => {
     email,
     password,
     fullName,
-    role,
+    role
   });
   const userResponse = {
     id: user._id,
     email: user.email,
     fullName: user.fullName,
-    role: user.role,
+    role: user.role
   };
 
   console.log(`✅ New user registered: ${user.email}`);
@@ -38,9 +49,9 @@ export const registerController = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: "User registered successfully",
+    message: 'User registered successfully',
     data: userResponse,
-    token: token,
+    token: token
   });
 
   const sent = await sendVerificationEmail({
@@ -49,12 +60,12 @@ export const registerController = asyncHandler(async (req, res) => {
     name: user.fullName,
     verificationLink:
       process.env.backendURL ||
-      `http://localhost:${config.PORT}/api/auth/verify/${token}`,
+      `http://localhost:${config.PORT}/api/auth/verify/${token}`
   });
   if (sent) {
-    console.log("📧 Verification Email sent successfully");
+    console.log('📧 Verification Email sent successfully');
   } else {
-    console.log("❎ Verification Email not sent");
+    console.log('❎ Verification Email not sent');
   }
 });
 
