@@ -5,58 +5,55 @@ import bcrypt from "bcryptjs";
 // ============================================
 // User Schema
 // ============================================
-const userSchema = mongoose.Schema(
-  {
-    workspace: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Workspace",
-    },
-    email: {
-      type: String,
-      require: [true, "Email is require"],
-      unique: [true, "Email should be unique"],
-    },
-    password: {
-      type: String,
-      select: false,
-      require: [
-        function () {
-          return !this.googleId;
-        },
-        "Password is required",
-      ],
-    },
-    fullName: {
-      type: String,
-      require: [true, "fullName is require"],
-    },
-    role: {
-      type: String,
-      enum: ["admin", "agent"],
-      default: "admin",
-    },
-    googleId: {
-      type: String,
-    },
-    profileImage: {
-      type: String,
-    },
-    verified: {
-      type: Boolean,
-      default: false,
-    },
-    lastLogin: {
-      type: Date,
-      default: Date.now,
-    },
-    status: {
-      type: String,
-      enum: ["online", "offline", "away"],
-      default: "online",
-    },
+const userSchema = mongoose.Schema({
+  workspace: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Workspace",
   },
-  { timestamps: true },
-);
+  email: {
+    type: String,
+    require: [true, "Email is require"],
+    unique: [true, "Email should be unique"],
+  },
+  password: {
+    type: String,
+    select : false,
+    require: [
+      function () {
+        return !this.googleId;
+      },
+      "Password is required",
+    ],
+  },
+  fullName: {
+    type: String,
+    require: [true, "fullName is require"],
+  },
+  role: {
+    type: String,
+    enum: ["admin", "agent"],
+    default: "admin"
+  },
+  googleId: {
+    type: String,
+  },
+  profileImage: {
+    type: String,
+  },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
+  lastLogin:{
+    type: Date,
+    default: Date.now,
+  },
+  status: {
+    type: String,
+    enum: ["online", "offline", "away"],
+    default: "online",
+  }
+}, { timestamps: true });
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return;
