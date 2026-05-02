@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const ProductCTA = () => (
   <section className="border-t border-surface-variant bg-white">
     <div className="max-w-3xl mx-auto px-[24px] py-[64px] text-center">
@@ -9,14 +11,21 @@ const ProductCTA = () => (
         operations.
       </p>
       <div className="flex flex-col sm:flex-row justify-center gap-[16px]">
-        <button className="bg-primary text-on-primary px-[32px] py-[12px] rounded-lg font-medium hover:opacity-90 transition-opacity">
+        <Link
+          to="/signup"
+          className="bg-primary text-on-primary px-[32px] py-[12px] rounded-lg font-medium hover:opacity-90 transition-opacity"
+        >
           Start Free Trial
-        </button>
-        <button className="bg-white text-primary border border-surface-variant px-[32px] py-[12px] rounded-lg font-medium hover:bg-surface-container-low transition-colors">
+        </Link>
+        <Link
+          to="/demo"
+          className="bg-white text-primary border border-surface-variant px-[32px] py-[12px] rounded-lg font-medium hover:bg-surface-container-low transition-colors"
+        >
           Book Demo
-        </button>
+        </Link>
       </div>
     </div>
   </section>
 );
+
 export default ProductCTA;

@@ -1,19 +1,12 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import AuthLeftPanel from "../components/auth/AuthLeftPanel";
-import AuthTabToggle from "../components/auth/AuthTabToggle";
-import RoleSelector from "../components/auth/RoleSelector";
 import AuthFormField from "../components/auth/AuthFormField";
-import AuthDivider from "../components/auth/AuthDivider";
-import GoogleAuthButton from "../components/auth/GoogleAuthButton";
 import BackLink from "../components/auth/BackLink";
 import PageWrapper from "../components/ui/PageWrapper";
 import Logo from "../components/ui/Logo";
 
-const Login = () => {
-  const [role, setRole] = useState("");
-
+const ForgotPassword = () => {
   return (
     <PageWrapper>
       <div className="bg-background text-on-surface antialiased min-h-screen flex selection:bg-primary selection:text-on-primary">
@@ -30,8 +23,7 @@ const Login = () => {
           </div>
 
           <div className="w-full max-w-[400px] flex flex-col">
-            <BackLink to="/" />
-            <AuthTabToggle activeTab="login" />
+            <BackLink to="/login" />
 
             <div className="mb-[32px]">
               <h2
@@ -42,60 +34,40 @@ const Login = () => {
                   letterSpacing: "-0.01em",
                 }}
               >
-                Welcome back
+                Reset your password
               </h2>
               <p
                 className="text-on-surface-variant mt-[4px]"
                 style={{ fontSize: "13px", lineHeight: "1.5" }}
               >
-                Enter your details to access your workspace.
+                Enter your email and we'll send you a reset link.
               </p>
             </div>
 
             <div className="flex flex-col w-full">
-              <RoleSelector value={role} onChange={setRole} />
               <AuthFormField
                 id="email"
                 label="Email"
                 type="email"
                 placeholder="name@company.com"
               />
-              <AuthFormField
-                id="password"
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-              />
-
-              <div className="flex justify-end mb-[32px]">
-                <div className="flex justify-end mb-[32px]">
-                  <Link
-                    to="/forgot-password"
-                    className="text-[13px] text-on-surface-variant hover:text-primary transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+              <div className="mt-[16px]">
+                <button
+                  type="submit"
+                  className="w-full h-12 bg-primary text-on-primary rounded-xl text-[14px] font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
+                >
+                  Send Reset Link
+                </button>
               </div>
-
-              <button
-                type="submit"
-                className="w-full h-12 bg-primary text-on-primary rounded-xl text-[14px] font-semibold hover:opacity-90 transition-opacity flex items-center justify-center"
-              >
-                Login
-              </button>
-
-              <AuthDivider />
-              <GoogleAuthButton />
             </div>
 
             <div className="mt-[32px] text-center text-[13px] text-on-surface-variant">
-              Don't have an account?{" "}
+              Remembered your password?{" "}
               <Link
-                to="/signup"
+                to="/login"
                 className="text-primary font-medium hover:underline"
               >
-                Sign up
+                Back to Login
               </Link>
             </div>
           </div>
@@ -105,4 +77,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

@@ -14,7 +14,7 @@ const ProductHero = () => (
       <img
         alt="Dashboard preview"
         className="w-full h-full object-cover opacity-90 mix-blend-luminosity"
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCE7Tiv5cVNhqzKNNt1V4_wLzv4MUdgYPhqTCR4EqhypNnPTVGI4lgX7P5JETSvZTtBYWYz4xv4nlRScNVpSzgUMC6R1u4zj1OFqJch7cPsserZEPBGAInO36AniHOJrzH9TvQcVDKoKpAvLTRDkhkA5AtIb3HA9wPeTjwhxwFS1TKl1TDOGz6lEaYkPVkupOp72WpD263yGqSidp2haAUYOiwd5VLBiuV9GOc8UoIyPOkc3LXOjZHtpGdxf5RPQa7YFNeiG7FsRBDs"
+        src="https://images.unsplash.com/photo-1717501217780-03809da32358?q=80&w=3264&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&fit=crop"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent" />
     </div>

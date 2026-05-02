@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const PlatformCTA = () => {
   return (
     <section className="max-w-4xl mx-auto px-8 text-center bg-surface border border-surface-container-highest rounded-xl py-16 mt-32">
@@ -9,18 +11,18 @@ const PlatformCTA = () => {
         workflows in minutes.
       </p>
       <div className="flex justify-center gap-4">
-        <a
-          href="#"
+        <Link
+          to="/signup"
           className="text-[16px] bg-primary text-on-primary px-8 py-3 rounded-lg hover:opacity-90 transition-opacity"
         >
           Start Free Trial
-        </a>
-        <a
-          href="#"
+        </Link>
+        <Link
+          to="/demo"
           className="text-[16px] border border-surface-container-highest text-on-surface px-8 py-3 rounded-lg bg-surface-container-lowest hover:border-on-surface transition-colors"
         >
           Talk to Engineering
-        </a>
+        </Link>
       </div>
     </section>
   );

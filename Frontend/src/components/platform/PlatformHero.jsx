@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const PlatformHero = () => {
   return (
     <section className="max-w-7xl mx-auto px-8 mb-32 grid grid-cols-12 gap-6 items-center">
@@ -14,18 +16,18 @@ const PlatformHero = () => {
           translates raw intent into verifiable outcomes.
         </p>
         <div className="flex gap-4">
-          <a
-            href="#"
+          <Link
+            to="/docs"
             className="text-[14px] bg-primary text-on-primary px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
           >
             Explore Documentation
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to="/docs"
             className="text-[14px] border border-surface-container-highest text-on-surface px-6 py-3 rounded-lg bg-surface-container-lowest hover:border-on-surface transition-colors"
           >
             View API Specs
-          </a>
+          </Link>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import Logo from "../ui/Logo";
 
 const Navbar = () => {
@@ -8,30 +8,46 @@ const Navbar = () => {
         <Logo size="md" linkTo="/" />
 
         <div className="hidden md:flex items-center gap-8 font-body-sm tracking-tight">
-          <a
-            className="text-on-surface font-medium border-b-2 border-primary pb-1"
-            href="#"
+          <NavLink
+            to="/platform"
+            className={({ isActive }) =>
+              isActive
+                ? "text-on-surface font-medium border-b-2 border-primary pb-1"
+                : "text-on-surface-variant hover:text-on-surface transition-colors"
+            }
           >
             Platform
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
-            href="#"
+          </NavLink>
+          <NavLink
+            to="/solutions"
+            className={({ isActive }) =>
+              isActive
+                ? "text-on-surface font-medium border-b-2 border-primary pb-1"
+                : "text-on-surface-variant hover:text-on-surface transition-colors"
+            }
           >
             Solutions
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
-            href="#"
+          </NavLink>
+          <NavLink
+            to="/integrations"
+            className={({ isActive }) =>
+              isActive
+                ? "text-on-surface font-medium border-b-2 border-primary pb-1"
+                : "text-on-surface-variant hover:text-on-surface transition-colors"
+            }
           >
             Integrations
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-on-surface transition-colors"
-            href="#"
+          </NavLink>
+          <NavLink
+            to="/pricing"
+            className={({ isActive }) =>
+              isActive
+                ? "text-on-surface font-medium border-b-2 border-primary pb-1"
+                : "text-on-surface-variant hover:text-on-surface transition-colors"
+            }
           >
             Pricing
-          </a>
+          </NavLink>
         </div>
 
         <div className="flex items-center gap-4">
