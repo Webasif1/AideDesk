@@ -7,11 +7,12 @@ import morgan from 'morgan';
 // Import Routes
 // ============================================
 import authRoutes from './routes/auth.routes.js';
+import companyRoutes from './routes/company.routes.js';
 
 // ============================================
 // Import Middleware & Error Handlers
 // ============================================
-import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
+import { errorHandler, notFoundHandler } from './utils/errorHandler.js';
 
 // ============================================
 // Initialize Express App
@@ -84,7 +85,8 @@ app.get('/api/health', (req, res) => {
 // API Routes
 // ============================================
 
-app.use("/api/auth", authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/company', companyRoutes);
 
 // ============================================
 // Error Handling & 404
