@@ -13,7 +13,9 @@ export const createCompanyValidator = [
     .notEmpty()
     .withMessage('Slug is required')
     .isSlug()
-    .withMessage('Slug must contain only lowercase letters, numbers, and hyphens')
+    .withMessage(
+      'Slug must contain only lowercase letters, numbers, and hyphens'
+    )
     .isLength({ max: 60 })
     .withMessage('Slug cannot exceed 60 characters'),
 
@@ -45,15 +47,9 @@ export const createCompanyValidator = [
     .isIn(['1-10', '11-50', '51-200', '201-500', '500+'])
     .withMessage('Size must be one of: 1-10, 11-50, 51-200, 201-500, 500+'),
 
-  body('address')
-    .trim()
-    .notEmpty()
-    .withMessage('Address is required'),
+  body('address').trim().notEmpty().withMessage('Address is required'),
 
-  body('country')
-    .trim()
-    .notEmpty()
-    .withMessage('Country is required'),
+  body('country').trim().notEmpty().withMessage('Country is required'),
 
   body('industry')
     .optional()

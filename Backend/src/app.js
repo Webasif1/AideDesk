@@ -7,15 +7,11 @@ import morgan from 'morgan';
 // Import Routes
 // ============================================
 import authRoutes from './routes/auth.routes.js';
-import agentRoutes from './routes/agent.routes.js';
-import chatRoutes from './routes/chat.routes.js';
-import messageRoutes from './routes/message.routes.js';
-import ticketRoutes from './routes/ticket.routes.js';
 
 // ============================================
 // Import Middleware & Error Handlers
 // ============================================
-import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
+import { errorHandler, notFoundHandler } from './utils/errorHandler.js';
 
 // ============================================
 // Initialize Express App
@@ -89,10 +85,6 @@ app.get('/api/health', (req, res) => {
 // ============================================
 
 app.use('/api/auth', authRoutes);
-app.use('/api/agents', agentRoutes);
-app.use('/api/chats', chatRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/tickets', ticketRoutes);
 
 // ============================================
 // Error Handling & 404

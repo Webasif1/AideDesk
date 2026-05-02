@@ -42,9 +42,13 @@ export const protect = asyncHandler(async (req, res, next) => {
 });
 
 // Usage: requireRole('admin') or requireRole('admin', 'agent')
-export const requireRole = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.role)) {
-    return next(new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN));
-  }
-  next();
-};
+export const requireRole =
+  (...roles) =>
+  (req, res, next) => {
+    if (!roles.includes(req.role)) {
+      return next(
+        new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN)
+      );
+    }
+    next();
+  };

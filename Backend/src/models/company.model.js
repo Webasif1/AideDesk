@@ -10,6 +10,13 @@ const companySchema = new mongoose.Schema(
       maxlength: [100, 'Name cannot exceed 100 characters']
     },
 
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [500, 'Description cannot exceed 500 characters']
+    },
+
     slug: {
       type: String,
       required: [true, 'Slug is required'],
@@ -62,16 +69,15 @@ const companySchema = new mongoose.Schema(
       trim: true
     },
 
-    owner: {
+    adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'admin',
-      required: [true, 'Owner is required']
+      required: [true, 'Admin is required']
     },
 
     workSpaceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'workspace',
-      required: [true, 'Workspace is required']
+      ref: 'workspace'
     },
 
     // Custom branding for multi-tenant white-labeling
