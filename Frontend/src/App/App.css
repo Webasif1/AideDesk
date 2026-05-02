@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+@theme {
+  /* ── Colors ────────────────────────────────────── */
+  --color-surface-container-low: #f3f3f3;
+  --color-surface-container-highest: #e2e2e2;
+  --color-inverse-on-surface: #f1f1f1;
+  --color-error: #ba1a1a;
+  --color-tertiary-fixed-dim: #c6c5cf;
+  --color-on-tertiary-fixed-variant: #46464e;
+  --color-tertiary: #000000;
+  --color-error-container: #ffdad6;
+  --color-on-secondary: #ffffff;
+  --color-surface-container-high: #e8e8e8;
+  --color-on-surface: #1b1b1b;
+  --color-surface-variant: #e2e2e2;
+  --color-surface-dim: #dadada;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary: #ffffff;
+  --color-surface-container: #eeeeee;
+  --color-secondary-container: #dfe0e0;
+  --color-surface-bright: #f9f9f9;
+  --color-secondary-fixed: #e2e2e2;
+  --color-on-error-container: #93000a;
+  --color-on-primary: #ffffff;
+  --color-surface-tint: #5e5e5e;
+  --color-primary: #000000;
+  --color-secondary: #5d5f5f;
+  --color-on-tertiary-container: #83838c;
+  --color-primary-fixed: #e2e2e2;
+  --color-on-secondary-container: #616363;
+  --color-on-primary-fixed: #1b1b1b;
+  --color-on-secondary-fixed: #1a1c1c;
+  --color-on-error: #ffffff;
+  --color-on-primary-fixed-variant: #474747;
+  --color-primary-container: #1b1b1b;
+  --color-primary-fixed-dim: #c6c6c6;
+  --color-on-surface-variant: #4c4546;
+  --color-inverse-surface: #303030;
+  --color-inverse-primary: #c6c6c6;
+  --color-on-primary-container: #848484;
+  --color-surface: #f9f9f9;
+  --color-background: #f9f9f9;
+  --color-outline: #7e7576;
+  --color-secondary-fixed-dim: #c6c6c7;
+  --color-on-secondary-fixed-variant: #454747;
+  --color-on-tertiary-fixed: #1a1b22;
+  --color-outline-variant: #cfc4c5;
+  --color-on-background: #1b1b1b;
+  --color-tertiary-container: #1a1b22;
+  --color-tertiary-fixed: #e3e1ec;
+
+  /* ── Border Radius ─────────────────────────────── */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* ── Spacing ───────────────────────────────────── */
+  --spacing-gutter: 24px;
+  --spacing-unit: 8px;
+  --spacing-stack-sm: 8px;
+  --spacing-stack-md: 16px;
+  --spacing-stack-lg: 32px;
+  --spacing-stack-xl: 64px;
+  --spacing-margin-page: 48px;
+  --spacing-container-max: 1280px;
+
+  /* ── Font Family ───────────────────────────────── */
+  --font-family-headline-md: "Poppins", sans-serif;
+  --font-family-body-md: "Poppins", sans-serif;
+  --font-family-body-lg: "Poppins", sans-serif;
+  --font-family-body-sm: "Poppins", sans-serif;
+  --font-family-display-xl: "Poppins", sans-serif;
+  --font-family-headline-lg: "Poppins", sans-serif;
+  --font-family-label-bold: "Poppins", sans-serif;
+  --font-family-button: "Poppins", sans-serif;
+
+  /* ── Font Size ─────────────────────────────────── */
+  --font-size-headline-md: 24px;
+  --font-size-body-md: 16px;
+  --font-size-body-lg: 18px;
+  --font-size-body-sm: 14px;
+  --font-size-display-xl: 48px;
+  --font-size-headline-lg: 30px;
+  --font-size-label-bold: 12px;
+  --font-size-button: 14px;
+}
+
+/* ── Base Styles ───────────────────────────────────── */
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f9f9f9;
+  color: #1b1b1b;
+}
+
+.depth-1 {
+  border: 1px solid #e2e2e2;
+}
+
+.depth-2 {
+  border: 1px solid #1b1b1b;
+  box-shadow: 4px 4px 0px 0px rgba(27, 27, 27, 0.05);
+}
