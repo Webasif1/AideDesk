@@ -1,109 +1,106 @@
 import mongoose from 'mongoose';
 
-const TicketSchema = new mongoose.Schema(
+const ticketSchema = new mongoose.Schema(
   {
-    // ─── Multi-tenant isolation (PDF: companyId on every doc) ───
+    ticketNumber: {
+      type: String,
+      unique: [true, 'Ticket number should be unique']
+    },
+
+    title: {
+      type: String,
+      required: [true, 'Title is require'],
+      trim: [true, 'Title cannot have leading or trailing spaces'],
+      minlength: [3, 'Title must be at least 3 characters long'],
+      maxlength: [150, 'Title cannot be more than 150 characters long']
+    },
+
+    description: {
+      type: String,
+      required: [true, 'Description is require'],
+      trim: [true, 'Description cannot have leading or trailing spaces'],
+      maxlength: [300, 'Description cannot be more than 300 characters long']
+    },
+
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CompanyAdmin',
-      required: true
+      ref: 'company',
+      required: [true, 'Company is require']
     },
 
-    // ─── Customer who raised the ticket ───
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Customer',
-      required: true
+      ref: 'user',
+      required: [true, 'Customer is require']
     },
-    customerEmail: { type: String, required: true },
 
-    // ─── Agent assignment ───
-    assignedTo: {
+    assignedAgent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'agent',
       default: null
     },
 
-    // ─── Core content ───
-    title: { type: String, required: true, trim: true },
-    description: { type: String, required: true },
+    category: {
+      type: String,
+      enum: ['billing', 'technical', 'account', 'general'],
+      default: 'general'
+    },
 
-    // ─── Lifecycle status (PDF: open→in_progress→resolved→closed) ───
+    priority: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'urgent'],
+      default: 'medium'
+    },
+
     status: {
       type: String,
-      enum: ['open', 'in_progress', 'pending', 'resolved', 'closed'],
+      enum: ['open', 'pending', 'in_progress', 'resolved', 'closed'],
       default: 'open'
     },
 
-    // ─── Priority (used by SLA engine) ───
-    priority: {
-      type: String,
-      enum: ['low', 'medium', 'urgent'],
-      default: 'low'
+    // source: {
+    //   type: String,
+    //   enum: ['dashboard', 'chat', 'email', 'website'],
+    //   default: 'dashboard'
+    // },
+
+    tags: {
+      type: [String],
+      default: []
     },
 
-    // ─── AI intent classifier (PDF: 5 intent buckets) ───
-    intent: {
-      label: {
-        type: String,
-        enum: [
-          'simple_faq',
-          'billing_issue',
-          'technical_problem',
-          'escalate_human',
-          'feedback'
-        ]
-      }
+    firstResponseAt: {
+      type: Date,
+      default: null
     },
 
-    // ─── AI sentiment score (PDF: 1–5 frustration scale) ───
-    sentimentScore: {
-      type: Number,
-      min: 1,
-      max: 10,
-      default: 1
+    resolvedAt: {
+      type: Date,
+      default: null
     },
 
-    // ─── Tags for filtering (PDF: ticket tagging) ───
-    tags: [{ type: String }],
-
-    // ─── SLA deadline (set from OrgSettings.sla on create) ───
-    sla: {
-      dueAt: { type: Date },
-      breached: { type: Boolean, default: false },
-      firstResponseAt: { type: Date }
+    closedAt: {
+      type: Date,
+      default: null
     },
 
-    // ─── AI escalation briefing (PDF: 3-sentence agent brief) ───
-    escalation: {
-      isEscalated: { type: Boolean, default: false },
-      escalatedAt: { type: Date },
-      escalatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
-      aiBriefing: { type: String }
-    },
-
-    // ─── AI suggested reply metadata ───
-    aiSuggestion: {
-      replies: [{ tone: String, reply: String }],
-      confidence: { type: String, enum: ['high', 'medium', 'low'] },
-      usedReply: { type: String },
-      acceptedAt: { type: Date }
-    },
-
-    // ─── Timestamps for analytics (PDF: response time, resolution time) ───
-    resolvedAt: { type: Date },
-    closedAt: { type: Date },
-    reopenedAt: { type: Date }
+    lastMessageAt: {
+      type: Date,
+      default: Date.now
+    }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
-// ─── Critical indexes (PDF: tickets(companyId, status, createdAt)) ───
-TicketSchema.index({ companyId: 1, status: 1, createdAt: -1 });
-TicketSchema.index({ assignedTo: 1, status: 1 });
-TicketSchema.index({ customerId: 1 });
-TicketSchema.index({ 'sla.dueAt': 1, 'sla.breached': 1 });
+// Auto-generate ticket number
+ticketSchema.pre('save', function (next) {
+  if (!this.ticketNumber) {
+    this.ticketNumber = 'TKT-' + Date.now().toString().slice(-6);
+  }
+  next();
+});
 
-const ticketModel = mongoose.model('Ticket', TicketSchema);
-
+const ticketModel = mongoose.model('ticket', ticketSchema);
 export default ticketModel;

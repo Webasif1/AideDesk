@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 // ============================================
-// Company and Admin Schema
+// Admin Schema
 // ============================================
-const companyAdminSchema = mongoose.Schema(
+const adminSchema = mongoose.Schema(
   {
     fullName: {
       type: String,
@@ -21,21 +21,14 @@ const companyAdminSchema = mongoose.Schema(
       select: false,
       required: [true, 'Password is require']
     },
-    companyName: {
-      type: String,
-      require: [true, 'Company name is require']
-    },
-    numberOfEmployees: {
-      type: Number,
-      require: [true, 'Number of employees is require']
-    },
     role: {
       type: String,
       enum: 'admin',
       default: 'admin'
     },
     profileImage: {
-      type: String
+      type: String,
+      default: ''
     },
     isVerified: {
       type: Boolean,
@@ -54,16 +47,16 @@ const companyAdminSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-companyAdminSchema.pre('save', async function (next) {
+adminSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return;
   const hash = await bcrypt.hash(this.password, 10);
   this.password = hash;
 });
 
-companyAdminSchema.methods.comparePassword = function (candidatePassword) {
+adminSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const companyAdminModel = mongoose.model('CompanyAdmin', companyAdminSchema);
+const adminModel = mongoose.model('admin', adminSchema);
 
-export default companyAdminModel;
+export default adminModel;

@@ -21,8 +21,7 @@ const agentSchema = new mongoose.Schema(
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CompanyAdmin',
-      required: [true, 'Company is required']
+      ref: 'company'
     }
   },
   { timestamps: true }
