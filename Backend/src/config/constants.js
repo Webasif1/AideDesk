@@ -2,6 +2,7 @@
 export const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
+  NO_CONTENT: 204,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
@@ -19,10 +20,11 @@ export const ERROR_MESSAGES = {
   TOKEN_EXPIRED: "Token has expired",
   INVALID_TOKEN: "Invalid token",
   UNAUTHORIZED: "Unauthorized access",
+  FORBIDDEN: "Access denied. Insufficient permissions",
   INTERNAL_ERROR: "Internal server error",
   QUERY_REQUIRED: "Search query is required",
   MESSAGE_REQUIRED: "Message content is required",
-  USER_NOT_VERIFIED: "User not verified",
+  USER_NOT_VERIFIED: "Please verify your email before logging in",
   USER_ALREADY_VERIFIED: "User already verified",
   VERIFICATION_LINK_EXPIRED: "Verification link has expired",
 };
