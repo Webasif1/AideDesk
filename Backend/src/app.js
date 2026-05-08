@@ -44,8 +44,8 @@ app.use(
       `http://localhost:${process.env.FRONTEND_PORT}`,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  })
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
 );
 
 // ============================================
@@ -69,7 +69,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Welcome to AideDesk API'
+    message: 'Welcome to AideDesk API',
   });
 });
 // ============================================
@@ -87,12 +87,8 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: '✅ Server is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
-});
-
-app.get('*name', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ============================================
@@ -108,6 +104,14 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/sla-config', slaRoutes);
 app.use('/api/workspaces', workspaceRoutes);
+
+// ============================================
+// Frontend Catch-All (SPA Router)
+// ============================================
+// Must be AFTER all API routes to avoid intercepting API calls
+app.get(/^(?!\/api\/)/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // ============================================
 // Error Handling & 404

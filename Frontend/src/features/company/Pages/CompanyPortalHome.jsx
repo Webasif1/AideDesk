@@ -45,7 +45,7 @@ const CompanyPortalHome = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const openTickets = companyTickets.filter
+  const openTickets = Array.isArray(companyTickets)
     ? companyTickets.filter((t) => t.status !== "closed" && t.status !== "resolved").length
     : 0;
 
@@ -80,7 +80,7 @@ const CompanyPortalHome = () => {
           <StatCard
             icon="workspaces"
             label="Workspaces"
-            value={workspaces.length}
+            value={workspaces?.length ?? 0}
             sub="Active environments"
             delay={0}
             onClick={() => navigate("/company-portal/workspaces")}
@@ -103,7 +103,7 @@ const CompanyPortalHome = () => {
           <StatCard
             icon="chat"
             label="Workspaces active"
-            value={workspaces.filter((w) => w.status === "active").length}
+            value={Array.isArray(workspaces) ? workspaces.filter((w) => w.status === "active").length : 0}
             sub="Running today"
             delay={0.15}
           />
@@ -111,7 +111,7 @@ const CompanyPortalHome = () => {
       )}
 
       {/* Workspaces quick list */}
-      {!loading && workspaces.length > 0 && (
+      {!loading && Array.isArray(workspaces) && workspaces.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -120,7 +120,7 @@ const CompanyPortalHome = () => {
         >
           <h2 className="text-[15px] font-bold text-black dark:text-white mb-4">Your Workspaces</h2>
           <div className="space-y-2">
-            {workspaces.map((ws, i) => (
+            {workspaces?.map((ws, i) => (
               <motion.div
                 key={ws._id}
                 initial={{ opacity: 0, x: -8 }}
@@ -153,7 +153,7 @@ const CompanyPortalHome = () => {
       )}
 
       {/* Empty state */}
-      {!loading && workspaces.length === 0 && (
+      {!loading && (!Array.isArray(workspaces) || workspaces.length === 0) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
