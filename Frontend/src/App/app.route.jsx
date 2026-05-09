@@ -23,9 +23,9 @@ import WelcomePage from "../features/auth/Pages/WelcomePage";
 import PublicRoute from "../features/auth/components/PublicRoute";
 
 // Company portal (admin)
-import CompanyPortal from "../features/company/Pages/CompanyPortal";
-import CompanyPortalHome from "../features/company/Pages/CompanyPortalHome";
-import WorkspaceList from "../features/company/Pages/WorkspaceList";
+import CompanyPortal from "../features/company/pages/CompanyPortal";
+import CompanyPortalHome from "../features/company/pages/CompanyPortalHome";
+import WorkspaceList from "../features/company/pages/WorkspaceList";
 
 // Dashboard / app
 import Dashboard from "../features/dashboard/Pages/Dashboard";
