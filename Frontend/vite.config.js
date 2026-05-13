@@ -7,8 +7,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
+      host : "0.0.0.0",
+      watch: {
+        usePolling: true,
+      },
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://backend:3000",
         secure: false,
         changeOrigin: true,
         withCredentials: true,

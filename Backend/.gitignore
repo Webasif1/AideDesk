@@ -1,2 +1,8 @@
 node_modules
 .env
+
+AideDesk_Copilot_Test.postman_collection.json
+CLAUDE.md
+.claude/
+settings.local.json
+INTEGRATION_TEST.md
