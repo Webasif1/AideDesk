@@ -51,8 +51,8 @@ const ChatInput = ({ onSend, disabled = false }) => {
 
   return (
     <div
-      className={`border-t border-neutral-200 bg-white px-[16px] pt-[12px] pb-[16px] transition-all ${
-        focused ? "bg-white" : "bg-neutral-50"
+      className={`border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[16px] pt-[12px] pb-[16px] transition-all ${
+        focused ? "bg-white dark:bg-[#1a1a1a]" : "bg-neutral-50 dark:bg-[#111]"
       }`}
     >
       {/* Toolbar */}
@@ -61,7 +61,7 @@ const ChatInput = ({ onSend, disabled = false }) => {
           type="button"
           title="Attach file"
           onClick={() => fileInputRef.current?.click()}
-          className="p-[6px] rounded-lg transition-colors text-neutral-400 hover:text-black hover:bg-neutral-100"
+          className="p-[6px] rounded-lg transition-colors text-neutral-400 dark:text-neutral-600 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700"
         >
           <span className="material-symbols-outlined text-[18px]">
             attach_file
@@ -78,19 +78,19 @@ const ChatInput = ({ onSend, disabled = false }) => {
 
       {/* Attachment preview */}
       {attachment && (
-        <div className="flex items-center gap-[10px] mb-[8px] px-[12px] py-[8px] bg-neutral-50 border border-neutral-200 rounded-lg">
-          <span className="material-symbols-outlined text-[18px] text-neutral-500">
+        <div className="flex items-center gap-[10px] mb-[8px] px-[12px] py-[8px] bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+          <span className="material-symbols-outlined text-[18px] text-neutral-500 dark:text-neutral-400">
             {attachment.type.startsWith("image/") ? "image" : "picture_as_pdf"}
           </span>
-          <span className="text-[12px] text-neutral-700 flex-1 truncate">
+          <span className="text-[12px] text-neutral-700 dark:text-neutral-300 flex-1 truncate">
             {attachment.name}
           </span>
-          <span className="text-[11px] text-neutral-400">
+          <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
             {(attachment.size / 1024).toFixed(1)} KB
           </span>
           <button
             onClick={removeAttachment}
-            className="p-[2px] rounded hover:bg-neutral-200 text-neutral-500"
+            className="p-[2px] rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
           >
             <span className="material-symbols-outlined text-[16px]">close</span>
           </button>
@@ -101,8 +101,8 @@ const ChatInput = ({ onSend, disabled = false }) => {
       <div
         className={`flex items-end gap-[10px] border rounded-xl px-[14px] py-[10px] transition-all ${
           focused
-            ? "border-black bg-white shadow-sm"
-            : "border-neutral-200 bg-white"
+            ? "border-black dark:border-white bg-white dark:bg-[#1a1a1a] shadow-sm dark:shadow-none"
+            : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a]"
         }`}
       >
         <textarea
@@ -115,7 +115,7 @@ const ChatInput = ({ onSend, disabled = false }) => {
           placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
           rows={1}
           disabled={disabled}
-          className="flex-1 resize-none bg-transparent outline-none text-[13px] text-neutral-800 placeholder:text-neutral-400 leading-relaxed min-h-[22px] max-h-[120px] overflow-y-auto"
+          className="flex-1 resize-none bg-transparent outline-none text-[13px] text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 leading-relaxed min-h-[22px] max-h-[120px] overflow-y-auto"
           style={{ scrollbarWidth: "none" }}
         />
 
@@ -124,15 +124,15 @@ const ChatInput = ({ onSend, disabled = false }) => {
           disabled={(!text.trim() && !attachment) || disabled}
           className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all ${
             text.trim() || attachment
-              ? "bg-black text-white hover:opacity-80 active:scale-95"
-              : "bg-neutral-100 text-neutral-300 cursor-not-allowed"
+              ? "bg-black dark:bg-white text-white dark:text-black hover:opacity-80 active:scale-95"
+              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-600 cursor-not-allowed"
           }`}
         >
           <span className="material-symbols-outlined text-[16px]">send</span>
         </button>
       </div>
 
-      <p className="text-[10px] text-neutral-300 mt-[6px] text-center">
+      <p className="text-[10px] text-neutral-300 dark:text-neutral-600 mt-[6px] text-center">
         This conversation is being recorded for quality assurance.
       </p>
     </div>

@@ -14,7 +14,7 @@ const ChatHeader = ({ conversation, onClose }) => {
 
   return (
     <div
-      className="flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-200 bg-white"
+      className="flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a]"
       style={{ animation: "headerIn 0.2s ease-out both" }}
     >
       {/* Left: avatar + name */}
@@ -22,9 +22,9 @@ const ChatHeader = ({ conversation, onClose }) => {
         {onClose && (
           <button
             onClick={onClose}
-            className="p-[6px] hover:bg-neutral-100 rounded-lg transition-colors mr-[2px]"
+            className="p-[6px] hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors mr-[2px]"
           >
-            <span className="material-symbols-outlined text-[18px] text-neutral-400">
+            <span className="material-symbols-outlined text-[18px] text-neutral-400 dark:text-neutral-600">
               arrow_back
             </span>
           </button>
@@ -40,7 +40,7 @@ const ChatHeader = ({ conversation, onClose }) => {
 
         <div>
           <div className="flex items-center gap-[8px]">
-            <h3 className="text-[14px] font-semibold text-black">
+            <h3 className="text-[14px] font-semibold text-black dark:text-white">
               {customer.name}
             </h3>
             <span
@@ -49,7 +49,7 @@ const ChatHeader = ({ conversation, onClose }) => {
               {tag}
             </span>
           </div>
-          <p className="text-[11px] text-neutral-500 mt-[1px] flex items-center gap-[4px]">
+          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-[1px] flex items-center gap-[4px]">
             <span
               className={`w-[6px] h-[6px] rounded-full inline-block ${
                 customer.status === "online"
@@ -74,7 +74,7 @@ const ChatHeader = ({ conversation, onClose }) => {
           <button
             key={a.icon}
             title={a.label}
-            className="p-[8px] rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 transition-colors"
+            className="p-[8px] rounded-lg text-neutral-400 dark:text-neutral-600 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">
               {a.icon}

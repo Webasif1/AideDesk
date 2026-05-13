@@ -1,6 +1,6 @@
 import Navbar from "../Components/landing/Navbar";
 import Footer from "../Components/landing/Footer";
-import PageWrapper from "../Components/ui/PageWrapper";
+import PageWrapper from "../../Components/ui/FadeUp";
 import FadeUp from "../../Components/ui/FadeUp";
 import PrivacySidebar from "../Components/privacy/PrivacySidebar";
 import PrivacySection from "../Components/privacy/PrivacySection";
@@ -9,7 +9,7 @@ const Privacy = () => (
   <PageWrapper>
     <div className="bg-surface-container-lowest text-on-surface antialiased min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow max-w-[1280px] mx-auto w-full px-[24px] py-[64px] flex flex-col md:flex-row gap-[48px]">
+      <main className="grow max-w-[1280px] mx-auto w-full px-[24px] py-[64px] flex flex-col md:flex-row gap-[48px]">
         <PrivacySidebar />
         <article className="flex-1 max-w-3xl">
           <FadeUp delay={0}>

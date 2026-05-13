@@ -38,7 +38,7 @@ const ChatAvatar = ({
     <div className="relative shrink-0">
       <div
         className={`${sizes[size]} rounded-xl flex items-center justify-center font-bold select-none
-          ${isAI ? "bg-black text-white" : isCustomer ? "bg-neutral-800 text-white" : "bg-neutral-100 text-neutral-700 border border-neutral-200"}`}
+          ${isAI ? "bg-black text-white" : isCustomer ? "bg-neutral-800 text-white" : "bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600"}`}
       >
         {isAI ? (
           <span className="material-symbols-outlined text-[15px]">
@@ -50,7 +50,7 @@ const ChatAvatar = ({
       </div>
       {showStatus && !isAI && (
         <span
-          className={`absolute -bottom-0.5 -right-0.5 rounded-full border-white ${dotSizes[size]} ${statusColors[status] || "bg-neutral-300"}`}
+          className={`absolute -bottom-0.5 -right-0.5 rounded-full border-white dark:border-[#1a1a1a] ${dotSizes[size]} ${statusColors[status] || "bg-neutral-300"}`}
         />
       )}
     </div>

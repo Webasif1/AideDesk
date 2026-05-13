@@ -15,7 +15,7 @@ const Customers = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-surface text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -31,20 +31,20 @@ const Customers = () => {
             >
               <div>
                 <nav className="flex items-center gap-[8px] mb-[8px]">
-                  <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest">
+                  <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
                     Enterprise
                   </span>
-                  <span className="text-neutral-300">/</span>
-                  <span className="text-[10px] font-mono text-black font-semibold uppercase tracking-widest">
+                  <span className="text-neutral-300 dark:text-neutral-700">/</span>
+                  <span className="text-[10px] font-mono text-black dark:text-white font-semibold uppercase tracking-widest">
                     Management
                   </span>
                 </nav>
-                <h2 className="text-[32px] font-bold text-black tracking-tight">
+                <h2 className="text-[32px] font-bold text-black dark:text-white tracking-tight">
                   Customers
                 </h2>
               </div>
               <div className="flex items-center gap-[12px]">
-                <button className="flex items-center gap-[8px] px-[16px] py-[8px] bg-white border border-neutral-200 text-black text-[13px] font-medium rounded-xl hover:bg-neutral-50 transition-all">
+                <button className="flex items-center gap-[8px] px-[16px] py-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white text-[13px] font-medium rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all">
                   <span className="material-symbols-outlined text-[18px]">
                     file_download
                   </span>
@@ -52,7 +52,7 @@ const Customers = () => {
                 </button>
                 <button
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-[8px] px-[16px] py-[8px] bg-black text-white text-[13px] font-medium rounded-xl hover:opacity-90 transition-all active:scale-95"
+                  className="flex items-center gap-[8px] px-[16px] py-[8px] bg-black dark:bg-white text-white dark:text-black text-[13px] font-medium rounded-xl hover:opacity-90 transition-all active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     add

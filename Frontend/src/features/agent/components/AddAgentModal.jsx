@@ -47,24 +47,24 @@ const AddAgentModal = ({ onClose }) => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.98 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="max-w-[720px] w-full bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-xl"
+        className="max-w-[720px] w-full bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-xl dark:shadow-none"
       >
         {/* Header */}
-        <div className="px-[32px] py-[24px] border-b border-neutral-200 flex justify-between items-center">
+        <div className="px-[32px] py-[24px] border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
           <div>
-            <h1 className="text-[24px] font-semibold text-black tracking-tight">
+            <h1 className="text-[24px] font-semibold text-black dark:text-white tracking-tight">
               Add New Agent
             </h1>
-            <p className="text-[13px] text-neutral-500 mt-1">
+            <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-1">
               Configure basic details and access levels for your new team
               member.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
           >
-            <span className="material-symbols-outlined text-neutral-500">
+            <span className="material-symbols-outlined text-neutral-500 dark:text-neutral-400">
               close
             </span>
           </button>
@@ -78,16 +78,16 @@ const AddAgentModal = ({ onClose }) => {
         >
           {/* Photo upload */}
           <div className="flex items-center gap-[24px]">
-            <div className="h-[48px] w-[48px] rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 flex items-center justify-center text-neutral-400">
+            <div className="h-[48px] w-[48px] rounded-full bg-neutral-100 dark:bg-neutral-800 border-2 border-dashed border-neutral-300 dark:border-neutral-600 flex items-center justify-center text-neutral-400 dark:text-neutral-500">
               <span className="material-symbols-outlined text-[28px]">
                 add_a_photo
               </span>
             </div>
             <div>
-              <button className="text-[12px] font-semibold uppercase tracking-widest text-black border border-neutral-200 px-[16px] py-[8px] rounded-lg hover:bg-neutral-50 transition-colors">
+              <button className="text-[12px] font-semibold uppercase tracking-widest text-black dark:text-white border border-neutral-200 dark:border-neutral-700 px-[16px] py-[8px] rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
                 Upload Photo
               </button>
-              <p className="text-[13px] text-neutral-500 mt-2">
+              <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-2">
                 Recommended: Square JPG or PNG, max 2MB.
               </p>
             </div>
@@ -108,24 +108,24 @@ const AddAgentModal = ({ onClose }) => {
               },
             ].map((f) => (
               <div key={f.label} className="flex flex-col gap-[8px]">
-                <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500">
+                <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                   {f.label}
                 </label>
                 <input
                   type={f.type}
                   placeholder={f.placeholder}
-                  className="w-full h-11 px-[16px] bg-neutral-50 border border-neutral-200 rounded-lg text-[14px] focus:outline-none focus:border-black transition-colors"
+                  className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
                 />
               </div>
             ))}
 
             {/* Role */}
             <div className="flex flex-col gap-[8px]">
-              <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500">
+              <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                 Role Selection
               </label>
               <div className="relative">
-                <select className="w-full h-11 px-[16px] bg-neutral-50 border border-neutral-200 rounded-lg text-[14px] focus:outline-none focus:border-black appearance-none transition-colors">
+                <select className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] focus:outline-none focus:border-black dark:focus:border-white appearance-none transition-colors">
                   <option>Agent</option>
                   <option>Lead</option>
                   <option>Admin</option>
@@ -138,11 +138,11 @@ const AddAgentModal = ({ onClose }) => {
 
             {/* Team */}
             <div className="flex flex-col gap-[8px]">
-              <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500">
+              <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                 Team Assignment
               </label>
               <div className="relative">
-                <select className="w-full h-11 px-[16px] bg-neutral-50 border border-neutral-200 rounded-lg text-[14px] focus:outline-none focus:border-black appearance-none transition-colors">
+                <select className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] focus:outline-none focus:border-black dark:focus:border-white appearance-none transition-colors">
                   <option>Customer Support</option>
                   <option>Customer Success</option>
                   <option>Technical Support</option>
@@ -156,8 +156,8 @@ const AddAgentModal = ({ onClose }) => {
           </div>
 
           {/* Permissions */}
-          <div className="pt-[24px] border-t border-neutral-200">
-            <h3 className="text-[18px] font-semibold text-black mb-[16px]">
+          <div className="pt-[24px] border-t border-neutral-200 dark:border-neutral-700">
+            <h3 className="text-[18px] font-semibold text-black dark:text-white mb-[16px]">
               Access Permissions
             </h3>
             <div className="grid grid-cols-2 gap-y-[16px] gap-x-[32px]">
@@ -175,10 +175,10 @@ const AddAgentModal = ({ onClose }) => {
                     />
                   </div>
                   <div>
-                    <p className="text-[14px] font-semibold text-black">
+                    <p className="text-[14px] font-semibold text-black dark:text-white">
                       {p.label}
                     </p>
-                    <p className="text-[13px] text-neutral-500">{p.desc}</p>
+                    <p className="text-[13px] text-neutral-500 dark:text-neutral-400">{p.desc}</p>
                   </div>
                 </label>
               ))}
@@ -186,11 +186,11 @@ const AddAgentModal = ({ onClose }) => {
           </div>
 
           {/* Info notice */}
-          <div className="p-[16px] bg-neutral-50 rounded-xl border border-neutral-200 flex gap-[8px]">
+          <div className="p-[16px] bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 flex gap-[8px]">
             <span className="material-symbols-outlined text-neutral-400 text-[20px] shrink-0">
               info
             </span>
-            <p className="text-[13px] text-neutral-500">
+            <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
               An invitation email will be sent to the address provided. The link
               expires in 48 hours.
             </p>
@@ -198,10 +198,10 @@ const AddAgentModal = ({ onClose }) => {
         </motion.div>
 
         {/* Footer */}
-        <div className="px-[32px] py-[24px] bg-neutral-50 border-t border-neutral-200 flex justify-end items-center gap-[16px]">
+        <div className="px-[32px] py-[24px] bg-neutral-50 dark:bg-[#111] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[16px]">
           <button
             onClick={onClose}
-            className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest text-black hover:bg-neutral-100 transition-colors rounded-lg"
+            className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg"
           >
             Cancel
           </button>

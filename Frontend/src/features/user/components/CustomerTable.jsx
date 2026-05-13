@@ -57,7 +57,7 @@ const customers = [
 
 const Tag = ({ label, dark, error }) => {
   if (dark) return (
-    <span className="text-[10px] font-bold px-[8px] py-[2px] bg-black text-white rounded-full">
+    <span className="text-[10px] font-bold px-[8px] py-[2px] bg-black dark:bg-white text-white dark:text-black rounded-full">
       {label}
     </span>
   );
@@ -67,7 +67,7 @@ const Tag = ({ label, dark, error }) => {
     </span>
   );
   return (
-    <span className="text-[10px] font-bold px-[8px] py-[2px] bg-neutral-100 text-neutral-600 rounded-full">
+    <span className="text-[10px] font-bold px-[8px] py-[2px] bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-full">
       {label}
     </span>
   );
@@ -78,19 +78,19 @@ const CustomerTable = () => {
   const loading = useSelector((s) => s.user.loading);
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-100">
+            <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-100 dark:border-neutral-700">
               {["Name", "Email", "Tags", "Timezone", "Last Updated", ""].map((h) => (
-                <th key={h} className="px-[24px] py-[16px] text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">
+                <th key={h} className="px-[24px] py-[16px] text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-50">
+          <tbody className="divide-y divide-neutral-50 dark:divide-neutral-800">
             {loading
               ? [...Array(5)].map((_, i) => (
                   <tr key={i}>
@@ -100,16 +100,16 @@ const CustomerTable = () => {
                   </tr>
                 ))
               : customers.map((c) => (
-              <tr key={c.id} className="hover:bg-neutral-50/50 transition-colors group">
+              <tr key={c.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800 transition-colors group">
                 {/* Name */}
                 <td className="px-[24px] py-[16px]">
                   <div className="flex items-center gap-[12px]">
-                    <div className="w-9 h-9 rounded-full bg-neutral-100 border border-neutral-100 flex items-center justify-center text-[11px] font-bold text-neutral-500 shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-700 border border-neutral-100 dark:border-neutral-600 flex items-center justify-center text-[11px] font-bold text-neutral-500 dark:text-neutral-300 shrink-0">
                       {c.initials}
                     </div>
                     <div>
                       <div className="flex items-center gap-[6px]">
-                        <span className="text-[13px] font-semibold text-black hover:underline cursor-pointer">
+                        <span className="text-[13px] font-semibold text-black dark:text-white hover:underline cursor-pointer">
                           {c.name}
                         </span>
                         {c.suspended && (
@@ -118,12 +118,12 @@ const CustomerTable = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-neutral-400">{c.id}</p>
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500">{c.id}</p>
                     </div>
                   </div>
                 </td>
                 {/* Email */}
-                <td className="px-[24px] py-[16px] text-[13px] text-neutral-600">
+                <td className="px-[24px] py-[16px] text-[13px] text-neutral-600 dark:text-neutral-400">
                   {c.email}
                 </td>
                 {/* Tags */}
@@ -133,16 +133,16 @@ const CustomerTable = () => {
                   </div>
                 </td>
                 {/* Timezone */}
-                <td className="px-[24px] py-[16px] text-[12px] text-neutral-500 font-mono">
+                <td className="px-[24px] py-[16px] text-[12px] text-neutral-500 dark:text-neutral-400 font-mono">
                   {c.timezone}
                 </td>
                 {/* Updated */}
-                <td className="px-[24px] py-[16px] text-[13px] text-neutral-500">
+                <td className="px-[24px] py-[16px] text-[13px] text-neutral-500 dark:text-neutral-400">
                   {c.updated}
                 </td>
                 {/* Actions */}
                 <td className="px-[24px] py-[16px] text-right">
-                  <button className="text-neutral-400 hover:text-black transition-colors p-[4px] rounded-lg">
+                  <button className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white transition-colors p-[4px] rounded-lg">
                     <span className="material-symbols-outlined text-[20px]">more_horiz</span>
                   </button>
                 </td>
@@ -153,15 +153,15 @@ const CustomerTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="px-[24px] py-[16px] bg-neutral-50/30 border-t border-neutral-100 flex items-center justify-between">
-        <p className="text-[11px] font-mono text-neutral-400">
+      <div className="px-[24px] py-[16px] bg-neutral-50/30 dark:bg-[#111] border-t border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
+        <p className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
           Showing 1 to 5 of 12,842 customers
         </p>
         <div className="flex items-center gap-[8px]">
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className="p-[6px] border border-neutral-200 rounded-lg hover:bg-white transition-all disabled:opacity-30"
+            className="p-[6px] border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-all disabled:opacity-30"
           >
             <span className="material-symbols-outlined text-[18px]">chevron_left</span>
           </button>
@@ -172,8 +172,8 @@ const CustomerTable = () => {
                 onClick={() => setPage(n)}
                 className={`px-[12px] py-[4px] text-[11px] font-bold rounded-lg transition-colors ${
                   page === n
-                    ? "bg-black text-white"
-                    : "text-neutral-400 hover:text-black"
+                    ? "bg-black dark:bg-white text-white dark:text-black"
+                    : "text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white"
                 }`}
               >
                 {n}
@@ -182,7 +182,7 @@ const CustomerTable = () => {
           </div>
           <button
             onClick={() => setPage((p) => p + 1)}
-            className="p-[6px] border border-neutral-200 rounded-lg hover:bg-white transition-all"
+            className="p-[6px] border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-white dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-all"
           >
             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
           </button>

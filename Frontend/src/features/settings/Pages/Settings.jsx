@@ -14,7 +14,7 @@ const Settings = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-neutral-50 text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-neutral-50 dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -29,10 +29,10 @@ const Settings = () => {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="mb-[8px]"
             >
-              <h2 className="text-[32px] font-bold text-black tracking-tight">
+              <h2 className="text-[32px] font-bold text-black dark:text-white tracking-tight">
                 Settings
               </h2>
-              <p className="text-neutral-500 text-[14px] mt-1">
+              <p className="text-neutral-500 dark:text-neutral-400 text-[14px] mt-1">
                 Manage your workspace configuration, security, and billing
                 preferences.
               </p>
@@ -63,14 +63,14 @@ const Settings = () => {
               {activeTab === "Security" && <SecuritySection />}
               {activeTab === "Billing" && <BillingSection />}
               {activeTab === "API & Integrations" && (
-                <div className="bg-white border border-neutral-200 rounded-xl p-[24px] text-center py-[64px]">
-                  <span className="material-symbols-outlined text-neutral-300 text-[48px] block mb-[16px]">
+                <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] text-center py-[64px]">
+                  <span className="material-symbols-outlined text-neutral-300 dark:text-neutral-700 text-[48px] block mb-[16px]">
                     api
                   </span>
-                  <h3 className="text-[18px] font-semibold text-black mb-[8px]">
+                  <h3 className="text-[18px] font-semibold text-black dark:text-white mb-[8px]">
                     API & Integrations
                   </h3>
-                  <p className="text-neutral-500 text-sm">
+                  <p className="text-neutral-500 dark:text-neutral-400 text-sm">
                     Coming soon — manage your API keys and third-party
                     integrations.
                   </p>

@@ -12,45 +12,45 @@ const formatTime = (date) => {
 };
 
 const STATUS_TAG = {
-  active: { label: "Active", color: "bg-emerald-100 text-emerald-700" },
-  waiting: { label: "Waiting", color: "bg-amber-100 text-amber-700" },
-  closed: { label: "Closed", color: "bg-neutral-100 text-neutral-600" },
+  active: { label: "Active", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400" },
+  waiting: { label: "Waiting", color: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400" },
+  closed: { label: "Closed", color: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400" },
 };
 
 const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100">
+      <div className="px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100 dark:border-neutral-800">
         <div className="flex items-center justify-between mb-[12px]">
-          <h2 className="text-[15px] font-bold text-black">Conversations</h2>
-          <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 transition-colors">
+          <h2 className="text-[15px] font-bold text-black dark:text-white">Conversations</h2>
+          <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
             <span className="material-symbols-outlined text-[18px] text-neutral-400">
               edit_square
             </span>
           </button>
         </div>
         {/* Search */}
-        <div className="flex items-center bg-neutral-50 border border-neutral-200 rounded-lg px-[10px] py-[6px] gap-[6px] focus-within:border-black transition-all">
+        <div className="flex items-center bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-[10px] py-[6px] gap-[6px] focus-within:border-black dark:focus-within:border-white transition-all">
           <span className="material-symbols-outlined text-neutral-400 text-[16px]">
             search
           </span>
           <input
-            className="bg-transparent text-[12px] outline-none placeholder:text-neutral-400 w-full"
+            className="bg-transparent text-[12px] text-black dark:text-white outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 w-full"
             placeholder="Search conversations..."
           />
         </div>
       </div>
 
       {/* Filter pills */}
-      <div className="flex gap-[6px] px-[16px] py-[10px] border-b border-neutral-100 overflow-x-auto scrollbar-none">
+      <div className="flex gap-[6px] px-[16px] py-[10px] border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto scrollbar-none">
         {["All", "Mine", "Unread", "Priority"].map((f, i) => (
           <button
             key={f}
             className={`shrink-0 text-[11px] font-semibold px-[10px] py-[4px] rounded-full transition-all ${
               i === 0
                 ? "bg-black text-white"
-                : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
             }`}
           >
             {f}
@@ -76,8 +76,8 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
             <button
               key={conv._id}
               onClick={() => onSelect(conv)}
-              className={`w-full text-left flex items-start gap-[10px] px-[16px] py-[12px] transition-all border-b border-neutral-50 relative
-                ${isActive ? "bg-neutral-100" : "hover:bg-neutral-50"}
+              className={`w-full text-left flex items-start gap-[10px] px-[16px] py-[12px] transition-all border-b border-neutral-50 dark:border-neutral-800 relative
+                ${isActive ? "bg-neutral-100 dark:bg-neutral-800" : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"}
               `}
               style={{
                 animation: `listIn 0.25s ease-out both`,
@@ -94,7 +94,7 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-[2px]">
                   <span
-                    className={`text-[13px] font-semibold truncate ${isActive ? "text-black" : "text-neutral-800"}`}
+                    className={`text-[13px] font-semibold truncate ${isActive ? "text-black dark:text-white" : "text-neutral-800 dark:text-neutral-200"}`}
                   >
                     {customerName}
                   </span>
@@ -102,7 +102,7 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
                     {formatTime(conv.lastActivity || conv.updatedAt)}
                   </span>
                 </div>
-                <p className="text-[11px] text-neutral-500 truncate leading-tight">
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate leading-tight">
                   {lastText}
                 </p>
                 <div className="flex items-center gap-[6px] mt-[5px]">

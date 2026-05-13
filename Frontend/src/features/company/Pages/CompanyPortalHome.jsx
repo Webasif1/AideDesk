@@ -11,7 +11,7 @@ const StatCard = ({ icon, label, value, sub, delay = 0, onClick }) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.35 }}
     onClick={onClick}
-    className={`bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-2xl p-5 ${
+    className={`bg-white dark:bg-[#1a1a1a] border border-neutral-100 dark:border-neutral-700 rounded-2xl p-5 ${
       onClick ? "cursor-pointer hover:shadow-sm transition-shadow" : ""
     }`}
   >
@@ -89,9 +89,8 @@ const CompanyPortalHome = () => {
             icon="group"
             label="Agents"
             value={companyAgents?.length ?? 0}
-            sub="Support staff"
+            sub="Across workspaces"
             delay={0.05}
-            onClick={() => navigate("/company-portal/team")}
           />
           <StatCard
             icon="confirmation_number"

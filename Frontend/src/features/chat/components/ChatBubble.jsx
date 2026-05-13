@@ -6,7 +6,7 @@ const TypingIndicator = () => (
     {[0, 1, 2].map((i) => (
       <span
         key={i}
-        className="w-[6px] h-[6px] rounded-full bg-neutral-400 inline-block"
+        className="w-[6px] h-[6px] rounded-full bg-neutral-400 dark:bg-neutral-600 inline-block"
         style={{
           animation: `typingBounce 1.2s ease-in-out infinite`,
           animationDelay: `${i * 0.18}s`,
@@ -62,15 +62,15 @@ const ChatBubble = ({
           <div
             className={`flex items-center gap-[6px] ${isMine ? "flex-row-reverse" : ""}`}
           >
-            <span className="text-[11px] font-semibold text-neutral-500">
+            <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
               {sender?.name}
               {isAI && (
-                <span className="ml-[6px] text-[9px] font-bold uppercase tracking-widest bg-black text-white px-[5px] py-[1px] rounded-full">
+                <span className="ml-[6px] text-[9px] font-bold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-[5px] py-[1px] rounded-full">
                   AI
                 </span>
               )}
             </span>
-            <span className="text-[10px] text-neutral-300">{time}</span>
+            <span className="text-[10px] text-neutral-300 dark:text-neutral-600">{time}</span>
           </div>
         )}
 
@@ -79,10 +79,10 @@ const ChatBubble = ({
           className={`relative rounded-2xl px-[14px] py-[10px] text-[13px] leading-relaxed transition-all
             ${
               isMine
-                ? "bg-black text-white rounded-br-[4px]"
-                : "bg-white border border-neutral-200 text-neutral-800 rounded-bl-[4px] shadow-sm"
+                ? "bg-black dark:bg-white text-white dark:text-black rounded-br-[4px]"
+                : "bg-white dark:bg-[#222] border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-white rounded-bl-[4px] shadow-sm dark:shadow-none"
             }
-            ${isTyping ? "py-0 px-0 bg-white border border-neutral-200 rounded-bl-[4px]" : ""}
+            ${isTyping ? "py-0 px-0 bg-white dark:bg-[#222] border border-neutral-200 dark:border-neutral-700 rounded-bl-[4px]" : ""}
           `}
         >
           {isTyping ? (
@@ -98,7 +98,7 @@ const ChatBubble = ({
                     <div
                       key={i}
                       className={`flex items-center gap-[8px] rounded-lg px-[10px] py-[8px] text-[12px]
-                        ${isMine ? "bg-white/10" : "bg-neutral-50 border border-neutral-100"}`}
+                        ${isMine ? "bg-white/10 dark:bg-black/20" : "bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-700"}`}
                     >
                       <span className="material-symbols-outlined text-[16px]">
                         {a.type === "image" ? "image" : "attach_file"}
@@ -114,7 +114,7 @@ const ChatBubble = ({
 
         {/* Status tick (for own messages) */}
         {isMine && !isTyping && (
-          <div className="flex items-center gap-[3px] text-[10px] text-neutral-400">
+          <div className="flex items-center gap-[3px] text-[10px] text-neutral-400 dark:text-neutral-600">
             <span className="material-symbols-outlined text-[13px]">
               {status === "read"
                 ? "done_all"
@@ -135,7 +135,7 @@ const ChatBubble = ({
 
       {/* Hover timestamp (compact) */}
       <span
-        className={`text-[10px] text-neutral-300 transition-opacity self-center ${hovered ? "opacity-100" : "opacity-0"}`}
+        className={`text-[10px] text-neutral-300 dark:text-neutral-600 transition-opacity self-center ${hovered ? "opacity-100" : "opacity-0"}`}
       >
         {!showAvatar && time}
       </span>

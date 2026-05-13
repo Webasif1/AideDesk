@@ -4,12 +4,10 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCompany } from "../hooks/useCompany";
 import { useAuth } from "../../auth/hooks/useAuth";
-import ThemeToggle from "../../../components/ui/ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/company-portal", icon: "home", label: "Home", end: true },
   { to: "/company-portal/workspaces", icon: "workspaces", label: "Workspaces" },
-  { to: "/company-portal/team", icon: "group", label: "Team" },
   { to: "/company-portal/settings", icon: "settings", label: "Settings" },
 ];
 
@@ -124,12 +122,8 @@ const CompanyPortal = () => {
           </div>
         </nav>
 
-        {/* Bottom: theme + logout */}
-        <div className="px-3 pb-4 pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-1">
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-[12px] text-neutral-400">Theme</span>
-            <ThemeToggle />
-          </div>
+        {/* Bottom: logout */}
+        <div className="px-3 pb-4 pt-2 border-t border-neutral-100 dark:border-neutral-800">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white transition-colors"

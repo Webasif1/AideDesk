@@ -29,18 +29,18 @@ const CustomerInsights = () => {
       {insights.map((i) => (
         <div
           key={i.title}
-          className="p-[24px] bg-white border border-neutral-100 rounded-xl flex items-start gap-[16px]"
+          className="p-[24px] bg-white dark:bg-[#1a1a1a] border border-neutral-100 dark:border-neutral-700 rounded-xl flex items-start gap-[16px]"
         >
-          <div className="w-10 h-10 bg-neutral-50 border border-neutral-100 rounded-xl flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-black">
+          <div className="w-10 h-10 bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-xl flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-black dark:text-white">
               {i.icon}
             </span>
           </div>
           <div>
-            <h4 className="text-[13px] font-bold text-black mb-[4px]">
+            <h4 className="text-[13px] font-bold text-black dark:text-white mb-[4px]">
               {i.title}
             </h4>
-            <p className="text-[12px] text-neutral-500 leading-relaxed">
+            <p className="text-[12px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
               {i.body}
             </p>
           </div>

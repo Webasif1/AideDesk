@@ -35,7 +35,7 @@ const ChatScreen = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-white text-on-surface min-h-screen font-['Poppins'] flex">
+      <div className="bg-white dark:bg-[#111] text-on-surface min-h-screen font-['Poppins'] flex">
         <Sidebar />
 
         <div className="ml-64 flex-1 flex flex-col min-h-screen overflow-hidden">
@@ -49,7 +49,7 @@ const ChatScreen = () => {
               initial={{ opacity: 0, x: -16 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="w-[300px] shrink-0 border-r border-neutral-200 bg-white flex flex-col overflow-hidden"
+              className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
             >
               <ChatConversationList
                 conversations={chats}
@@ -84,7 +84,7 @@ const ChatScreen = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="w-[260px] shrink-0 border-l border-neutral-200 bg-white overflow-hidden flex flex-col"
+                  className="w-[260px] shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden flex flex-col"
                 >
                   <div className="flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-100">
                     <span className="text-[12px] font-bold uppercase tracking-widest text-neutral-500">

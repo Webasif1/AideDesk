@@ -1,6 +1,7 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
 import ScrollToTop from "../components/ui/ScrollToTop";
 import ProtectedRoute from "../components/ui/ProtectedRoute";
+import FloatingThemeToggle from "../components/ui/FloatingThemeToggle";
 
 // Marketing
 import Home from "./Pages/Home";
@@ -43,6 +44,7 @@ const RootLayout = () => (
   <>
     <ScrollToTop />
     <Outlet />
+    <FloatingThemeToggle />
   </>
 );
 
@@ -107,14 +109,6 @@ const AppRoutes = createBrowserRouter([
         children: [
           { index: true, element: <CompanyPortalHome /> },
           { path: "workspaces", element: <WorkspaceList /> },
-          {
-            path: "team",
-            element: (
-              <Authenticated roles={["admin"]}>
-                <Team />
-              </Authenticated>
-            ),
-          },
           {
             path: "settings",
             element: (

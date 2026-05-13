@@ -91,18 +91,18 @@ const TopBar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/80 backdrop-blur-md flex justify-between items-center h-16 px-[32px]">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md flex justify-between items-center h-16 px-[32px]">
       {/* Search */}
-      <div className="flex items-center bg-surface-container-low border border-neutral-200 rounded-lg px-[12px] py-[6px] w-96 transition-all focus-within:border-black gap-[8px]">
+      <div className="flex items-center bg-surface-container-low dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[6px] w-96 transition-all focus-within:border-black dark:focus-within:border-white gap-[8px]">
         <span className="material-symbols-outlined text-neutral-400 text-[20px]">
           search
         </span>
         <input
-          className="bg-transparent border-none focus:ring-0 text-[13px] w-full font-['Inter'] outline-none placeholder:text-neutral-400"
+          className="bg-transparent border-none focus:ring-0 text-[13px] w-full font-['Inter'] outline-none text-black dark:text-white placeholder:text-neutral-400"
           placeholder="Search tickets, agents, or knowledge..."
           type="text"
         />
-        <span className="text-[10px] bg-white border border-neutral-200 px-[6px] py-[2px] rounded text-neutral-400 font-mono shrink-0">
+        <span className="text-[10px] bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-[6px] py-[2px] rounded text-neutral-400 font-mono shrink-0">
           ⌘K
         </span>
       </div>
@@ -117,12 +117,12 @@ const TopBar = () => {
                 setNotifOpen((v) => !v);
                 setProfileOpen(false);
               }}
-              className="p-[8px] text-neutral-500 hover:bg-neutral-100 rounded-lg transition-colors relative"
+              className="p-[8px] text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors relative"
             >
               <span className="material-symbols-outlined">notifications</span>
               {unreadCount > 0 && (
-                <span className="absolute top-[7px] right-[7px] w-[18px] h-[18px] bg-black rounded-full border-2 border-white flex items-center justify-center">
-                  <span className="text-white text-[9px] font-bold leading-none">
+                <span className="absolute top-[7px] right-[7px] w-[18px] h-[18px] bg-black dark:bg-white rounded-full border-2 border-white dark:border-neutral-950 flex items-center justify-center">
+                  <span className="text-white dark:text-black text-[9px] font-bold leading-none">
                     {unreadCount}
                   </span>
                 </span>
@@ -213,7 +213,7 @@ const TopBar = () => {
           {/* ── Help ── */}
           <button
             onClick={() => navigate("/support")}
-            className="p-[8px] text-neutral-500 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="p-[8px] text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             title="Help & Support"
           >
             <span className="material-symbols-outlined">help_outline</span>
@@ -222,7 +222,7 @@ const TopBar = () => {
           {/* ── Chat ── */}
           <button
             onClick={() => navigate("/dashboard/chat")}
-            className="p-[8px] text-neutral-500 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="p-[8px] text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             title="Live Chats"
           >
             <span className="material-symbols-outlined">
@@ -231,7 +231,7 @@ const TopBar = () => {
           </button>
         </div>
 
-        <div className="h-8 w-[1px] bg-neutral-200" />
+        <div className="h-8 w-[1px] bg-neutral-200 dark:bg-neutral-800" />
 
         {/* ── Profile ── */}
         <div className="relative" ref={profileRef}>
@@ -243,7 +243,7 @@ const TopBar = () => {
             className="flex items-center gap-[12px] cursor-pointer group select-none"
           >
             <div className="text-right">
-              <p className="text-[13px] font-semibold leading-tight">
+              <p className="text-[13px] font-semibold leading-tight text-black dark:text-white">
                 Alex Sterling
               </p>
               <p

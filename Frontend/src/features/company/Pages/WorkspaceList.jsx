@@ -45,7 +45,7 @@ const WorkspaceList = () => {
   };
 
   const inputCls =
-    "w-full border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-[14px] bg-white dark:bg-neutral-900 text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors";
+    "w-full border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-[14px] bg-white dark:bg-[#1a1a1a] text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors";
 
   return (
     <div className="p-8 max-w-3xl">
