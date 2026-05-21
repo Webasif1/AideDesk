@@ -1,30 +1,30 @@
-import crypto from 'crypto';
-import agentModel from '../models/aget.model.js';
-import companyModel from '../models/company.model.js';
-import workspaceModel from '../models/workSpace.model.js';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
-import { AppError, asyncHandler } from '../utils/errorHandler.js';
-import { sendAgentInviteEmail } from '../utils/email.js';
-import { config } from '../config/config.js';
-import jwt from 'jsonwebtoken';
+import crypto from "crypto";
+import agentModel from "../models/aget.model.js";
+import companyModel from "../models/company.model.js";
+import workspaceModel from "../models/workSpace.model.js";
+import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { sendAgentInviteEmail } from "../utils/email.js";
+import { config } from "../config/config.js";
+import jwt from "jsonwebtoken";
 
 // ============================================
 // Generates a temporary password in the format: <Company4Letters><5RandomChars>
 // Example: "Tech" + "3kPmN" → "Tech3kPmN"
 // ============================================
 const generateAgentPassword = (companyName) => {
-  // Strip non-alpha, take first 4, pad with 'X' if the name is short
+  // Strip non-alpha, take first 4, pad with "X" if the name is short
   const prefix = companyName
-    .replace(/[^a-zA-Z]/g, '')
+    .replace(/[^a-zA-Z]/g, "")
     .substring(0, 4)
-    .padEnd(4, 'X');
+    .padEnd(4, "X");
 
   // Charset excludes visually confusing characters (0/O, 1/l/I)
-  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const random = Array.from(
     crypto.randomBytes(5),
     (byte) => charset[byte % charset.length]
-  ).join('');
+  ).join("");
 
   return prefix + random;
 };
@@ -37,7 +37,7 @@ const generateAgentPassword = (companyName) => {
 export const createAgent = asyncHandler(async (req, res) => {
   if (!req.companyId) {
     throw new AppError(
-      'Please complete your company setup before adding agents.',
+      "Please complete your company setup before adding agents.",
       HTTP_STATUS.BAD_REQUEST
     );
   }
@@ -52,15 +52,15 @@ export const createAgent = asyncHandler(async (req, res) => {
   // Fetch company so we can use the name in the password and in the email
   const company = await companyModel.findById(req.companyId);
   if (!company) {
-    throw new AppError('Company not found. Please contact support.', HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Company not found. Please contact support.", HTTP_STATUS.NOT_FOUND);
   }
 
   // Guard: company must have a workspace before agents can be added
-  const workspace = await workspaceModel.findOne({ companyId: req.companyId, status: 'active' });
+  const workspace = await workspaceModel.findOne({ companyId: req.companyId, status: "active" });
   if (!workspace) {
     throw new AppError(
-      'You must create a workspace before adding agents.',
-      HTTP_STATUS.BAD_REQUEST
+      "You must create a workspace before adding agents.",
+      HTTP_STATUS.BAD_REQUEST,
     );
   }
 
@@ -77,9 +77,9 @@ export const createAgent = asyncHandler(async (req, res) => {
 
   // Invite token — short-lived (7d), contains role so verifyEmailToken picks the right model
   const inviteToken = jwt.sign(
-    { userId: agent._id, email: agent.email, role: 'agent' },
+    { userId: agent._id, email: agent.email, role: "agent" },
     config.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: "7d" },
   );
 
   const verifyLink = `${config.BACKEND_URL || `http://localhost:${config.PORT}`}/api/auth/verify/${inviteToken}`;
@@ -126,13 +126,13 @@ export const getAgents = asyncHandler(async (req, res) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const filter = { companyId: req.companyId };
-  if (req.workspaceId) filter.workspaceId = req.workspaceId;
-  if (status) filter.status = status;
+  if (req.workspaceId) {filter.workspaceId = req.workspaceId;}
+  if (status) {filter.status = status;}
 
   const [agents, total] = await Promise.all([
     agentModel
       .find(filter)
-      .select('-password')
+      .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -156,15 +156,15 @@ export const getAgents = asyncHandler(async (req, res) => {
 // Admin: any agent in their company | Agent: own profile
 // ============================================
 export const getAgent = asyncHandler(async (req, res) => {
-  const agent = await agentModel.findById(req.params.id).select('-password');
+  const agent = await agentModel.findById(req.params.id).select("-password");
 
   if (!agent) {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
 
-  const isOwnProfile = req.role === 'agent' && agent._id.toString() === req.userId;
+  const isOwnProfile = req.role === "agent" && agent._id.toString() === req.userId;
   const isAdminOfCompany =
-    req.role === 'admin' && agent.companyId.toString() === req.companyId.toString();
+    req.role === "admin" && agent.companyId.toString() === req.companyId.toString();
 
   if (!isOwnProfile && !isAdminOfCompany) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
@@ -184,9 +184,9 @@ export const updateAgent = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
 
-  const isOwnProfile = req.role === 'agent' && agent._id.toString() === req.userId;
+  const isOwnProfile = req.role === "agent" && agent._id.toString() === req.userId;
   const isAdminOfCompany =
-    req.role === 'admin' && agent.companyId.toString() === req.companyId.toString();
+    req.role === "admin" && agent.companyId.toString() === req.companyId.toString();
 
   if (!isOwnProfile && !isAdminOfCompany) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
@@ -195,9 +195,11 @@ export const updateAgent = asyncHandler(async (req, res) => {
   const updates = isAdminOfCompany ? { ...req.body } : {};
 
   if (isOwnProfile) {
-    const agentAllowed = ['name', 'profileImage', 'status'];
+    const agentAllowed = ["name", "profileImage", "status"];
     agentAllowed.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
     });
   }
 
@@ -209,11 +211,11 @@ export const updateAgent = asyncHandler(async (req, res) => {
 
   const updated = await agentModel
     .findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
-    .select('-password');
+    .select("-password");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Agent updated successfully',
+    message: "Agent updated successfully",
     data: updated,
   });
 });
@@ -226,18 +228,18 @@ export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   // Only the agent themselves can change their password
-  if (req.role !== 'agent' || req.params.id !== req.userId) {
+  if (req.role !== "agent" || req.params.id !== req.userId) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
-  const agent = await agentModel.findById(req.userId).select('+password');
+  const agent = await agentModel.findById(req.userId).select("+password");
   if (!agent) {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
 
   const isMatch = await agent.comparePassword(currentPassword);
   if (!isMatch) {
-    throw new AppError('Current password is incorrect', HTTP_STATUS.UNAUTHORIZED);
+    throw new AppError("Current password is incorrect", HTTP_STATUS.UNAUTHORIZED);
   }
 
   agent.password = newPassword; // pre-save hook re-hashes
@@ -245,7 +247,7 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Password changed successfully.',
+    message: "Password changed successfully.",
   });
 });
 
@@ -268,7 +270,7 @@ export const deleteAgent = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Agent removed successfully',
+    message: "Agent removed successfully",
   });
 });
 
@@ -279,17 +281,17 @@ export const deleteAgent = asyncHandler(async (req, res) => {
 export const updateOwnStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  if (!['online', 'offline', 'away'].includes(status)) {
-    throw new AppError('Status must be online, offline, or away', HTTP_STATUS.BAD_REQUEST);
+  if (!["online", "offline", "away"].includes(status)) {
+    throw new AppError("Status must be online, offline, or away", HTTP_STATUS.BAD_REQUEST);
   }
 
   const agent = await agentModel
     .findByIdAndUpdate(req.userId, { status }, { new: true })
-    .select('-password');
+    .select("-password");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Status updated',
+    message: "Status updated",
     data: { status: agent.status },
   });
 });

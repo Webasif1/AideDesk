@@ -1,16 +1,16 @@
-// import dns from 'dns';
-// dns.setServers(['8.8.8.8', '8.8.4.4']);
-import app from './src/app.js';
-import { connectToDB, disconnectDB } from './src/config/database.js';
-import http from 'http';
-import { initSocket } from './src/sockets/server.socket.js';
+// import dns from "dns";
+// dns.setServers(["8.8.8.8", "8.8.4.4"]);
+import app from "./src/app.js";
+import { connectToDB, disconnectDB } from "./src/config/database.js";
+import http from "http";
+import { initSocket } from "./src/sockets/server.socket.js";
 
 // ============================================
 // Configuration
 // ============================================
 
 const PORT = process.env.PORT || 4000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV || "development";
 
 // ============================================
 // Create HTTP server (for Socket IO)
@@ -26,7 +26,7 @@ let server;
 const startServer = async () => {
   try {
     // Connect to MongoDB
-    console.log('🔗 Connecting to MongoDB...');
+    console.log("🔗 Connecting to MongoDB...");
     await connectToDB();
 
     // Start HTTP server
@@ -42,7 +42,7 @@ const startServer = async () => {
       `);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    console.error("❌ Failed to start server:", error.message);
     process.exit(1);
   }
 };
@@ -58,7 +58,7 @@ const gracefulShutdown = async (signal) => {
     if (server) {
       await new Promise((resolve) => {
         server.close(() => {
-          console.log('✅ HTTP server closed');
+          console.log("✅ HTTP server closed");
           resolve();
         });
       });
@@ -66,10 +66,10 @@ const gracefulShutdown = async (signal) => {
 
     // Disconnect from MongoDB
     await disconnectDB();
-    console.log('✅ Shutdown complete');
+    console.log("✅ Shutdown complete");
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during shutdown:', error.message);
+    console.error("❌ Error during shutdown:", error.message);
     process.exit(1);
   }
 };
@@ -77,19 +77,19 @@ const gracefulShutdown = async (signal) => {
 // ============================================
 // Process Event Listeners
 // ============================================
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  gracefulShutdown('unhandledRejection');
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+  gracefulShutdown("unhandledRejection");
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  gracefulShutdown('uncaughtException');
+process.on("uncaughtException", (error) => {
+  console.error("❌ Uncaught Exception:", error);
+  gracefulShutdown("uncaughtException");
 });
 
 // ============================================

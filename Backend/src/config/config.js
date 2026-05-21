@@ -44,7 +44,7 @@ export const config = {
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET,
-  JWT_EXPIRE: process.env.JWT_EXPIRE || '5d',
+  JWT_EXPIRE: process.env.JWT_EXPIRE || "5d",
   NODE_ENV: process.env.NODE_ENV,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
@@ -52,7 +52,7 @@ export const config = {
   GOOGLE_USER_EMAIL: process.env.GOOGLE_USER_EMAIL,
   TEST_RECIEVER_EMAIL: process.env.TEST_RECIEVER_EMAIL,
   // Optional — defaults to localhost. Set in production to the deployed frontend URL.
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   BACKEND_URL: process.env.BACKEND_URL || null,
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
