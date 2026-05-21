@@ -15,8 +15,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // use STARTTLS (upgrade connection to TLS after connecting)
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: config.SMTP_USER,
+    pass: config.SMTP_PASS,
   },
 });
 
@@ -32,7 +32,7 @@ transporter.verify((error, success) => {
 export async function sendEmail({ to, subject, html, text }) {
   try {
     const info = await transporter.sendMail({
-      from: `'AideDesk Team' <${config.GOOGLE_USER_EMAIL}>`, // sender address
+      from: `'AideDesk Team' <${config.SMTP_USER}>`, // sender address
       to, // list of receivers
       subject, // Subject line
       text, //plain text body
