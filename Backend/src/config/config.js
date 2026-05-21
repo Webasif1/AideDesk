@@ -32,6 +32,14 @@ if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV is not defined in environment variable");
 }
 
+if (!process.env.SMTP_USER) {
+  throw new Error("SMTP_USER is not defined in environment variable");
+}
+
+if (!process.env.SMTP_PASS) {
+  throw new Error("SMTP_PASS is not defined in environment variable");
+}
+
 export const config = {
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI,
@@ -46,4 +54,6 @@ export const config = {
   // Optional — defaults to localhost. Set in production to the deployed frontend URL.
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   BACKEND_URL: process.env.BACKEND_URL || null,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
 };
