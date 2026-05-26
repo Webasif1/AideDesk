@@ -1,7 +1,7 @@
-import { sendEmail } from '../services/mail.service.js';
+import { sendEmail } from "../services/mail.service.js";
 
-export const sendVerificationEmail = async ({ email, name, verificationLink }) => {
-  const subject = 'Verify Your Account - AideDesk';
+export const sendVerificationEmail =  ({ email, name, verificationLink }) => {
+  const subject = "Verify Your Account - AideDesk";
   const text = `Hi ${name}, please verify your account: ${verificationLink}`;
   const html = `
   <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -10,7 +10,7 @@ export const sendVerificationEmail = async ({ email, name, verificationLink }) =
       <tr>
         <td>
           <p style="font-size: 16px; color: #555;">Hi <strong>${name}</strong>,</p>
-          <p style="font-size: 16px; color: #555;">We're excited to have you on board! Please verify your email by clicking below.</p>
+          <p style="font-size: 16px; color: #555;">We"re excited to have you on board! Please verify your email by clicking below.</p>
         </td>
       </tr>
       <tr>
@@ -26,15 +26,15 @@ export const sendVerificationEmail = async ({ email, name, verificationLink }) =
           <p style="word-break: break-all; font-size: 14px;"><a href="${verificationLink}">${verificationLink}</a></p>
         </td>
       </tr>
-      <tr><td><p style="font-size: 14px; color: #777;">If you didn't create this account, ignore this email.</p></td></tr>
+      <tr><td><p style="font-size: 14px; color: #777;">If you didn"t create this account, ignore this email.</p></td></tr>
       <tr><td style="padding-top: 20px;"><p style="font-size: 14px; color: #555;">Regards,<br/><strong>AideDesk Team</strong></p></td></tr>
     </table>
   </div>`;
-  return await sendEmail({ to: email, subject, text, html });
+  return sendEmail({ to: email, subject, text, html });
 };
 
-export const sendPasswordResetEmail = async ({ email, name, resetLink }) => {
-  const subject = 'Reset Your Password - AideDesk';
+export const sendPasswordResetEmail =  ({ email, name, resetLink }) => {
+  const subject = "Reset Your Password - AideDesk";
   const text = `Hi ${name}, reset your password here: ${resetLink} (expires in 15 minutes)`;
   const html = `
   <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -59,11 +59,11 @@ export const sendPasswordResetEmail = async ({ email, name, resetLink }) => {
           <p style="word-break: break-all; font-size: 14px;"><a href="${resetLink}">${resetLink}</a></p>
         </td>
       </tr>
-      <tr><td><p style="font-size: 14px; color: #777;">If you didn't request this, ignore this email.</p></td></tr>
+      <tr><td><p style="font-size: 14px; color: #777;">If you didn"t request this, ignore this email.</p></td></tr>
       <tr><td style="padding-top: 20px;"><p style="font-size: 14px; color: #555;">Regards,<br/><strong>AideDesk Team</strong></p></td></tr>
     </table>
   </div>`;
-  return await sendEmail({ to: email, subject, text, html });
+  return sendEmail({ to: email, subject, text, html });
 };
 
 // ============================================
@@ -71,16 +71,16 @@ export const sendPasswordResetEmail = async ({ email, name, resetLink }) => {
 // Sent by the system when an admin adds a new agent.
 // Contains credentials + a one-click verify-and-login link.
 // ============================================
-export const sendAgentInviteEmail = async ({
+export const sendAgentInviteEmail =  ({
   email,
   agentName,
   companyName,
   loginEmail,
   tempPassword,
   verifyLink,
-  frontendUrl = 'http://localhost:5173',
+  frontendUrl = "http://localhost:5173",
 }) => {
-  const subject = `You've been added as a Support Agent — ${companyName}`;
+  const subject = `You"ve been added as a Support Agent — ${companyName}`;
   const loginUrl = `${frontendUrl}/login`;
   const changePasswordUrl = `${frontendUrl}/agent/profile`;
 
@@ -97,9 +97,9 @@ Click the link below to verify your account and go to the login page:
 ${verifyLink}
 
 After logging in:
-  1. Go to Profile → Change Password and set a password you'll remember.
+  1. Go to Profile → Change Password and set a password you"ll remember.
   2. Update your profile image and display name if you wish.
-  3. Your status will be set to "offline" by default — switch it to "online" when you're ready to take chats.
+  3. Your status will be set to "offline" by default — switch it to "online" when you"re ready to take chats.
 
 If you have any issues, contact your admin or reply to this email.
 
@@ -116,7 +116,7 @@ AideDesk Team
       <tr>
         <td style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 32px; text-align: center;">
           <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: -0.5px;">Welcome to AideDesk</h1>
-          <p style="color: #bfdbfe; margin: 8px 0 0; font-size: 15px;">You've joined <strong>${companyName}</strong> as a Support Agent</p>
+          <p style="color: #bfdbfe; margin: 8px 0 0; font-size: 15px;">You"ve joined <strong>${companyName}</strong> as a Support Agent</p>
         </td>
       </tr>
 
@@ -150,7 +150,7 @@ AideDesk Team
                   <tr>
                     <td style="font-size: 14px; color: #64748b; padding: 6px 0;">Password</td>
                     <td style="padding: 6px 0;">
-                      <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700;
+                      <span style="font-family: "Courier New", monospace; font-size: 15px; font-weight: 700;
                                    color: #1e293b; background: #e0f2fe; padding: 3px 10px; border-radius: 4px;
                                    letter-spacing: 1px;">
                         ${tempPassword}
@@ -208,7 +208,7 @@ AideDesk Team
                                    font-weight: 700; color: #2563eb;">2</span>
                     </td>
                     <td style="font-size: 14px; color: #4b5563; padding: 4px 0 4px 10px; line-height: 1.5;">
-                      <strong>Update your profile</strong> — add a photo and confirm your display name so customers know who they're chatting with.
+                      <strong>Update your profile</strong> — add a photo and confirm your display name so customers know who they"re chatting with.
                     </td>
                   </tr>
                   <tr>
@@ -218,7 +218,7 @@ AideDesk Team
                                    font-weight: 700; color: #2563eb;">3</span>
                     </td>
                     <td style="font-size: 14px; color: #4b5563; padding: 4px 0 4px 10px; line-height: 1.5;">
-                      <strong>Go online</strong> — your status starts as "offline". Switch it to "online" in the dashboard when you're ready to accept chats.
+                      <strong>Go online</strong> — your status starts as "offline". Switch it to "online" in the dashboard when you"re ready to accept chats.
                     </td>
                   </tr>
                 </table>
@@ -248,7 +248,7 @@ AideDesk Team
         <td style="background: #f8fafc; padding: 20px 36px; text-align: center; border-top: 1px solid #e2e8f0;">
           <p style="font-size: 13px; color: #94a3b8; margin: 0;">
             Sent by <strong>AideDesk</strong> on behalf of <strong>${companyName}</strong>.<br/>
-            If you weren't expecting this email, you can safely ignore it.
+            If you weren"t expecting this email, you can safely ignore it.
           </p>
         </td>
       </tr>
@@ -256,7 +256,7 @@ AideDesk Team
     </table>
   </div>`;
 
-  return await sendEmail({ to: email, subject, text, html });
+  return sendEmail({ to: email, subject, text, html });
 };
 
 // ============================================
@@ -264,16 +264,16 @@ AideDesk Team
 // Sent by the system when an admin adds a new customer.
 // Contains credentials + a direct link to the login page.
 // ============================================
-export const sendCustomerInviteEmail = async ({
+export const sendCustomerInviteEmail =  ({
   email,
   customerName,
   companyName,
   loginEmail,
   tempPassword,
   loginUrl,
-  frontendUrl = 'http://localhost:5173',
+  frontendUrl = "http://localhost:5173",
 }) => {
-  const subject = `You've been added to ${companyName} Support Portal — AideDesk`;
+  const subject = `You"ve been added to ${companyName} Support Portal — AideDesk`;
   const changePasswordUrl = `${frontendUrl}/profile`;
 
   const text = `
@@ -288,7 +288,7 @@ Your login credentials:
 Log in here: ${loginUrl}
 
 After logging in, we recommend changing your password:
-  Go to Profile → Change Password and set a password you'll remember.
+  Go to Profile → Change Password and set a password you"ll remember.
 
 If you have any issues, please contact ${companyName} support.
 
@@ -305,7 +305,7 @@ AideDesk Team
       <tr>
         <td style="background: linear-gradient(135deg, #0ea5e9, #0284c7); padding: 32px; text-align: center;">
           <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: -0.5px;">Welcome to AideDesk</h1>
-          <p style="color: #bae6fd; margin: 8px 0 0; font-size: 15px;">You've been added to <strong>${companyName}</strong>'s Support Portal</p>
+          <p style="color: #bae6fd; margin: 8px 0 0; font-size: 15px;">You"ve been added to <strong>${companyName}</strong>"s Support Portal</p>
         </td>
       </tr>
 
@@ -338,7 +338,7 @@ AideDesk Team
                   <tr>
                     <td style="font-size: 14px; color: #64748b; padding: 6px 0;">Password</td>
                     <td style="padding: 6px 0;">
-                      <span style="font-family: 'Courier New', monospace; font-size: 15px; font-weight: 700;
+                      <span style="font-family: "Courier New", monospace; font-size: 15px; font-weight: 700;
                                    color: #1e293b; background: #e0f2fe; padding: 3px 10px; border-radius: 4px;
                                    letter-spacing: 1px;">
                         ${tempPassword}
@@ -399,7 +399,7 @@ AideDesk Team
         <td style="background: #f8fafc; padding: 20px 36px; text-align: center; border-top: 1px solid #e2e8f0;">
           <p style="font-size: 13px; color: #94a3b8; margin: 0;">
             Sent by <strong>AideDesk</strong> on behalf of <strong>${companyName}</strong>.<br/>
-            If you weren't expecting this email, you can safely ignore it.
+            If you weren"t expecting this email, you can safely ignore it.
           </p>
         </td>
       </tr>
@@ -407,5 +407,5 @@ AideDesk Team
     </table>
   </div>`;
 
-  return await sendEmail({ to: email, subject, text, html });
+  return sendEmail({ to: email, subject, text, html });
 };

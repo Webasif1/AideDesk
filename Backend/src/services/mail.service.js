@@ -43,13 +43,13 @@ import { config } from "../config/config.js";
 // Create Nodemailer transporter (Gmail OAuth2)
 // ============================================
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // true for 465, false for other ports
   auth: {
-    type: "OAuth2",
+    // type: "OAuth2",
     user: config.GOOGLE_USER_EMAIL,
-    clientSecret: config.GOOGLE_CLIENT_SECRET,
-    refreshToken: config.GOOGLE_REFRESH_TOKEN,
-    clientId: config.GOOGLE_CLIENT_ID,
+    pass: config.GOOGLE_USER_PASSWORD,
   },
 });
 
@@ -77,7 +77,7 @@ transporter.verify((error, success) => {
 });
 
 // Function to send email
-export const sendEmail = async (to, subject, text, html) => {
+export const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const info = await transporter.sendMail({
       from: `"AideDesk Team" <${config.GOOGLE_USER_EMAIL}>`, // sender address
@@ -87,10 +87,10 @@ export const sendEmail = async (to, subject, text, html) => {
       html, // html body
     });
 
-    console.log("Message sent: %s", info.messageId);
+    console.log("📧 Email sent: %s", info.messageId);
     return true;
   } catch (error) {
     console.error("Error sending email:", error.message);
     return false;
   }
-}
+};

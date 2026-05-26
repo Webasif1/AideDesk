@@ -1,15 +1,15 @@
-import adminModel from '../models/admin.model.js';
-import agentModel from '../models/aget.model.js';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
-import { AppError, asyncHandler } from '../utils/errorHandler.js';
-import { generateToken, generateResetToken } from '../utils/tokens.js';
+import adminModel from "../models/admin.model.js";
+import agentModel from "../models/aget.model.js";
+import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { generateToken, generateResetToken } from "../utils/tokens.js";
 import {
   sendVerificationEmail,
   sendPasswordResetEmail
-} from '../utils/email.js';
-import { config } from '../config/config.js';
-import { getVerificationHTML } from '../utils/verificationTemplate.js';
-import jwt from 'jsonwebtoken';
+} from "../utils/email.js";
+import { config } from "../config/config.js";
+import { getVerificationHTML } from "../utils/verificationTemplate.js";
+import jwt from "jsonwebtoken";
 
 // ============================================
 // POST /api/auth/register
@@ -27,7 +27,7 @@ export const registerController = asyncHandler(async (req, res) => {
     email,
     password,
     fullName,
-    role: 'admin'
+    role: "admin"
   });
 
   const token = generateToken(
@@ -35,30 +35,30 @@ export const registerController = asyncHandler(async (req, res) => {
     admin._id,
     admin.email,
     admin.role,
-    admin.companyId
+    admin.companyId,
   );
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
     message:
-      'Account registered successfully. Please check your email to verify.',
+      "Account registered successfully. Please check your email to verify.",
     data: {
       id: admin._id,
       email: admin.email,
       fullName: admin.fullName,
-      role: admin.role
+      role: admin.role,
     },
-    token
+    token,
   });
 
-  // Fire-and-forget — email errors don't affect the response
-  sendVerificationEmail({
-    email: config.TEST_RECIEVER_EMAIL || admin.email,
+  // Fire-and-forget — email errors don"t affect the response
+  await sendVerificationEmail({
+    email: admin.email,
     name: admin.fullName,
-    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`
+    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`,
   }).then(sent => {
     console.log(
-      sent ? '📧 Verification email sent' : '❎ Verification email failed'
+      sent ? "📧 Verification email sent" : "❎ Verification email failed",
     );
   });
 });
@@ -77,14 +77,14 @@ export const verifyEmailToken = async (req, res) => {
   } catch {
     return res.status(HTTP_STATUS.UNAUTHORIZED).send(
       getVerificationHTML(
-        'Invalid or Expired Link',
-        'This verification link is invalid or has expired. Please request a new one.',
+        "Invalid or Expired Link",
+        "This verification link is invalid or has expired. Please request a new one.",
         false
       )
     );
   }
 
-  const isAgentToken = decoded.role === 'agent';
+  const isAgentToken = decoded.role === "agent";
 
   // Resolve the right model based on the role encoded in the token
   const user = isAgentToken
@@ -94,8 +94,8 @@ export const verifyEmailToken = async (req, res) => {
   if (!user) {
     return res.status(HTTP_STATUS.NOT_FOUND).send(
       getVerificationHTML(
-        'User Not Found',
-        'The account associated with this link does not exist.',
+        "User Not Found",
+        "The account associated with this link does not exist.",
         false
       )
     );
@@ -110,8 +110,8 @@ export const verifyEmailToken = async (req, res) => {
     }
     return res.status(HTTP_STATUS.OK).send(
       getVerificationHTML(
-        'Already Verified',
-        'Your account has already been verified. You can log in.',
+        "Already Verified",
+        "Your account has already been verified. You can log in.",
         true
       )
     );
@@ -139,12 +139,12 @@ export const loginController = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   // Try admin first
-  let user = await adminModel.findOne({ email }).select('+password');
-  let role = 'admin';
+  let user = await adminModel.findOne({ email }).select("+password");
+  let role = "admin";
 
   if (!user) {
-    user = await agentModel.findOne({ email }).select('+password');
-    role = 'agent';
+    user = await agentModel.findOne({ email }).select("+password");
+    role = "agent";
   }
 
   if (!user) {
@@ -184,7 +184,7 @@ export const loginController = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Logged in successfully',
+    message: "Logged in successfully",
     data: {
       id: user._id,
       email: user.email,
@@ -202,15 +202,15 @@ export const loginController = asyncHandler(async (req, res) => {
 // POST /api/auth/logout
 // ============================================
 export const logoutController = asyncHandler(async (req, res) => {
-  res.clearCookie('token', {
+  res.clearCookie("token", {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
-    sameSite: 'strict'
+    secure: config.NODE_ENV === "production",
+    sameSite: "strict"
   });
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Logged out successfully'
+    message: "Logged out successfully"
   });
 });
 
@@ -229,7 +229,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
     name = user?.name;
   }
 
-  // Always return the same response — don't reveal whether the email exists
+  // Always return the same response — don"t reveal whether the email exists
   if (user) {
     const resetToken = generateResetToken(user._id);
     const resetLink = `http://localhost:${config.PORT}/api/auth/reset-password/${resetToken}`;
@@ -240,14 +240,14 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
       resetLink
     }).then(sent => {
       console.log(
-        sent ? '📧 Password reset email sent' : '❎ Password reset email failed'
+        sent ? "📧 Password reset email sent" : "❎ Password reset email failed"
       );
     });
   }
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'If that email is registered, a reset link has been sent.'
+    message: "If that email is registered, a reset link has been sent."
   });
 });
 
@@ -265,7 +265,7 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.INVALID_TOKEN, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  if (decoded.purpose !== 'password-reset') {
+  if (decoded.purpose !== "password-reset") {
     throw new AppError(ERROR_MESSAGES.INVALID_TOKEN, HTTP_STATUS.UNAUTHORIZED);
   }
 
@@ -280,16 +280,16 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
   await user.save();
 
   // Clear any active session so user must log in with new password
-  res.clearCookie('token', {
+  res.clearCookie("token", {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
-    sameSite: 'strict'
+    secure: config.NODE_ENV === "production",
+    sameSite: "strict"
   });
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message:
-      'Password reset successfully. Please log in with your new password.'
+      "Password reset successfully. Please log in with your new password."
   });
 });
 
@@ -322,7 +322,7 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
     { userId: user._id, email: user.email },
     config.JWT_SECRET,
     {
-      expiresIn: config.JWT_EXPIRE || '5d'
+      expiresIn: config.JWT_EXPIRE || "5d"
     }
   );
 
@@ -332,13 +332,13 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
     verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`
   }).then(sent => {
     console.log(
-      sent ? '📧 Verification email resent' : '❎ Verification email failed'
+      sent ? "📧 Verification email resent" : "❎ Verification email failed"
     );
   });
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Verification email sent. Please check your inbox.'
+    message: "Verification email sent. Please check your inbox."
   });
 });
 
