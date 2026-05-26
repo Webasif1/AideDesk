@@ -1,6 +1,6 @@
 //import mongoose to create a schema for the user model
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 // ============================================
 // Admin Schema
@@ -9,26 +9,26 @@ const adminSchema = mongoose.Schema(
   {
     fullName: {
       type: String,
-      required: [true, 'fullName is require']
+      required: [true, "fullName is require"]
     },
     email: {
       type: String,
-      required: [true, 'Email is require'],
-      unique: [true, 'Email should be unique']
+      required: [true, "Email is require"],
+      unique: [true, "Email should be unique"]
     },
     password: {
       type: String,
       select: false,
-      required: [true, 'Password is require']
+      required: [true, "Password is require"]
     },
     role: {
       type: String,
-      enum: 'admin',
-      default: 'admin'
+      enum: "admin",
+      default: "admin"
     },
     profileImage: {
       type: String,
-      default: ''
+      default: ""
     },
     isVerified: {
       type: Boolean,
@@ -40,30 +40,30 @@ const adminSchema = mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['online', 'offline', 'away'],
-      default: 'online'
+      enum: ["online", "offline", "away"],
+      default: "online"
     },
 
     // Populated after the admin creates their company during onboarding
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'company',
+      ref: "company",
       default: null
-    }
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-adminSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return;
+adminSchema.pre("save", async function() {
+  if (!this.isModified("password")) return;
   const hash = await bcrypt.hash(this.password, 10);
   this.password = hash;
 });
 
-adminSchema.methods.comparePassword = function (candidatePassword) {
+adminSchema.methods.comparePassword = function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const adminModel = mongoose.model('admin', adminSchema);
+const adminModel = mongoose.model("admin", adminSchema);
 
 export default adminModel;

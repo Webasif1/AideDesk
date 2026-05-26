@@ -43,16 +43,13 @@ import { config } from "../config/config.js";
 // Create Nodemailer transporter (Gmail OAuth2)
 // ============================================
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // true for 465, false for other ports
+  service: "gmail",
   auth: {
-    // type: "OAuth2",
-    user: process.env.GOOGLE_USER_EMAIL,
-    pass: process.env.GOOGLE_APP_PASSWORD,
-    // clientId: process.env.GOOGLE_CLIENT_ID,
-    // clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    // refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+    type: "OAuth2",
+    user: config.GOOGLE_USER_EMAIL,
+    clientSecret: config.GOOGLE_CLIENT_SECRET,
+    refreshToken: config.GOOGLE_REFRESH_TOKEN,
+    clientId: config.GOOGLE_CLIENT_ID,
   },
 });
 
@@ -83,7 +80,7 @@ transporter.verify((error, success) => {
 export const sendEmail = async (to, subject, text, html) => {
   try {
     const info = await transporter.sendMail({
-      from: `"ModelVerse AI Team" <${process.env.GOOGLE_USER_EMAIL}>`, // sender address
+      from: `"AideDesk Team" <${config.GOOGLE_USER_EMAIL}>`, // sender address
       to, // list of receivers
       subject, // Subject line
       text, //plain text body

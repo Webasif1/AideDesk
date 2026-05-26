@@ -1,4 +1,4 @@
-import { getIO } from './server.socket.js';
+import { getIO } from "./server.socket.js";
 
 // Wraps every push so getIO() failure (server not yet bound) never crashes a request.
 const safeEmit = (room, event, payload) => {
@@ -11,26 +11,26 @@ const safeEmit = (room, event, payload) => {
 
 export const socketEmit = {
   newMessage(chatId, message) {
-    safeEmit(`chat:${chatId}`, 'message:new', message);
+    safeEmit(`chat:${chatId}`, "message:new", message);
   },
 
   copilotTyping(chatId, isTyping) {
-    safeEmit(`chat:${chatId}`, 'copilot:typing', { isTyping });
+    safeEmit(`chat:${chatId}`, "copilot:typing", { isTyping });
   },
 
   escalating(chatId, ticketDraft) {
-    safeEmit(`chat:${chatId}`, 'copilot:escalating', { ticketDraft });
+    safeEmit(`chat:${chatId}`, "copilot:escalating", { ticketDraft });
   },
 
   ticketAssigned(agentId, payload) {
-    safeEmit(`user:${agentId}`, 'ticket:assigned', payload);
+    safeEmit(`user:${agentId}`, "ticket:assigned", payload);
   },
 
   agentJoined(chatId, agent) {
-    safeEmit(`chat:${chatId}`, 'agent:joined', { agent });
+    safeEmit(`chat:${chatId}`, "agent:joined", { agent });
   },
 
   ticketUpdated(workspaceId, ticket) {
-    safeEmit(`workspace:${workspaceId}:agents`, 'ticket:updated', ticket);
+    safeEmit(`workspace:${workspaceId}:agents`, "ticket:updated", ticket);
   }
 };
