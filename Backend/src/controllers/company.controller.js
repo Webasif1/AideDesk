@@ -1,21 +1,21 @@
 // ============================================
 // Import Models
 // ============================================
-import companyModel from '../models/company.model.js';
-import adminModel from '../models/admin.model.js';
-import userModel from '../models/user.model.js';
-import agentModel from '../models/aget.model.js';
-import chatModel from '../models/chat.model.js';
-import ticketModel from '../models/ticket.model.js';
-import messageModel from '../models/message.model.js';
+import companyModel from "../models/company.model.js";
+import adminModel from "../models/admin.model.js";
+import userModel from "../models/user.model.js";
+import agentModel from "../models/aget.model.js";
+import chatModel from "../models/chat.model.js";
+import ticketModel from "../models/ticket.model.js";
+import messageModel from "../models/message.model.js";
 
 // ============================================
 // Import Utilities
 // ============================================
-import { AppError, asyncHandler } from '../utils/errorHandler.js';
-import { HTTP_STATUS } from '../config/constants.js';
-import { config } from '../config/config.js';
-import { regenerateToken } from '../utils/tokens.js';
+import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { HTTP_STATUS } from "../config/constants.js";
+import { config } from "../config/config.js";
+import { regenerateToken } from "../utils/tokens.js";
 
 // ============================================
 // Register Company
@@ -52,7 +52,7 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
   const emailExists = await companyModel.findOne({ email });
   if (emailExists) {
     throw new AppError(
-      'A company with this email already exists',
+      "A company with this email already exists",
       HTTP_STATUS.CONFLICT
     );
   }
@@ -60,7 +60,7 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
   const slugExists = await companyModel.findOne({ slug });
   if (slugExists) {
     throw new AppError(
-      'A company with this slug already exists',
+      "A company with this slug already exists",
       HTTP_STATUS.CONFLICT
     );
   }
@@ -92,7 +92,7 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
   // Regenerate the auth token to include the new company ID
   regenerateToken(res, req.userId, req.user.email, req.role, company._id);
 
-  if (config.NODE_ENV === 'development') {
+  if (config.NODE_ENV === "development") {
     console.log(
       `✅ New company registered: ${company.name} (${company.email})`
     );
@@ -118,7 +118,7 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: 'Company registered successfully',
+    message: "Company registered successfully",
     data: companyResponse
   });
 });
@@ -135,10 +135,10 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
 export const getCompanyController = asyncHandler(async (req, res) => {
   const company = await companyModel
     .findById(req.params.id)
-    .populate('adminId', 'fullName email role profileImage status');
+    .populate("adminId", "fullName email role profileImage status");
 
   if (!company) {
-    throw new AppError('Company not found', HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Company not found", HTTP_STATUS.NOT_FOUND);
   }
 
   res.status(HTTP_STATUS.OK).json({
@@ -168,12 +168,12 @@ export const updateCompanyController = asyncHandler(async (req, res) => {
   );
 
   if (!company) {
-    throw new AppError('Company not found', HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Company not found", HTTP_STATUS.NOT_FOUND);
   }
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Company updated successfully',
+    message: "Company updated successfully",
     data: company
   });
 });
@@ -191,7 +191,7 @@ export const deleteCompanyController = asyncHandler(async (req, res) => {
   const company = await companyModel.findById(req.params.id);
 
   if (!company) {
-    throw new AppError('Company not found', HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Company not found", HTTP_STATUS.NOT_FOUND);
   }
 
   // Unlink company from admin
@@ -203,7 +203,7 @@ export const deleteCompanyController = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'Company deleted successfully'
+    message: "Company deleted successfully"
   });
 });
 
@@ -218,7 +218,7 @@ export const deleteCompanyController = asyncHandler(async (req, res) => {
  */
 export const getCompanyUsersController = asyncHandler(async (req, res) => {
   const companyId = req.params.companyId;
-  const users = await userModel.find({ companyId: companyId }).select('-__v');
+  const users = await userModel.find({ companyId: companyId }).select("-__v");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -240,7 +240,7 @@ export const getCompanyAgentsController = asyncHandler(async (req, res) => {
   const companyId = req.params.companyId;
   const agents = await agentModel
     .find({ companyId: companyId })
-    .select('-password -__v');
+    .select("-password -__v");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -262,9 +262,9 @@ export const getCompanyTicketsController = asyncHandler(async (req, res) => {
   const companyId = req.params.companyId;
   const tickets = await ticketModel
     .find({ companyId: companyId })
-    .populate('createdBy', 'name email')
-    .populate('assignedTo', 'name email')
-    .select('-__v');
+    .populate("createdBy", "name email")
+    .populate("assignedTo", "name email")
+    .select("-__v");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -289,17 +289,17 @@ export const getCompanyTicketsController = asyncHandler(async (req, res) => {
 export const getCompanyMessagesController = asyncHandler(async (req, res) => {
   const companyId = req.params.companyId;
 
-  const chats = await chatModel.find({ company: companyId }).select('_id');
+  const chats = await chatModel.find({ company: companyId }).select("_id");
 
   const chatIds = chats.map(c => c._id);
 
   const messages = await messageModel
     .find({ chat: { $in: chatIds } })
     .populate({
-      path: 'sender',
-      select: 'name email role'
+      path: "sender",
+      select: "name email role"
     })
-    .select('-__v');
+    .select("-__v");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,

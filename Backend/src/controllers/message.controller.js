@@ -1,19 +1,19 @@
-import messageModel from '../models/message.model.js';
-import chatModel from '../models/chat.model.js';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
-import { AppError, asyncHandler } from '../utils/errorHandler.js';
-import { classifyIntent, scoreSentiment, generateReplySuggestions } from '../services/ai.service.js';
+import messageModel from "../models/message.model.js";
+import chatModel from "../models/chat.model.js";
+import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { classifyIntent, scoreSentiment, generateReplySuggestions } from "../services/ai.service.js";
 
 // ============================================
 // Helper — verify the requesting user has access to the given chat
 // ============================================
 const assertChatAccess = async (chatId, req) => {
   const chat = await chatModel.findById(chatId);
-  if (!chat) throw new AppError('Chat not found', HTTP_STATUS.NOT_FOUND);
+  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
 
-  const isAdmin = req.role === 'admin' && chat.company.toString() === req.companyId.toString();
-  const isAgent = req.role === 'agent' && chat.company.toString() === req.companyId.toString();
-  const isOwner = req.role === 'customer' && chat.user.toString() === req.userId;
+  const isAdmin = req.role === "admin" && chat.company.toString() === req.companyId.toString();
+  const isAgent = req.role === "agent" && chat.company.toString() === req.companyId.toString();
+  const isOwner = req.role === "customer" && chat.user.toString() === req.userId;
 
   if (!isAdmin && !isAgent && !isOwner) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
@@ -31,16 +31,16 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   const chat = await assertChatAccess(chatId, req);
 
-  if (chat.status === 'closed') {
-    throw new AppError('This chat session is closed. Please start a new one.', HTTP_STATUS.BAD_REQUEST);
+  if (chat.status === "closed") {
+    throw new AppError("This chat session is closed. Please start a new one.", HTTP_STATUS.BAD_REQUEST);
   }
 
   const message = await messageModel.create({
     chat: chatId,
     content,
-    role: req.role === 'customer' ? 'user' : 'agent',
+    role: req.role === "customer" ? "user" : "agent",
     sender: req.userId,
-    senderModel: req.role === 'customer' ? 'user' : 'agent',
+    senderModel: req.role === "customer" ? "user" : "agent",
     attachments,
   });
 
@@ -52,7 +52,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
   });
 
   // Fire-and-forget AI classification for customer messages only
-  if (req.role === 'customer') {
+  if (req.role === "customer") {
     Promise.all([
       classifyIntent(content),
       scoreSentiment(content)
@@ -63,7 +63,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: 'Message sent',
+    message: "Message sent",
     data: message,
   });
 });
@@ -113,7 +113,7 @@ export const markMessagesRead = asyncHandler(async (req, res) => {
   await assertChatAccess(chatId, req);
 
   // Mark messages sent by the OTHER party as read
-  const oppositeRole = req.role === 'customer' ? 'agent' : 'user';
+  const oppositeRole = req.role === "customer" ? "agent" : "user";
 
   const result = await messageModel.updateMany(
     { chat: chatId, role: oppositeRole, isRead: false },
@@ -135,7 +135,7 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
 
   await assertChatAccess(chatId, req);
 
-  const ownRole = req.role === 'customer' ? 'agent' : 'user';
+  const ownRole = req.role === "customer" ? "agent" : "user";
 
   const count = await messageModel.countDocuments({
     chat: chatId,
@@ -155,15 +155,15 @@ export const requestAiSuggestions = asyncHandler(async (req, res) => {
   const { messageId } = req.params;
 
   const message = await messageModel.findById(messageId);
-  if (!message) throw new AppError('Message not found', HTTP_STATUS.NOT_FOUND);
+  if (!message) throw new AppError("Message not found", HTTP_STATUS.NOT_FOUND);
 
   // Confirm the agent has access to the parent chat
   await assertChatAccess(message.chat.toString(), req);
 
   // Only customer messages should trigger suggestions (agent replying to a customer)
-  if (message.role !== 'user') {
+  if (message.role !== "user") {
     throw new AppError(
-      'AI suggestions are only available for customer messages.',
+      "AI suggestions are only available for customer messages.",
       HTTP_STATUS.BAD_REQUEST
     );
   }
@@ -179,11 +179,11 @@ export const requestAiSuggestions = asyncHandler(async (req, res) => {
   try {
     suggestions = await generateReplySuggestions({
       messages: recentMessages.reverse().map(m => ({ role: m.role, content: m.content })),
-      companyName: req.companyName || 'our company',
+      companyName: req.companyName || "our company",
     });
   } catch {
     suggestions = [
-      { tone: 'professional', reply: 'Thank you for reaching out. I will look into this right away.', confidence: 'medium' }
+      { tone: "professional", reply: "Thank you for reaching out. I will look into this right away.", confidence: "medium" }
     ];
   }
 
@@ -192,7 +192,7 @@ export const requestAiSuggestions = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: 'AI reply suggestions generated',
+    message: "AI reply suggestions generated",
     data: { messageId, suggestions },
   });
 });

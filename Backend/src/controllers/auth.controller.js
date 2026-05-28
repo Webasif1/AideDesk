@@ -5,7 +5,7 @@ import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { generateToken, generateResetToken } from "../utils/tokens.js";
 import {
   sendVerificationEmail,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
 } from "../utils/email.js";
 import { config } from "../config/config.js";
 import { getVerificationHTML } from "../utils/verificationTemplate.js";
@@ -27,7 +27,7 @@ export const registerController = asyncHandler(async (req, res) => {
     email,
     password,
     fullName,
-    role: "admin"
+    role: "admin",
   });
 
   const token = generateToken(
@@ -79,8 +79,8 @@ export const verifyEmailToken = async (req, res) => {
       getVerificationHTML(
         "Invalid or Expired Link",
         "This verification link is invalid or has expired. Please request a new one.",
-        false
-      )
+        false,
+      ),
     );
   }
 
@@ -210,7 +210,7 @@ export const logoutController = asyncHandler(async (req, res) => {
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: "Logged out successfully"
+    message: "Logged out successfully",
   });
 });
 
@@ -361,8 +361,8 @@ export const getMeController = asyncHandler(async (req, res) => {
       profileImage: user.profileImage,
       status: user.status,
       lastLogin: user.lastLogin,
-      createdAt: user.createdAt
-    }
+      createdAt: user.createdAt,
+    },
   });
 });
 

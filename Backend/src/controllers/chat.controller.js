@@ -1,25 +1,25 @@
-import chatModel from '../models/chat.model.js';
-import messageModel from '../models/message.model.js';
-import agentModel from '../models/aget.model.js';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
-import { AppError, asyncHandler } from '../utils/errorHandler.js';
+import chatModel from "../models/chat.model.js";
+import messageModel from "../models/message.model.js";
+import agentModel from "../models/aget.model.js";
+import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { AppError, asyncHandler } from "../utils/errorHandler.js";
 
 // ============================================
 // POST /api/chats
-// Customer starts a new chat session with a company's support
+// Customer starts a new chat session with a company"s support
 // ============================================
 export const createChat = asyncHandler(async (req, res) => {
   // Prevent duplicate open chats: one active session per customer per company
   const existing = await chatModel.findOne({
     user: req.userId,
     company: req.companyId,
-    status: 'active'
+    status: "active"
   });
 
   if (existing) {
     return res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: 'You already have an active chat session.',
+      message: "You already have an active chat session.",
       data: existing
     });
   }
@@ -27,12 +27,12 @@ export const createChat = asyncHandler(async (req, res) => {
   const chat = await chatModel.create({
     company: req.companyId,
     user: req.userId,
-    status: 'active'
+    status: "active"
   });
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: 'Chat session started.',
+    message: "Chat session started.",
     data: chat
   });
 });
@@ -50,12 +50,12 @@ export const getChats = asyncHandler(async (req, res) => {
 
   let filter = {};
 
-  if (req.role === 'admin') {
+  if (req.role === "admin") {
     filter.company = req.companyId;
-  } else if (req.role === 'agent') {
+  } else if (req.role === "agent") {
     filter.company = req.companyId;
     filter.$or = [{ assignedAgent: req.userId }, { assignedAgent: null }];
-  } else if (req.role === 'customer') {
+  } else if (req.role === "customer") {
     filter.user = req.userId;
   }
 
@@ -64,9 +64,9 @@ export const getChats = asyncHandler(async (req, res) => {
   const [chats, total] = await Promise.all([
     chatModel
       .find(filter)
-      .populate('user', 'name email profileImage')
-      .populate('assignedAgent', 'name email status profileImage')
-      .populate('latestMessage', 'content role createdAt')
+      .populate("user", "name email profileImage")
+      .populate("assignedAgent", "name email status profileImage")
+      .populate("latestMessage", "content role createdAt")
       .sort({ lastActivity: -1 })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -92,27 +92,27 @@ export const getChats = asyncHandler(async (req, res) => {
 export const getChat = asyncHandler(async (req, res) => {
   const chat = await chatModel
     .findById(req.params.id)
-    .populate('user', 'name email profileImage')
-    .populate('assignedAgent', 'name email status profileImage')
-    .populate('ticket', 'ticketNumber title status priority');
+    .populate("user", "name email profileImage")
+    .populate("assignedAgent", "name email status profileImage")
+    .populate("ticket", "ticketNumber title status priority");
 
   if (!chat) {
-    throw new AppError('Chat not found', HTTP_STATUS.NOT_FOUND);
+    throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
   }
 
   // Enforce access: admin/agent sees company chats, customer sees own chats
   const hasAccess =
-    (req.role === 'admin' &&
+    (req.role === "admin" &&
       chat.company.toString() === req.companyId.toString()) ||
-    (req.role === 'agent' &&
+    (req.role === "agent" &&
       chat.company.toString() === req.companyId.toString()) ||
-    (req.role === 'customer' && chat.user._id.toString() === req.userId);
+    (req.role === "customer" && chat.user._id.toString() === req.userId);
 
   if (!hasAccess) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
-  // Include last 50 messages so the agent/customer doesn't need a second request
+  // Include last 50 messages so the agent/customer doesn"t need a second request
   const messages = await messageModel
     .find({ chat: chat._id })
     .sort({ createdAt: -1 })
@@ -133,11 +133,11 @@ export const assignAgent = asyncHandler(async (req, res) => {
   const { agentId } = req.body;
 
   if (!agentId) {
-    throw new AppError('agentId is required', HTTP_STATUS.BAD_REQUEST);
+    throw new AppError("agentId is required", HTTP_STATUS.BAD_REQUEST);
   }
 
   const chat = await chatModel.findById(req.params.id);
-  if (!chat) throw new AppError('Chat not found', HTTP_STATUS.NOT_FOUND);
+  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
 
   if (chat.company.toString() !== req.companyId.toString()) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
@@ -150,13 +150,13 @@ export const assignAgent = asyncHandler(async (req, res) => {
   });
   if (!agent) {
     throw new AppError(
-      'Agent not found in your company',
+      "Agent not found in your company",
       HTTP_STATUS.NOT_FOUND
     );
   }
 
   chat.assignedAgent = agentId;
-  chat.status = 'active';
+  chat.status = "active";
   await chat.save();
 
   res.status(HTTP_STATUS.OK).json({
@@ -176,18 +176,18 @@ export const assignAgent = asyncHandler(async (req, res) => {
 export const updateChatStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  if (!['active', 'waiting', 'closed'].includes(status)) {
+  if (!["active", "waiting", "closed"].includes(status)) {
     throw new AppError(
-      'Status must be active, waiting, or closed',
+      "Status must be active, waiting, or closed",
       HTTP_STATUS.BAD_REQUEST
     );
   }
 
   const chat = await chatModel.findById(req.params.id);
-  if (!chat) throw new AppError('Chat not found', HTTP_STATUS.NOT_FOUND);
+  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
 
   // Agents can only update chats assigned to them or unassigned
-  if (req.role === 'agent') {
+  if (req.role === "agent") {
     const isAssigned =
       chat.assignedAgent && chat.assignedAgent.toString() === req.userId;
     if (!isAssigned) {
@@ -200,7 +200,7 @@ export const updateChatStatus = asyncHandler(async (req, res) => {
   }
 
   chat.status = status;
-  if (status === 'closed') chat.lastActivity = new Date();
+  if (status === "closed") chat.lastActivity = new Date();
   await chat.save();
 
   res.status(HTTP_STATUS.OK).json({
@@ -219,13 +219,13 @@ export const getChatStats = asyncHandler(async (req, res) => {
 
   const [total, active, waiting, closed, unassigned] = await Promise.all([
     chatModel.countDocuments({ company: companyId }),
-    chatModel.countDocuments({ company: companyId, status: 'active' }),
-    chatModel.countDocuments({ company: companyId, status: 'waiting' }),
-    chatModel.countDocuments({ company: companyId, status: 'closed' }),
+    chatModel.countDocuments({ company: companyId, status: "active" }),
+    chatModel.countDocuments({ company: companyId, status: "waiting" }),
+    chatModel.countDocuments({ company: companyId, status: "closed" }),
     chatModel.countDocuments({
       company: companyId,
       assignedAgent: null,
-      status: 'active'
+      status: "active"
     })
   ]);
 
