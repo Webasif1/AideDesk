@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getTicketStats as getTicketStatsAPI,
+  getTicketVolume as getTicketVolumeAPI,
+  getTicketCsat as getTicketCsatAPI,
   createTicket as createTicketAPI,
   getTickets as getTicketsAPI,
   getTicket as getTicketAPI,
@@ -15,6 +17,8 @@ import {
   setTickets,
   setCurrentTicket,
   setStats,
+  setVolume,
+  setCsat,
   setLoading,
   setError,
   updateTicketInList,
@@ -23,7 +27,7 @@ import {
 
 export const useTicket = () => {
   const dispatch = useDispatch();
-  const { tickets, currentTicket, stats, loading, error, pagination } =
+  const { tickets, currentTicket, stats, volume, csat, loading, error, pagination } =
     useSelector((state) => state.ticket);
 
   const handleRequest = async (apiFunc, data = null, onSuccess = null) => {
@@ -51,6 +55,21 @@ export const useTicket = () => {
     });
   }, [dispatch]);
 
+  const getTicketVolume = useCallback(
+    async (params) => {
+      return handleRequest(getTicketVolumeAPI, params, (res) => {
+        dispatch(setVolume(res.data));
+      });
+    },
+    [dispatch]
+  );
+
+  const getTicketCsat = useCallback(async () => {
+    return handleRequest(getTicketCsatAPI, null, (res) => {
+      dispatch(setCsat(res.data));
+    });
+  }, [dispatch]);
+
   const createTicket = useCallback(
     async (ticketData) => {
       return handleRequest(createTicketAPI, ticketData, (res) => {
@@ -63,7 +82,7 @@ export const useTicket = () => {
   const getTickets = useCallback(
     async (params) => {
       return handleRequest(getTicketsAPI, params, (res) => {
-        dispatch(setTickets(res.data));
+        dispatch(setTickets({ tickets: res.data, pagination: res.pagination }));
       });
     },
     [dispatch]
@@ -127,10 +146,14 @@ export const useTicket = () => {
     tickets,
     currentTicket,
     stats,
+    volume,
+    csat,
     loading,
     error,
     pagination,
     getTicketStats,
+    getTicketVolume,
+    getTicketCsat,
     createTicket,
     getTickets,
     getTicket,

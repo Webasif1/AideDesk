@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   users: [],
   currentUserProfile: null, // Specific user viewed by Admin
+  stats: null,
   loading: false,
   error: null,
   pagination: {
@@ -26,6 +27,9 @@ const userSlice = createSlice({
     setCurrentUserProfile: (state, action) => {
       state.currentUserProfile = action.payload;
     },
+    setStats: (state, action) => {
+      state.stats = action.payload;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -41,6 +45,15 @@ const userSlice = createSlice({
         state.currentUserProfile = { ...state.currentUserProfile, ...action.payload };
       }
     },
+    // Insert-or-update — used by live socket events (customer:created).
+    upsertUser: (state, action) => {
+      const index = state.users.findIndex((u) => u._id === action.payload._id);
+      if (index !== -1) {
+        state.users[index] = { ...state.users[index], ...action.payload };
+      } else {
+        state.users.unshift(action.payload);
+      }
+    },
     removeUserFromList: (state, action) => {
       state.users = state.users.filter((u) => u._id !== action.payload);
       if (state.currentUserProfile?._id === action.payload) {
@@ -53,9 +66,11 @@ const userSlice = createSlice({
 export const {
   setUsers,
   setCurrentUserProfile,
+  setStats,
   setLoading,
   setError,
   updateUserInList,
+  upsertUser,
   removeUserFromList,
 } = userSlice.actions;
 

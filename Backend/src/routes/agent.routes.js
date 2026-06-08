@@ -4,6 +4,7 @@ const router = express.Router();
 import {
   createAgent,
   getAgents,
+  getAgentStats,
   getAgent,
   updateAgent,
   deleteAgent,
@@ -69,6 +70,13 @@ router.post(
  * @access  Private — Admin only
  */
 router.get('/getAll', requireRole('admin'), getAgents);
+
+/**
+ * @route   GET /api/agents/stats
+ * @desc    Team metrics — total, active, pending invites, avg CSAT (workspace-scoped)
+ * @access  Private — Admin or Agent
+ */
+router.get('/stats', requireRole('admin', 'agent'), getAgentStats);
 
 // ============================================
 // Shared — Admin or Agent (own profile)

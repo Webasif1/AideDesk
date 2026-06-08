@@ -11,6 +11,7 @@ import {
   updateMe,
   changeUserPassword,
   getUsers,
+  getUserStats,
   getUserById,
   deleteUser
 } from '../controllers/user.controller.js';
@@ -125,10 +126,17 @@ router.post(
 
 /**
  * @route  GET /api/users
- * @desc   List all customers for admin's company — ?status=&search=&page=&limit=
- * @access Private — Admin
+ * @desc   List customers for the company/workspace — ?status=&search=&page=&limit=
+ * @access Private — Admin or Agent
  */
-router.get('/getAll', requireRole('admin'), getUsers);
+router.get('/getAll', requireRole('admin', 'agent'), getUsers);
+
+/**
+ * @route  GET /api/users/stats
+ * @desc   Customer metrics — total, active (30d), new this month, active rate
+ * @access Private — Admin or Agent
+ */
+router.get('/stats', requireRole('admin', 'agent'), getUserStats);
 
 /**
  * @route  GET /api/users/:id

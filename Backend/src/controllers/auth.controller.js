@@ -201,11 +201,11 @@ export const loginController = asyncHandler(async (req, res) => {
 // ============================================
 // POST /api/auth/logout
 // ============================================
-export const logoutController = asyncHandler(async (req, res) => {
+export const logoutController = asyncHandler((req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
-    sameSite: "strict"
+    sameSite: "strict",
   });
 
   res.status(HTTP_STATUS.OK).json({
@@ -314,7 +314,7 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
   if (user.isVerified) {
     throw new AppError(
       ERROR_MESSAGES.USER_ALREADY_VERIFIED,
-      HTTP_STATUS.CONFLICT
+      HTTP_STATUS.CONFLICT,
     );
   }
 
@@ -322,30 +322,30 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
     { userId: user._id, email: user.email },
     config.JWT_SECRET,
     {
-      expiresIn: config.JWT_EXPIRE || "5d"
+      expiresIn: config.JWT_EXPIRE || "5d",
     }
   );
 
   sendVerificationEmail({
     email: config.TEST_RECIEVER_EMAIL || email,
     name,
-    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`
+    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`,
   }).then(sent => {
     console.log(
-      sent ? "📧 Verification email resent" : "❎ Verification email failed"
+      sent ? "📧 Verification email resent" : "❎ Verification email failed",
     );
   });
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
-    message: "Verification email sent. Please check your inbox."
+    message: "Verification email sent. Please check your inbox.",
   });
 });
 
 // ============================================
 // GET /api/auth/me  (protected)
 // ============================================
-export const getMeController = asyncHandler(async (req, res) => {
+export const getMeController = asyncHandler( (req, res) => {
   const user = req.user;
 
   res.status(HTTP_STATUS.OK).json({

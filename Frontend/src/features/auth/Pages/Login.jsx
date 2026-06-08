@@ -134,6 +134,7 @@ const Login = () => {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={set("password")}
+                canTogglePassword
               />
               {errors.password && (
                 <p className="text-[12px] text-error -mt-3 mb-3">

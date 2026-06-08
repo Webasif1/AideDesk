@@ -5,6 +5,8 @@ import {
   createTicket,
   getTickets,
   getTicketStats,
+  getTicketVolume,
+  getTicketCsat,
   getTicket,
   updateTicket,
   assignAgent,
@@ -27,10 +29,24 @@ router.use(protect);
 
 /**
  * @route   GET /api/tickets/stats
- * @desc    Dashboard counts: total, open, in_progress, resolved, closed, urgent, slaBreached
- * @access  Private — Admin only
+ * @desc    Dashboard + ticket-page metrics (counts, AI/resolution rates, avg response)
+ * @access  Private — Admin or Agent
  */
-router.get('/stats', requireRole('admin'), getTicketStats);
+router.get('/stats', requireRole('admin', 'agent'), getTicketStats);
+
+/**
+ * @route   GET /api/tickets/analytics/volume?days=14
+ * @desc    Daily ticket volume (AI-managed vs human) for the volume chart
+ * @access  Private — Admin or Agent
+ */
+router.get('/analytics/volume', requireRole('admin', 'agent'), getTicketVolume);
+
+/**
+ * @route   GET /api/tickets/analytics/csat
+ * @desc    CSAT (from sentimentScore) aggregate + per-channel breakdown
+ * @access  Private — Admin or Agent
+ */
+router.get('/analytics/csat', requireRole('admin', 'agent'), getTicketCsat);
 
 // ============================================
 // Collection routes

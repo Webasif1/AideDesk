@@ -1,29 +1,38 @@
-const insights = [
-  {
-    icon: "auto_graph",
-    title: "Weekly Growth Insight",
-    body: (
-      <>
-        Your customer base has grown by 12.5% this week. Most new signups are
-        coming from the <span className="font-bold text-black">Enterprise</span>{" "}
-        segment.
-      </>
-    ),
-  },
-  {
-    icon: "security",
-    title: "Account Security",
-    body: (
-      <>
-        Currently <span className="font-bold text-black">14 accounts</span> are
-        suspended due to inactivity or policy violations. Review them in the
-        Suspended tab.
-      </>
-    ),
-  },
-];
+import { useSelector } from "react-redux";
 
 const CustomerInsights = () => {
+  const stats = useSelector((s) => s.user.stats);
+
+  const insights = [
+    {
+      icon: "auto_graph",
+      title: "Monthly Growth",
+      body: stats ? (
+        <>
+          <span className="font-bold text-black dark:text-white">{stats.newThisMonth}</span>{" "}
+          new customer{stats.newThisMonth === 1 ? "" : "s"} joined this month, bringing
+          the workspace total to{" "}
+          <span className="font-bold text-black dark:text-white">{stats.total}</span>.
+        </>
+      ) : (
+        "Growth insights appear once customer data loads."
+      ),
+    },
+    {
+      icon: "groups",
+      title: "Engagement",
+      body: stats ? (
+        <>
+          <span className="font-bold text-black dark:text-white">{stats.active}</span> of{" "}
+          {stats.total} customers were active in the last 30 days — an active rate of{" "}
+          <span className="font-bold text-black dark:text-white">{stats.activeRate}%</span>.
+        </>
+      ) : (
+        "Engagement insights appear once customer data loads."
+      ),
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
       {insights.map((i) => (

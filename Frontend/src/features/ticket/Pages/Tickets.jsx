@@ -54,7 +54,7 @@ const Tickets = () => {
               transition={{ duration: 0.3, delay: 0.16, ease: "easeOut" }}
             >
               <TicketTabs active={activeTab} onChange={setActiveTab} />
-              <TicketTable />
+              <TicketTable activeTab={activeTab} />
             </motion.div>
           </main>
         </div>

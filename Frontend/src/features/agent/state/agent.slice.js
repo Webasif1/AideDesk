@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   agents: [],
   currentAgent: null,
+  stats: null,
   loading: false,
   error: null,
   pagination: {
@@ -26,6 +27,9 @@ const agentSlice = createSlice({
     setCurrentAgent: (state, action) => {
       state.currentAgent = action.payload;
     },
+    setStats: (state, action) => {
+      state.stats = action.payload;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -41,6 +45,15 @@ const agentSlice = createSlice({
         state.currentAgent = { ...state.currentAgent, ...action.payload };
       }
     },
+    // Insert-or-update — used by live socket events (agent:created / agent:updated).
+    upsertAgent: (state, action) => {
+      const index = state.agents.findIndex((a) => a._id === action.payload._id);
+      if (index !== -1) {
+        state.agents[index] = { ...state.agents[index], ...action.payload };
+      } else {
+        state.agents.unshift(action.payload);
+      }
+    },
     removeAgentFromList: (state, action) => {
       state.agents = state.agents.filter((a) => a._id !== action.payload);
       if (state.currentAgent?._id === action.payload) {
@@ -53,9 +66,11 @@ const agentSlice = createSlice({
 export const {
   setAgents,
   setCurrentAgent,
+  setStats,
   setLoading,
   setError,
   updateAgentInList,
+  upsertAgent,
   removeAgentFromList,
 } = agentSlice.actions;
 

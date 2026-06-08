@@ -5,6 +5,7 @@ import {
   changePassword as changePasswordAPI,
   createAgent as createAgentAPI,
   getAgents as getAgentsAPI,
+  getAgentStats as getAgentStatsAPI,
   getAgent as getAgentAPI,
   updateAgent as updateAgentAPI,
   deleteAgent as deleteAgentAPI,
@@ -12,6 +13,7 @@ import {
 import {
   setAgents,
   setCurrentAgent,
+  setStats,
   setLoading,
   setError,
   updateAgentInList,
@@ -20,7 +22,7 @@ import {
 
 export const useAgent = () => {
   const dispatch = useDispatch();
-  const { agents, currentAgent, loading, error, pagination } = useSelector(
+  const { agents, currentAgent, stats, loading, error, pagination } = useSelector(
     (state) => state.agent
   );
 
@@ -72,11 +74,17 @@ export const useAgent = () => {
   const getAgents = useCallback(
     async (params) => {
       return handleRequest(getAgentsAPI, params, (res) => {
-        dispatch(setAgents(res.data));
+        dispatch(setAgents({ agents: res.data, pagination: res.pagination }));
       });
     },
     [dispatch]
   );
+
+  const getAgentStats = useCallback(async () => {
+    return handleRequest(getAgentStatsAPI, null, (res) => {
+      dispatch(setStats(res.data));
+    });
+  }, [dispatch]);
 
   const getAgent = useCallback(
     async (id) => {
@@ -108,6 +116,7 @@ export const useAgent = () => {
   return {
     agents,
     currentAgent,
+    stats,
     loading,
     error,
     pagination,
@@ -115,6 +124,7 @@ export const useAgent = () => {
     changePassword,
     createAgent,
     getAgents,
+    getAgentStats,
     getAgent,
     updateAgent,
     deleteAgent,

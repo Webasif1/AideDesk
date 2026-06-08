@@ -79,7 +79,7 @@ const Customers = () => {
               className="flex flex-col gap-[24px]"
             >
               <CustomerTabs active={activeTab} onChange={setActiveTab} />
-              <CustomerTable />
+              <CustomerTable activeTab={activeTab} />
             </motion.div>
 
             {/* Insights */}

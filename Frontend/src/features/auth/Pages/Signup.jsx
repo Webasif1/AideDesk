@@ -23,7 +23,6 @@ const Signup = () => {
 
   const [errors, setErrors] = useState({});
 
-  const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.auth.loading);
   const apiError = useSelector((state) => state.auth.error);
 
@@ -115,6 +114,7 @@ const Signup = () => {
                 placeholder="••••••••"
                 value={form.password}
                 onChange={set("password")}
+                canTogglePassword
               />
               {errors.password && (
                 <p className="text-[12px] text-error -mt-[12px]">

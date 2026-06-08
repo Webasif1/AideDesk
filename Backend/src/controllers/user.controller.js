@@ -6,6 +6,7 @@ import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
 import { AppError, asyncHandler } from '../utils/errorHandler.js';
 import { generateToken, generateResetToken } from '../utils/tokens.js';
 import { sendPasswordResetEmail, sendCustomerInviteEmail } from '../utils/email.js';
+import { emitDomain } from '../sockets/emit.js';
 import { config } from '../config/config.js';
 import jwt from 'jsonwebtoken';
 
@@ -87,6 +88,17 @@ export const createUser = asyncHandler(async (req, res) => {
     );
   });
 
+  emitDomain.customerCreated(req.companyId, {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    companyId: user.companyId,
+    workspaceId: user.workspaceId,
+    status: user.status,
+    isVerified: user.isVerified,
+    createdAt: user.createdAt,
+  });
+
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
     message: `Customer added. An invite email with login credentials has been sent to ${user.email}.`,
@@ -96,6 +108,37 @@ export const createUser = asyncHandler(async (req, res) => {
       email: user.email,
       companyId: user.companyId,
       status: user.status,
+    },
+  });
+});
+
+// ============================================
+// GET /api/users/stats  (protected — admin or agent)
+// Customer metrics — total, active (30d), new this month, active rate.
+// Workspace-scoped when a workspace context is present.
+// ============================================
+export const getUserStats = asyncHandler(async (req, res) => {
+  const filter = { companyId: req.companyId };
+  if (req.workspaceId) filter.workspaceId = req.workspaceId;
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [total, active, newThisMonth] = await Promise.all([
+    userModel.countDocuments(filter),
+    userModel.countDocuments({ ...filter, lastLogin: { $gte: thirtyDaysAgo } }),
+    userModel.countDocuments({ ...filter, createdAt: { $gte: monthStart } }),
+  ]);
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: {
+      total,
+      active,
+      newThisMonth,
+      activeRate: total ? Math.round((active / total) * 1000) / 10 : 0,
     },
   });
 });
@@ -307,6 +350,7 @@ export const getUsers = asyncHandler(async (req, res) => {
   const { status, search, page = 1, limit = 20 } = req.query;
 
   const filter = { companyId: req.companyId };
+  if (req.workspaceId) filter.workspaceId = req.workspaceId;
   if (status) filter.status = status;
   if (search) {
     filter.$or = [
@@ -366,6 +410,8 @@ export const deleteUser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
+
+  emitDomain.customerDeleted(req.companyId, { _id: req.params.id });
 
   res.status(HTTP_STATUS.OK).json({ success: true, message: 'Customer account removed' });
 });

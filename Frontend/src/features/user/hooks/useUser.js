@@ -10,12 +10,14 @@ import {
   changeUserPassword as changeUserPasswordAPI,
   createUser as createUserAPI,
   getUsers as getUsersAPI,
+  getUserStats as getUserStatsAPI,
   getUserById as getUserByIdAPI,
   deleteUser as deleteUserAPI,
 } from "../services/user.api";
 import {
   setUsers,
   setCurrentUserProfile,
+  setStats,
   setLoading,
   setError,
   updateUserInList,
@@ -24,7 +26,7 @@ import {
 
 export const useUser = () => {
   const dispatch = useDispatch();
-  const { users, currentUserProfile, loading, error, pagination } = useSelector(
+  const { users, currentUserProfile, stats, loading, error, pagination } = useSelector(
     (state) => state.user
   );
 
@@ -110,11 +112,17 @@ export const useUser = () => {
   const getUsers = useCallback(
     async (params) => {
       return handleRequest(getUsersAPI, params, (res) => {
-        dispatch(setUsers(res.data));
+        dispatch(setUsers({ users: res.data, pagination: res.pagination }));
       });
     },
     [dispatch]
   );
+
+  const getUserStats = useCallback(async () => {
+    return handleRequest(getUserStatsAPI, null, (res) => {
+      dispatch(setStats(res.data));
+    });
+  }, [dispatch]);
 
   const getUserById = useCallback(
     async (id) => {
@@ -137,6 +145,7 @@ export const useUser = () => {
   return {
     users,
     currentUserProfile,
+    stats,
     loading,
     error,
     pagination,
@@ -149,6 +158,7 @@ export const useUser = () => {
     changeUserPassword,
     createUser,
     getUsers,
+    getUserStats,
     getUserById,
     deleteUser,
   };

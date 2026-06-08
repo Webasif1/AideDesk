@@ -1,10 +1,13 @@
 import crypto from "crypto";
+import mongoose from "mongoose";
 import agentModel from "../models/aget.model.js";
+import ticketModel from "../models/ticket.model.js";
 import companyModel from "../models/company.model.js";
 import workspaceModel from "../models/workSpace.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { sendAgentInviteEmail } from "../utils/email.js";
+import { emitDomain } from "../sockets/emit.js";
 import { config } from "../config/config.js";
 import jwt from "jsonwebtoken";
 
@@ -102,6 +105,18 @@ export const createAgent = asyncHandler(async (req, res) => {
     );
   });
 
+  emitDomain.agentCreated(req.companyId, {
+    _id: agent._id,
+    name: agent.name,
+    email: agent.email,
+    companyId: agent.companyId,
+    workspaceId: agent.workspaceId,
+    status: agent.status,
+    isVerified: agent.isVerified,
+    role: agent.role,
+    createdAt: agent.createdAt,
+  });
+
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
     message: `Agent added successfully. An invite email with login credentials has been sent to ${agent.email}.`,
@@ -113,6 +128,44 @@ export const createAgent = asyncHandler(async (req, res) => {
       workspaceId: agent.workspaceId,
       status: agent.status,
       isVerified: agent.isVerified,
+    },
+  });
+});
+
+// ============================================
+// GET /api/agents/stats
+// Team metrics — total, active (online), pending invites, avg CSAT.
+// Workspace-scoped when a workspace context is present (admin header / agent token).
+// ============================================
+export const getAgentStats = asyncHandler(async (req, res) => {
+  const filter = { companyId: req.companyId };
+  if (req.workspaceId) filter.workspaceId = req.workspaceId;
+
+  const [total, active, pendingInvites, csatAgg] = await Promise.all([
+    agentModel.countDocuments(filter),
+    agentModel.countDocuments({ ...filter, status: "online" }),
+    agentModel.countDocuments({ ...filter, isVerified: false }),
+    // Team CSAT proxy: avg sentiment over human-handled (agent-assigned) tickets.
+    ticketModel.aggregate([
+      {
+        $match: {
+          companyId: new mongoose.Types.ObjectId(req.companyId),
+          assignedAgent: { $ne: null },
+        },
+      },
+      { $group: { _id: null, avg: { $avg: "$sentimentScore" } } },
+    ]),
+  ]);
+
+  const avg = csatAgg[0]?.avg ?? null;
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: {
+      total,
+      active,
+      pendingInvites,
+      avgCsat: avg != null ? Math.round((avg / 5) * 100) : null,
     },
   });
 });
@@ -213,6 +266,8 @@ export const updateAgent = asyncHandler(async (req, res) => {
     .findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
     .select("-password");
 
+  emitDomain.agentUpdated(updated.companyId, updated.toObject ? updated.toObject() : updated);
+
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message: "Agent updated successfully",
@@ -268,6 +323,8 @@ export const deleteAgent = asyncHandler(async (req, res) => {
 
   await agentModel.findByIdAndDelete(req.params.id);
 
+  emitDomain.agentDeleted(agent.companyId, { _id: req.params.id });
+
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message: "Agent removed successfully",
@@ -288,6 +345,8 @@ export const updateOwnStatus = asyncHandler(async (req, res) => {
   const agent = await agentModel
     .findByIdAndUpdate(req.userId, { status }, { new: true })
     .select("-password");
+
+  emitDomain.agentUpdated(agent.companyId, agent.toObject ? agent.toObject() : agent);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,

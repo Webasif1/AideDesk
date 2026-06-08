@@ -4,6 +4,8 @@ const initialState = {
   tickets: [],
   currentTicket: null,
   stats: null,
+  volume: [],
+  csat: null,
   loading: false,
   error: null,
   pagination: {
@@ -30,6 +32,12 @@ const ticketSlice = createSlice({
     setStats: (state, action) => {
       state.stats = action.payload;
     },
+    setVolume: (state, action) => {
+      state.volume = action.payload || [];
+    },
+    setCsat: (state, action) => {
+      state.csat = action.payload;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -45,6 +53,15 @@ const ticketSlice = createSlice({
         state.currentTicket = { ...state.currentTicket, ...action.payload };
       }
     },
+    // Insert-or-update — used by live socket events (ticket:created / ticket:updated).
+    upsertTicket: (state, action) => {
+      const index = state.tickets.findIndex((t) => t._id === action.payload._id);
+      if (index !== -1) {
+        state.tickets[index] = { ...state.tickets[index], ...action.payload };
+      } else {
+        state.tickets.unshift(action.payload);
+      }
+    },
     removeTicketFromList: (state, action) => {
       state.tickets = state.tickets.filter((t) => t._id !== action.payload);
       if (state.currentTicket?._id === action.payload) {
@@ -58,9 +75,12 @@ export const {
   setTickets,
   setCurrentTicket,
   setStats,
+  setVolume,
+  setCsat,
   setLoading,
   setError,
   updateTicketInList,
+  upsertTicket,
   removeTicketFromList,
 } = ticketSlice.actions;
 

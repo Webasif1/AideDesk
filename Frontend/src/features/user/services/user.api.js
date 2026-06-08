@@ -53,6 +53,11 @@ export const getUsers = async (params) => {
   return response.data;
 };
 
+export const getUserStats = async () => {
+  const response = await apiClient.get(`${PREFIX}/stats`);
+  return response.data;
+};
+
 export const getUserById = async (id) => {
   const response = await apiClient.get(`${PREFIX}/${id}`);
   return response.data;

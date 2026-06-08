@@ -17,6 +17,13 @@ export default defineConfig({
         changeOrigin: true,
         withCredentials: true,
       },
+      // Proxy Socket.IO (HTTP polling + WebSocket upgrade) to the backend so the
+      // client can connect to the same origin as the app.
+      "/socket.io": {
+        target: "http://backend:3000",
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 });

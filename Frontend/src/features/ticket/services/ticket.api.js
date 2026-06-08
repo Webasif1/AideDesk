@@ -7,6 +7,16 @@ export const getTicketStats = async () => {
   return response.data;
 };
 
+export const getTicketVolume = async (params) => {
+  const response = await apiClient.get(`${PREFIX}/analytics/volume`, { params });
+  return response.data;
+};
+
+export const getTicketCsat = async () => {
+  const response = await apiClient.get(`${PREFIX}/analytics/csat`);
+  return response.data;
+};
+
 export const createTicket = async (ticketData) => {
   const response = await apiClient.post(`${PREFIX}/`, ticketData);
   return response.data;

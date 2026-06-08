@@ -44,7 +44,7 @@ app.use(
       `http://localhost:${process.env.FRONTEND_PORT}`,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-workspace-id"],
   }),
 );
 

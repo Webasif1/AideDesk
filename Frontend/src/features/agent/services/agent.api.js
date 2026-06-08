@@ -25,6 +25,11 @@ export const getAgents = async (params) => {
   return response.data;
 };
 
+export const getAgentStats = async () => {
+  const response = await apiClient.get(`${PREFIX}/stats`);
+  return response.data;
+};
+
 export const getAgent = async (id) => {
   const response = await apiClient.get(`${PREFIX}/${id}`);
   return response.data;

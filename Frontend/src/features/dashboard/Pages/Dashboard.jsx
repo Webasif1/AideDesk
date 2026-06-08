@@ -8,36 +8,39 @@ import QuickActions from "../components/QuickActions";
 import GenerateReportModal from "../components/GenerateReportModal";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 import { SkeletonCard } from "../../../components/ui/Skeleton";
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
+import { useTicket } from "../../ticket/hooks/useTicket";
+import { useAgent } from "../../agent/hooks/useAgent";
+import { formatMinutes } from "../../../lib/format";
 
-const kpis = [
+const buildKpis = (ticketStats, agentStats) => [
   {
     icon: "confirmation_number",
     label: "Total Tickets",
-    value: "1,284",
-    badge: "+12%",
-    badgeType: "success",
+    value: (ticketStats?.total ?? 0).toLocaleString(),
+    badge: ticketStats?.newThisWeek ? `+${ticketStats.newThisWeek} this wk` : "—",
+    badgeType: ticketStats?.newThisWeek ? "success" : "neutral",
   },
   {
     icon: "psychology",
     label: "AI Resolution Rate",
-    value: "94.2%",
-    badge: "+1.2%",
+    value: ticketStats ? `${ticketStats.aiResolutionRate}%` : "—",
+    badge: ticketStats ? `${ticketStats.aiResolved} resolved` : "—",
     badgeType: "success",
   },
   {
     icon: "timer",
     label: "Avg. Response Time",
-    value: "14m",
-    badge: "-8%",
-    badgeType: "success",
+    value: formatMinutes(ticketStats?.avgFirstResponseMins ?? null),
+    badge: "first reply",
+    badgeType: "neutral",
   },
   {
     icon: "support_agent",
     label: "Active Agents",
-    value: "24/42",
+    value: `${agentStats?.active ?? 0}/${agentStats?.total ?? 0}`,
     badge: "Live",
     badgeType: "neutral",
   },
@@ -45,7 +48,28 @@ const kpis = [
 
 const Dashboard = () => {
   const [showReport, setShowReport] = useState(false);
-  const companyLoading = useSelector((s) => s.company.loading);
+
+  const { stats: ticketStats, getTicketStats } = useTicket();
+  const { stats: agentStats, getAgentStats } = useAgent();
+  const ticketLoading = useSelector((s) => s.ticket.loading);
+  const agentLoading = useSelector((s) => s.agent.loading);
+  const activeWorkspaceId = useSelector((s) => s.company.activeWorkspaceId);
+  const userWorkspaceId = useSelector((s) => s.auth.user?.workspaceId);
+  const workspaceId = activeWorkspaceId || userWorkspaceId;
+
+  const loadStats = useCallback(() => {
+    getTicketStats().catch(() => {});
+    getAgentStats().catch(() => {});
+  }, [getTicketStats, getAgentStats]);
+
+  // Fetch on mount + whenever the active workspace changes.
+  useEffect(() => {
+    loadStats();
+  }, [loadStats, workspaceId]);
+
+  const statsReady = ticketStats && agentStats;
+  const kpis = buildKpis(ticketStats, agentStats);
+  const showSkeleton = !statsReady && (ticketLoading || agentLoading || !statsReady);
 
   return (
     <PageWrapper>
@@ -71,15 +95,25 @@ const Dashboard = () => {
                   Welcome back, here's what's happening today.
                 </p>
               </div>
-              <button
-                onClick={() => setShowReport(true)}
-                className="flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  add
-                </span>
-                Create Report
-              </button>
+              <div className="flex items-center gap-[12px]">
+                <button
+                  onClick={loadStats}
+                  title="Refresh"
+                  className="flex items-center gap-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white px-[16px] py-[10px] rounded-xl font-medium text-[13px] transition-all active:scale-95 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                >
+                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                  Refresh
+                </button>
+                <button
+                  onClick={() => setShowReport(true)}
+                  className="flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    add
+                  </span>
+                  Create Report
+                </button>
+              </div>
             </motion.div>
 
             {/* KPIs */}
@@ -89,7 +123,7 @@ const Dashboard = () => {
               transition={{ duration: 0.3, delay: 0.08, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[24px]"
             >
-              {companyLoading
+              {showSkeleton
                 ? [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
                 : kpis.map((k) => <KpiCard key={k.label} {...k} />)}
             </motion.div>

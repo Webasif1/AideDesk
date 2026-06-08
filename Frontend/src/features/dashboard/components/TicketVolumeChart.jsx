@@ -1,19 +1,26 @@
-const bars = [
-  { day: "Mon", total: 160, aiPct: 85 },
-  { day: "Tue", total: 176, aiPct: 90 },
-  { day: "Wed", total: 128, aiPct: 70 },
-  { day: "Thu", total: 192, aiPct: 95 },
-  { day: "Fri", total: 208, aiPct: 80 },
-  { day: "Sat", total: 96, aiPct: 40 },
-  { day: "Sun", total: 80, aiPct: 30 },
-  { day: "Mon", total: 160, aiPct: 88 },
-  { day: "Tue", total: 168, aiPct: 92 },
-  { day: "Wed", total: 144, aiPct: 75 },
-];
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useTicket } from "../../ticket/hooks/useTicket";
 
-const MAX = 208;
+const weekday = (dateStr) =>
+  new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, { weekday: "short" });
 
 const TicketVolumeChart = () => {
+  const { getTicketVolume } = useTicket();
+  const volume = useSelector((s) => s.ticket.volume);
+  const loading = useSelector((s) => s.ticket.loading);
+  const activeWorkspaceId = useSelector((s) => s.company.activeWorkspaceId);
+  const userWorkspaceId = useSelector((s) => s.auth.user?.workspaceId);
+  const workspaceId = activeWorkspaceId || userWorkspaceId;
+
+  useEffect(() => {
+    getTicketVolume({ days: 14 }).catch(() => {});
+  }, [getTicketVolume, workspaceId]);
+
+  const bars = volume || [];
+  const max = Math.max(1, ...bars.map((b) => b.total));
+  const hasData = bars.some((b) => b.total > 0);
+
   return (
     <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden flex flex-col">
       {/* Header */}
@@ -41,29 +48,58 @@ const TicketVolumeChart = () => {
       </div>
 
       {/* Chart */}
-      <div className="flex-1 min-h-[300px] px-[24px] pb-[24px] pt-[16px] flex items-end justify-between gap-[8px]">
-        {bars.map((bar, i) => {
-          const totalHeight = Math.round((bar.total / MAX) * 220);
-          const aiHeight = Math.round((bar.aiPct / 100) * totalHeight);
-          return (
-            <div
-              key={i}
-              className="flex-1 flex flex-col items-center gap-[6px] group"
-            >
+      {loading && !hasData ? (
+        <div className="flex-1 min-h-[300px] px-[24px] pb-[24px] pt-[16px] flex items-end justify-between gap-[8px] animate-pulse">
+          {[...Array(14)].map((_, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-[6px]">
               <div
-                className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-t relative overflow-hidden"
-                style={{ height: `${totalHeight}px` }}
+                className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-t"
+                style={{ height: `${40 + ((i * 37) % 160)}px` }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : !hasData ? (
+        <div className="flex-1 min-h-[300px] flex flex-col items-center justify-center text-center px-[24px]">
+          <span className="material-symbols-outlined text-[40px] text-neutral-300 dark:text-neutral-700 mb-2">
+            bar_chart
+          </span>
+          <p className="text-[13px] font-semibold text-neutral-600 dark:text-neutral-300">
+            No ticket activity yet
+          </p>
+          <p className="text-[12px] text-neutral-400 mt-1">
+            Volume appears here as tickets come in.
+          </p>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-[300px] px-[24px] pb-[24px] pt-[16px] flex items-end justify-between gap-[8px]">
+          {bars.map((bar, i) => {
+            const totalHeight = Math.round((bar.total / max) * 220);
+            const aiPct = bar.total ? bar.ai / bar.total : 0;
+            const aiHeight = Math.round(aiPct * totalHeight);
+            return (
+              <div
+                key={i}
+                className="flex-1 flex flex-col items-center gap-[6px] group"
+                title={`${bar.total} tickets • ${bar.ai} AI-managed`}
               >
                 <div
-                  className="absolute bottom-0 w-full bg-black dark:bg-white rounded-t transition-all group-hover:opacity-75"
-                  style={{ height: `${aiHeight}px` }}
-                />
+                  className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-t relative overflow-hidden"
+                  style={{ height: `${Math.max(totalHeight, 2)}px` }}
+                >
+                  <div
+                    className="absolute bottom-0 w-full bg-black dark:bg-white rounded-t transition-all group-hover:opacity-75"
+                    style={{ height: `${aiHeight}px` }}
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                  {weekday(bar.date)}
+                </p>
               </div>
-              <p className="text-[10px] text-neutral-400 dark:text-neutral-500">{bar.day}</p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
