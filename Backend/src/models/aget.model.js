@@ -67,12 +67,12 @@ const agentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-agentSchema.pre("save", async function(next) {
-  if (!this.isModified("password")) return next();
+agentSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-agentSchema.methods.comparePassword = function(candidatePassword) {
+agentSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 

@@ -12,6 +12,11 @@ export const createUserValidator = [
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Must be a valid email address')
     .normalizeEmail(),
+
+  body('phone')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isLength({ max: 30 }).withMessage('Phone number cannot exceed 30 characters'),
 ];
 
 export const loginUserValidator = [

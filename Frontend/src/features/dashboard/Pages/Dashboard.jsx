@@ -128,25 +128,25 @@ const Dashboard = () => {
                 : kpis.map((k) => <KpiCard key={k.label} {...k} />)}
             </motion.div>
 
-            {/* Analytics */}
+            {/* Recent ticket updates (moved up) + CSAT (coming soon) */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.16, ease: "easeOut" }}
               className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]"
             >
-              <TicketVolumeChart />
+              <RecentTicketsTable />
               <CsatBreakdown />
             </motion.div>
 
-            {/* Bottom */}
+            {/* Ticket volume (coming soon, moved down) + Quick actions */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.24, ease: "easeOut" }}
               className="grid grid-cols-1 lg:grid-cols-4 gap-[24px]"
             >
-              <RecentTicketsTable />
+              <TicketVolumeChart />
               <QuickActions />
             </motion.div>
           </main>

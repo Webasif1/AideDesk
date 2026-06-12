@@ -1,20 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
+import { useTicket } from "../hooks/useTicket";
+import { useUser } from "../../user/hooks/useUser";
+import { toast } from "../../../components/ui/toast";
 
 const priorities = ["Low", "Normal", "High"];
+const PRIORITY_MAP = { Low: "low", Normal: "medium", High: "high" };
+
+const channels = ["Email", "Chat", "Phone", "Portal"];
+// Ticket `source` enum is chat | email | dashboard | api
+const CHANNEL_MAP = { Email: "email", Chat: "chat", Phone: "dashboard", Portal: "dashboard" };
 
 const resources = [
   { title: "Resetting user passwords", meta: "Technical • 2m read" },
   { title: "Billing FAQ", meta: "Finance • 5m read" },
 ];
 
-const history = [
-  { id: "TICKET-2041", date: "Oct 24", status: "Closed", active: true },
-  { id: "TICKET-1982", date: "Aug 05", status: "Resolved", active: false },
-];
-
 const CreateTicketModal = ({ onClose }) => {
+  const { createTicket, getTickets } = useTicket();
+  const { getUsers } = useUser();
+  const customers = useSelector((s) => s.user.users);
+  const role = useSelector((s) => s.auth.role);
+  const isStaff = role === "admin" || role === "agent";
+
+  const [form, setForm] = useState({
+    customerId: "",
+    channel: "Email",
+    subject: "",
+    description: "",
+  });
   const [priority, setPriority] = useState("Normal");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }));
+
+  // Staff create on behalf of a customer — load the workspace customer list.
+  useEffect(() => {
+    if (isStaff) getUsers({ page: 1, limit: 100 }).catch(() => {});
+  }, [getUsers, isStaff]);
+
+  const validate = () => {
+    if (isStaff && !form.customerId) return "Please select a customer.";
+    if (form.subject.trim().length < 3)
+      return "Subject must be at least 3 characters.";
+    if (form.description.trim().length < 10)
+      return "Description must be at least 10 characters.";
+    return "";
+  };
+
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    const msg = validate();
+    if (msg) {
+      setError(msg);
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: form.subject.trim(),
+        description: form.description.trim(),
+        priority: PRIORITY_MAP[priority],
+        source: CHANNEL_MAP[form.channel],
+      };
+      if (isStaff) payload.customerId = form.customerId;
+
+      await createTicket(payload);
+      getTickets({ page: 1, limit: 10 }).catch(() => {});
+      toast("Ticket created successfully.", { type: "success" });
+      onClose();
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || err?.message || "Failed to create ticket."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <motion.div
@@ -23,7 +88,8 @@ const CreateTicketModal = ({ onClose }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-[32px] bg-black/40 backdrop-blur-sm"
     >
-      <motion.div
+      <motion.form
+        onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 40, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -41,6 +107,7 @@ const CreateTicketModal = ({ onClose }) => {
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
           >
@@ -59,22 +126,31 @@ const CreateTicketModal = ({ onClose }) => {
             className="flex-1 p-[32px] space-y-[24px] border-r border-neutral-200 dark:border-neutral-700"
           >
             <div className="grid grid-cols-2 gap-[24px]">
-              {/* Customer search */}
-              <div className="flex flex-col gap-[8px]">
-                <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                  Customer
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search customer..."
-                    className="w-full h-11 pl-10 pr-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                  />
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[20px]">
-                    search
-                  </span>
+              {/* Customer select (staff only) */}
+              {isStaff && (
+                <div className="flex flex-col gap-[8px]">
+                  <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                    Customer <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={form.customerId}
+                      onChange={set("customerId")}
+                      className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] focus:outline-none focus:border-black dark:focus:border-white appearance-none transition-colors"
+                    >
+                      <option value="">Select customer…</option>
+                      {(customers || []).map((c) => (
+                        <option key={c._id} value={c._id}>
+                          {c.name} ({c.email})
+                        </option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
+                      expand_more
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Channel */}
               <div className="flex flex-col gap-[8px]">
@@ -82,11 +158,14 @@ const CreateTicketModal = ({ onClose }) => {
                   Channel
                 </label>
                 <div className="relative">
-                  <select className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] focus:outline-none focus:border-black dark:focus:border-white appearance-none transition-colors">
-                    <option>Email</option>
-                    <option>Chat</option>
-                    <option>Phone</option>
-                    <option>Portal</option>
+                  <select
+                    value={form.channel}
+                    onChange={set("channel")}
+                    className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] focus:outline-none focus:border-black dark:focus:border-white appearance-none transition-colors"
+                  >
+                    {channels.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
                   </select>
                   <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
                     expand_more
@@ -98,10 +177,12 @@ const CreateTicketModal = ({ onClose }) => {
             {/* Subject */}
             <div className="flex flex-col gap-[8px]">
               <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                Subject
+                Subject <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
+                value={form.subject}
+                onChange={set("subject")}
                 placeholder="Brief summary of the issue"
                 className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
               />
@@ -133,41 +214,33 @@ const CreateTicketModal = ({ onClose }) => {
             {/* Description */}
             <div className="flex flex-col gap-[8px]">
               <label className="text-[12px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
-              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-4 px-4 py-2 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#222]">
-                  {[
-                    "format_bold",
-                    "format_italic",
-                    "format_list_bulleted",
-                    "link",
-                    "image",
-                  ].map((icon) => (
-                    <span
-                      key={icon}
-                      className="material-symbols-outlined text-[18px] text-neutral-400 cursor-pointer hover:text-black dark:hover:text-white transition-colors"
-                    >
-                      {icon}
-                    </span>
-                  ))}
-                </div>
-                <textarea
-                  className="w-full px-[16px] py-[16px] bg-neutral-50 dark:bg-[#111] text-black dark:text-white text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none resize-none min-h-[140px] border-none"
-                  placeholder="Provide detailed information about the request..."
-                />
-              </div>
+              <textarea
+                value={form.description}
+                onChange={set("description")}
+                className="w-full px-[16px] py-[16px] bg-neutral-50 dark:bg-[#111] text-black dark:text-white text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white resize-none min-h-[140px] border border-neutral-200 dark:border-neutral-600 rounded-lg transition-colors"
+                placeholder="Provide detailed information about the request..."
+              />
             </div>
+
+            {error && (
+              <div className="p-[12px] bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg flex gap-[8px]">
+                <span className="material-symbols-outlined text-red-500 text-[18px] shrink-0">
+                  error
+                </span>
+                <p className="text-[13px] text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
           </motion.div>
 
-          {/* Right sidebar */}
+          {/* Right sidebar — suggested resources */}
           <motion.aside
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.12, duration: 0.25 }}
-            className="w-64 bg-neutral-50 dark:bg-[#111] p-[16px] space-y-[24px]"
+            className="w-64 bg-neutral-50 dark:bg-[#111] p-[16px] space-y-[24px] hidden md:block"
           >
-            {/* Resources */}
             <div className="space-y-[12px]">
               <h2 className="text-[12px] font-semibold uppercase tracking-widest text-black dark:text-white border-b border-neutral-200 dark:border-neutral-700 pb-2 flex items-center justify-between">
                 Resources
@@ -179,44 +252,18 @@ const CreateTicketModal = ({ onClose }) => {
                 {resources.map((r) => (
                   <div
                     key={r.title}
-                    className="p-3 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer hover:border-black dark:hover:border-white transition-colors"
+                    className="p-3 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-lg"
                   >
                     <p className="text-[13px] font-semibold text-black dark:text-white">
                       {r.title}
                     </p>
-                    <p className="text-[11px] text-neutral-400 mt-1">
-                      {r.meta}
-                    </p>
+                    <p className="text-[11px] text-neutral-400 mt-1">{r.meta}</p>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* History */}
-            <div className="space-y-[12px] pt-[16px] border-t border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-[12px] font-semibold uppercase tracking-widest text-black dark:text-white border-b border-neutral-200 dark:border-neutral-700 pb-2">
-                History
-              </h2>
-              <div className="space-y-[16px]">
-                {history.map((h) => (
-                  <div
-                    key={h.id}
-                    className="relative pl-6 border-l border-neutral-200 dark:border-neutral-700"
-                  >
-                    <div
-                      className={`absolute -left-[5px] top-1 w-2 h-2 rounded-full ${
-                        h.active ? "bg-black dark:bg-white" : "bg-neutral-300 dark:bg-neutral-600"
-                      }`}
-                    />
-                    <p className="text-[12px] font-semibold text-black dark:text-white">
-                      {h.id}
-                    </p>
-                    <p className="text-[10px] text-neutral-400">
-                      {h.date} • {h.status}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <p className="text-[11px] text-neutral-400 dark:text-neutral-500 leading-relaxed">
+                Suggested articles your customer may find helpful.
+              </p>
             </div>
           </motion.aside>
         </div>
@@ -224,17 +271,33 @@ const CreateTicketModal = ({ onClose }) => {
         {/* Footer */}
         <div className="px-[32px] py-[24px] bg-neutral-50 dark:bg-[#111] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[16px]">
           <button
+            type="button"
             onClick={onClose}
             className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest text-black dark:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg"
           >
             Cancel
           </button>
-          <button className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors flex items-center gap-2 active:scale-95">
-            Create Ticket
-            <span className="material-symbols-outlined text-sm">send</span>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors flex items-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? (
+              <>
+                <span className="material-symbols-outlined text-sm animate-spin">
+                  progress_activity
+                </span>
+                Creating…
+              </>
+            ) : (
+              <>
+                Create Ticket
+                <span className="material-symbols-outlined text-sm">send</span>
+              </>
+            )}
           </button>
         </div>
-      </motion.div>
+      </motion.form>
     </motion.div>
   );
 };

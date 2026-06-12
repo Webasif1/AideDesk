@@ -22,9 +22,9 @@ const TeamCapacity = () => {
     : 0;
 
   return (
-    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-[24px]">
+    <div className="mt-8">
       {/* Capacity panel */}
-      <div className="md:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl flex flex-col gap-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h4 className="text-[18px] font-semibold text-black dark:text-white">Team Capacity</h4>
           <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
@@ -59,23 +59,6 @@ const TeamCapacity = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* AI hire card */}
-      <div className="bg-black text-white p-[24px] rounded-xl flex flex-col justify-between">
-        <div>
-          <span className="material-symbols-outlined text-[32px] mb-4 block">
-            auto_awesome
-          </span>
-          <h4 className="text-[18px] font-bold mb-2">Hire with AI</h4>
-          <p className="text-sm text-neutral-400 leading-relaxed">
-            Let AideDesk analyze your ticket trends to recommend the optimal
-            staffing levels for next quarter.
-          </p>
-        </div>
-        <button className="mt-6 w-full py-2 bg-white text-black font-semibold rounded-lg text-sm hover:bg-neutral-100 transition-colors">
-          Start Analysis
-        </button>
       </div>
     </div>
   );

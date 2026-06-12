@@ -1,4 +1,5 @@
-import { useState } from "react";
+import Tooltip from "../../../components/ui/Tooltip";
+import { toast } from "../../../components/ui/toast";
 
 const sessions = [
   {
@@ -16,8 +17,6 @@ const sessions = [
 ];
 
 const SecuritySection = () => {
-  const [twoFa, setTwoFa] = useState(true);
-
   return (
     <section className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
@@ -29,24 +28,28 @@ const SecuritySection = () => {
         </span>
       </div>
       <div className="p-[24px] space-y-[32px]">
-        {/* 2FA */}
+        {/* 2FA — not implemented yet */}
         <div className="flex justify-between items-center">
           <div>
-            <h4 className="text-sm font-semibold text-black dark:text-white">
+            <h4 className="text-sm font-semibold text-black dark:text-white flex items-center gap-2">
               Two-Factor Authentication
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                Coming soon
+              </span>
             </h4>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
               Add an extra layer of security to your account.
             </p>
           </div>
-          <button
-            onClick={() => setTwoFa(!twoFa)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${twoFa ? "bg-black dark:bg-white" : "bg-neutral-200 dark:bg-neutral-700"}`}
-          >
-            <span
-              className={`inline-block h-5 w-5 transform rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 transition-transform ${twoFa ? "translate-x-5" : "translate-x-0.5"}`}
-            />
-          </button>
+          <Tooltip text="Coming soon">
+            <button
+              disabled
+              aria-disabled="true"
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-neutral-200 dark:bg-neutral-700 opacity-50 cursor-not-allowed"
+            >
+              <span className="inline-block h-5 w-5 transform rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 translate-x-0.5" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Sessions */}
@@ -74,9 +77,14 @@ const SecuritySection = () => {
                     Current
                   </span>
                 ) : (
-                  <button className="text-xs font-semibold text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 px-[8px] py-1 rounded transition-colors">
-                    Revoke
-                  </button>
+                  <Tooltip text="Coming soon">
+                    <button
+                      onClick={() => toast.comingSoon("Session management")}
+                      className="text-xs font-semibold text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 px-[8px] py-1 rounded transition-colors"
+                    >
+                      Revoke
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             ))}

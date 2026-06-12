@@ -19,6 +19,13 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    // String — not Number — to support international formats like +92-300-1234567
+    phone: {
+      type: String,
+      default: "",
+      trim: true
+    },
+
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -68,13 +75,12 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function(next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
-userSchema.methods.comparePassword = function(candidatePassword) {
+userSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 

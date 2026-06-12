@@ -45,7 +45,7 @@ const RecentTicketsTable = () => {
   });
 
   return (
-    <div className="lg:col-span-3 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+    <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="p-[24px] border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
         <h4 className="font-bold text-black dark:text-white">Recent Ticket Updates</h4>
         <button className="text-[12px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors">

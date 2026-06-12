@@ -2,6 +2,7 @@ import { createBrowserRouter, Outlet } from "react-router-dom";
 import ScrollToTop from "../components/ui/ScrollToTop";
 import ProtectedRoute from "../components/ui/ProtectedRoute";
 import FloatingThemeToggle from "../components/ui/FloatingThemeToggle";
+import { ToastHost } from "../components/ui/toast";
 
 // Marketing
 import Home from "./Pages/Home";
@@ -35,6 +36,7 @@ import Customers from "../features/user/Pages/Customers";
 import Tickets from "../features/ticket/Pages/Tickets";
 import Team from "../features/agent/Pages/Team";
 import ChatScreen from "../features/chat/Pages/ChatScreen";
+import Billing from "../features/billing/Pages/Billing";
 
 // Onboarding
 import Onboarding from "../features/onboarding/Pages/Onboarding";
@@ -45,6 +47,7 @@ const RootLayout = () => (
     <ScrollToTop />
     <Outlet />
     <FloatingThemeToggle />
+    <ToastHost />
   </>
 );
 
@@ -158,6 +161,14 @@ const AppRoutes = createBrowserRouter([
         element: (
           <Authenticated roles={["admin"]}>
             <Settings />
+          </Authenticated>
+        ),
+      },
+      {
+        path: "/dashboard/billing",
+        element: (
+          <Authenticated roles={["admin"]}>
+            <Billing />
           </Authenticated>
         ),
       },

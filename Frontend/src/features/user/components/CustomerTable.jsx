@@ -5,21 +5,6 @@ import { useUser } from "../hooks/useUser";
 import { formatRelative, initialsOf, shortId } from "../../../lib/format";
 
 const LIMIT = 10;
-const cap = (s = "") => (s ? s[0].toUpperCase() + s.slice(1) : "");
-
-const Tag = ({ label, dark }) => {
-  if (dark)
-    return (
-      <span className="text-[10px] font-bold px-[8px] py-[2px] bg-black dark:bg-white text-white dark:text-black rounded-full">
-        {label}
-      </span>
-    );
-  return (
-    <span className="text-[10px] font-bold px-[8px] py-[2px] bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-full">
-      {label}
-    </span>
-  );
-};
 
 const CustomerTable = ({ activeTab = "All Customers" }) => {
   const { getUsers } = useUser();
@@ -48,19 +33,14 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
     return list;
   }, [users, activeTab]);
 
-  const rows = filtered.map((u) => {
-    const tags = [{ label: cap(u.status || "offline") }];
-    if (!u.isVerified) tags.push({ label: "Pending" });
-    return {
-      key: u._id,
-      name: u.name,
-      id: shortId(u._id, "#C-"),
-      email: u.email,
-      tags,
-      updated: formatRelative(u.lastLogin || u.updatedAt || u.createdAt),
-      initials: initialsOf(u.name),
-    };
-  });
+  const rows = filtered.map((u) => ({
+    key: u._id,
+    name: u.name,
+    id: shortId(u._id, "#C-"),
+    email: u.email,
+    updated: formatRelative(u.lastLogin || u.updatedAt || u.createdAt),
+    initials: initialsOf(u.name),
+  }));
 
   const total = pagination?.total ?? rows.length;
   const pages = pagination?.pages ?? 1;
@@ -71,7 +51,7 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-100 dark:border-neutral-700">
-              {["Name", "Email", "Tags", "Last Active", ""].map((h) => (
+              {["Name", "Email", "Last Active", ""].map((h) => (
                 <th
                   key={h}
                   className="px-[24px] py-[16px] text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest"
@@ -85,14 +65,14 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
             {loading && rows.length === 0 ? (
               [...Array(6)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={5} className="px-0 py-0">
+                  <td colSpan={4} className="px-0 py-0">
                     <SkeletonRow />
                   </td>
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-[24px] py-16 text-center">
+                <td colSpan={4} className="px-[24px] py-16 text-center">
                   <span className="material-symbols-outlined text-[40px] text-neutral-300 dark:text-neutral-700 block mb-2">
                     group_off
                   </span>
@@ -127,13 +107,6 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
                   </td>
                   <td className="px-[24px] py-[16px] text-[13px] text-neutral-600 dark:text-neutral-400">
                     {c.email}
-                  </td>
-                  <td className="px-[24px] py-[16px]">
-                    <div className="flex flex-wrap gap-[4px]">
-                      {c.tags.map((t) => (
-                        <Tag key={t.label} {...t} />
-                      ))}
-                    </div>
                   </td>
                   <td className="px-[24px] py-[16px] text-[13px] text-neutral-500 dark:text-neutral-400">
                     {c.updated}

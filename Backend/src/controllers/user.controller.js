@@ -41,7 +41,7 @@ export const createUser = asyncHandler(async (req, res) => {
     );
   }
 
-  const { name, email } = req.body;
+  const { name, email, phone } = req.body;
 
   const exists = await userModel.findOne({ email });
   if (exists) {
@@ -67,6 +67,7 @@ export const createUser = asyncHandler(async (req, res) => {
   const user = await userModel.create({
     name,
     email,
+    phone: phone || "",
     password: tempPassword,
     companyId: req.companyId,
     workspaceId: workspace._id,
@@ -106,6 +107,7 @@ export const createUser = asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       companyId: user.companyId,
       status: user.status,
     },

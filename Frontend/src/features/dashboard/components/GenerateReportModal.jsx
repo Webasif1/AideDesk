@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Tooltip from "../../../components/ui/Tooltip";
 
 const reportTypes = [
   {
@@ -203,10 +204,16 @@ const GenerateReportModal = ({ onClose }) => {
           >
             Cancel
           </button>
-          <button className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors flex items-center gap-2 active:scale-95">
-            Generate & Download
-            <span className="material-symbols-outlined text-sm">download</span>
-          </button>
+          <Tooltip text="Coming soon">
+            <button
+              disabled
+              aria-disabled="true"
+              className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black text-white rounded-lg flex items-center gap-2 opacity-40 cursor-not-allowed"
+            >
+              Generate & Download
+              <span className="material-symbols-outlined text-sm">download</span>
+            </button>
+          </Tooltip>
         </div>
       </motion.div>
     </motion.div>

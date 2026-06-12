@@ -5,9 +5,9 @@ import TopBar from "../../dashboard/components/TopBar";
 import CustomerMetrics from "../components/CustomerMetrics";
 import CustomerTabs from "../components/CustomerTabs";
 import CustomerTable from "../components/CustomerTable";
-import CustomerInsights from "../components/CustomerInsights";
 import CreateCustomerModal from "../components/CreateCustomerModal";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
+import Tooltip from "../../../components/ui/Tooltip";
 
 const Customers = () => {
   const [activeTab, setActiveTab] = useState("All Customers");
@@ -44,12 +44,18 @@ const Customers = () => {
                 </h2>
               </div>
               <div className="flex items-center gap-[12px]">
-                <button className="flex items-center gap-[8px] px-[16px] py-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white text-[13px] font-medium rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all">
-                  <span className="material-symbols-outlined text-[18px]">
-                    file_download
-                  </span>
-                  Bulk Import
-                </button>
+                <Tooltip text="Coming soon">
+                  <button
+                    disabled
+                    aria-disabled="true"
+                    className="flex items-center gap-[8px] px-[16px] py-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white text-[13px] font-medium rounded-xl opacity-40 cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      file_download
+                    </span>
+                    Bulk Import
+                  </button>
+                </Tooltip>
                 <button
                   onClick={() => setShowModal(true)}
                   className="flex items-center gap-[8px] px-[16px] py-[8px] bg-black dark:bg-white text-white dark:text-black text-[13px] font-medium rounded-xl hover:opacity-90 transition-all active:scale-95"
@@ -80,15 +86,6 @@ const Customers = () => {
             >
               <CustomerTabs active={activeTab} onChange={setActiveTab} />
               <CustomerTable activeTab={activeTab} />
-            </motion.div>
-
-            {/* Insights */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.24, ease: "easeOut" }}
-            >
-              <CustomerInsights />
             </motion.div>
           </main>
         </div>

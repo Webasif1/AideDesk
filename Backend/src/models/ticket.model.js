@@ -130,11 +130,11 @@ const ticketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-ticketSchema.pre('save', function (next) {
+ticketSchema.pre('save', function () {
   if (!this.ticketNumber) {
     this.ticketNumber = 'TKT-' + Date.now().toString().slice(-6);
   }
-  next();
+  ;
 });
 
 const ticketModel = mongoose.model('ticket', ticketSchema);
