@@ -74,7 +74,7 @@ export const createUser = asyncHandler(async (req, res) => {
   });
 
   sendCustomerInviteEmail({
-    email: config.TEST_RECIEVER_EMAIL || user.email,
+    email: user.email,
     customerName: user.name,
     companyName: company.name,
     loginEmail: user.email,
@@ -216,7 +216,7 @@ export const forgotUserPassword = asyncHandler(async (req, res) => {
     const resetLink = `${config.FRONTEND_URL}/reset-password?token=${resetToken}&role=customer`;
 
     sendPasswordResetEmail({
-      email: config.TEST_RECIEVER_EMAIL || email,
+      email: email,
       name: user.name,
       resetLink,
     }).then((sent) => {

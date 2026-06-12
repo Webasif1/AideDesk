@@ -89,7 +89,7 @@ export const createAgent = asyncHandler(async (req, res) => {
 
   // Send invite — fire-and-forget, email failure should not block the response
   sendAgentInviteEmail({
-    email: config.TEST_RECIEVER_EMAIL || agent.email,
+    email: agent.email,
     agentName: agent.name,
     companyName: company.name,
     loginEmail: agent.email,

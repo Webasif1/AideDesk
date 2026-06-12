@@ -1,48 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const notifications = [
-  {
-    id: 1,
-    icon: "confirmation_number",
-    title: "New ticket assigned",
-    desc: "Ticket #AD-4521 assigned to you by Sarah J.",
-    time: "2 min ago",
-    unread: true,
-  },
-  {
-    id: 2,
-    icon: "psychology",
-    title: "AI resolved a ticket",
-    desc: "AideBot resolved 'Resetting User Password' automatically.",
-    time: "14 min ago",
-    unread: true,
-  },
-  {
-    id: 3,
-    icon: "person_add",
-    title: "New agent joined",
-    desc: "Emma Walsh accepted your team invitation.",
-    time: "1 hr ago",
-    unread: true,
-  },
-  {
-    id: 4,
-    icon: "sentiment_satisfied",
-    title: "CSAT score updated",
-    desc: "Your team's satisfaction score rose to 98%.",
-    time: "3 hr ago",
-    unread: false,
-  },
-  {
-    id: 5,
-    icon: "warning",
-    title: "High ticket volume",
-    desc: "Queue exceeded 50 open tickets in the last hour.",
-    time: "5 hr ago",
-    unread: false,
-  },
-];
+import { useSelector } from "react-redux";
 
 const statusOptions = [
   { value: "online", label: "Online", color: "bg-emerald-500" },
@@ -66,7 +24,10 @@ const TopBar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [status, setStatus] = useState("online");
-  const [notifs, setNotifs] = useState(notifications);
+  const [readNotifs, setReadNotifs] = useState(new Set());
+  
+  const tickets = useSelector((state) => state.ticket.tickets || []);
+  const user = useSelector((state) => state.auth.user);
 
   const notifRef = useRef(null);
   const profileRef = useRef(null);
@@ -74,16 +35,31 @@ const TopBar = () => {
   useClickOutside(notifRef, () => setNotifOpen(false));
   useClickOutside(profileRef, () => setProfileOpen(false));
 
+  const notifs = tickets.slice(0, 5).map((t) => {
+    // If assigned to current user
+    const isAssignedToMe = (t.assignedAgent?._id || t.assignedAgent) === user?.id;
+
+    return {
+      id: t._id,
+      icon: "confirmation_number",
+      title: isAssignedToMe ? "Ticket assigned to you" : "New ticket",
+      desc: `Ticket "${t.title}" is currently ${t.status}.`,
+      time: new Date(t.createdAt).toLocaleDateString(),
+      unread: !readNotifs.has(t._id),
+    };
+  });
+
   const unreadCount = notifs.filter((n) => n.unread).length;
-  const currentStatus = statusOptions.find((s) => s.value === status);
+  const currentStatus = statusOptions.find((s) => s.value === status) || statusOptions[0];
 
-  const markAllRead = () =>
-    setNotifs((prev) => prev.map((n) => ({ ...n, unread: false })));
+  const markAllRead = () => {
+    const allIds = notifs.map((n) => n.id);
+    setReadNotifs(new Set([...readNotifs, ...allIds]));
+  };
 
-  const markRead = (id) =>
-    setNotifs((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
-    );
+  const markRead = (id) => {
+    setReadNotifs(new Set([...readNotifs, id]));
+  };
 
   const handleStatusChange = (val) => {
     setStatus(val);

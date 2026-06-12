@@ -1,5 +1,6 @@
 import adminModel from "../models/admin.model.js";
 import agentModel from "../models/aget.model.js";
+import userModel from "../models/user.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { generateToken, generateResetToken } from "../utils/tokens.js";
@@ -148,6 +149,11 @@ export const loginController = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
+    user = await userModel.findOne({ email }).select("+password");
+    role = "customer";
+  }
+
+  if (!user) {
     throw new AppError(
       ERROR_MESSAGES.INVALID_CREDENTIALS,
       HTTP_STATUS.UNAUTHORIZED
@@ -162,7 +168,7 @@ export const loginController = asyncHandler(async (req, res) => {
     );
   }
 
-  if (!user.isVerified) {
+  if (role === "admin" && !user.isVerified) {
     throw new AppError(
       ERROR_MESSAGES.USER_NOT_VERIFIED,
       HTTP_STATUS.UNAUTHORIZED
@@ -235,7 +241,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
     const resetLink = `http://localhost:${config.PORT}/api/auth/reset-password/${resetToken}`;
 
     sendPasswordResetEmail({
-      email: config.TEST_RECIEVER_EMAIL || email,
+      email: email,
       name,
       resetLink
     }).then(sent => {
@@ -327,7 +333,7 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
   );
 
   sendVerificationEmail({
-    email: config.TEST_RECIEVER_EMAIL || email,
+    email: email,
     name,
     verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`,
   }).then(sent => {

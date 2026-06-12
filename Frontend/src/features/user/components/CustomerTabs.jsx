@@ -1,11 +1,15 @@
-const tabs = [
-  { label: "All Customers", count: null },
-  { label: "Active", count: null },
-  { label: "Suspended", count: 14 },
-  { label: "Pending Review", count: null },
-];
+import { useSelector } from "react-redux";
 
 const CustomerTabs = ({ active, onChange }) => {
+  const users = useSelector((state) => state.user.users || []);
+
+  const tabs = [
+    { label: "All Customers", count: users.length },
+    { label: "Active", count: users.filter((u) => u.status === "online").length },
+    { label: "Suspended", count: users.filter((u) => u.status === "offline" && u.isVerified === false).length },
+    { label: "Pending Review", count: users.filter((u) => !u.isVerified).length },
+  ];
+
   return (
     <div className="flex items-center border-b border-neutral-100 dark:border-neutral-800">
       {tabs.map((t) => (
@@ -19,7 +23,7 @@ const CustomerTabs = ({ active, onChange }) => {
           }`}
         >
           {t.label}
-          {t.count && (
+          {t.count !== null && t.count !== undefined && (
             <span className="bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 text-[10px] px-[6px] py-[2px] rounded-full">
               {t.count}
             </span>
