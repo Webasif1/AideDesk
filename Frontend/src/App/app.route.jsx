@@ -135,7 +135,7 @@ const AppRoutes = createBrowserRouter([
       {
         path: "/dashboard/customers",
         element: (
-          <Authenticated roles={["admin", "agent"]}>
+          <Authenticated roles={["admin"]}>
             <Customers />
           </Authenticated>
         ),

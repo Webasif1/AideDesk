@@ -120,7 +120,7 @@ export const getTickets = asyncHandler(async (req, res) => {
   if (req.role === "customer") {
     filter.customerId = req.userId;
   } else if (req.role === "agent") {
-    filter.$or = [{ assignedAgent: req.userId }, { assignedAgent: null }];
+    filter.assignedAgent = req.userId;
   }
 
   if (status) filter.status = status;
@@ -168,24 +168,33 @@ export const getTicketStats = asyncHandler(async (req, res) => {
   const oid = new mongoose.Types.ObjectId(companyId);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
+  // Agents see stats scoped to their own assigned tickets only.
+  const isAgent = req.role === "agent";
+  const agentOid = isAgent ? new mongoose.Types.ObjectId(req.userId) : null;
+  const base = isAgent ? { companyId, assignedAgent: agentOid } : { companyId };
+  const matchOid = isAgent ? { companyId: oid, assignedAgent: agentOid } : { companyId: oid };
+
   const [
     total, open, pending, inProgress, resolved, closed, urgent, slaBreached,
     aiResolved, newThisWeek, respAgg,
   ] = await Promise.all([
-    ticketModel.countDocuments({ companyId }),
-    ticketModel.countDocuments({ companyId, status: "open" }),
-    ticketModel.countDocuments({ companyId, status: "pending" }),
-    ticketModel.countDocuments({ companyId, status: "in_progress" }),
-    ticketModel.countDocuments({ companyId, status: "resolved" }),
-    ticketModel.countDocuments({ companyId, status: "closed" }),
-    ticketModel.countDocuments({ companyId, priority: "urgent", status: { $nin: ["resolved", "closed"] } }),
-    ticketModel.countDocuments({ companyId, slaBreached: true }),
-    // AI-resolved = reached resolved/closed without a human agent ever assigned.
-    ticketModel.countDocuments({ companyId, status: { $in: ["resolved", "closed"] }, assignedAgent: null }),
-    ticketModel.countDocuments({ companyId, createdAt: { $gte: weekAgo } }),
+    ticketModel.countDocuments(base),
+    ticketModel.countDocuments({ ...base, status: "open" }),
+    ticketModel.countDocuments({ ...base, status: "pending" }),
+    ticketModel.countDocuments({ ...base, status: "in_progress" }),
+    ticketModel.countDocuments({ ...base, status: "resolved" }),
+    ticketModel.countDocuments({ ...base, status: "closed" }),
+    ticketModel.countDocuments({ ...base, priority: "urgent", status: { $nin: ["resolved", "closed"] } }),
+    ticketModel.countDocuments({ ...base, slaBreached: true }),
+    // Admin: AI-resolved = resolved/closed without any human agent assigned.
+    // Agent: their own resolved+closed ticket count.
+    isAgent
+      ? ticketModel.countDocuments({ ...base, status: { $in: ["resolved", "closed"] } })
+      : ticketModel.countDocuments({ companyId, status: { $in: ["resolved", "closed"] }, assignedAgent: null }),
+    ticketModel.countDocuments({ ...base, createdAt: { $gte: weekAgo } }),
     // Avg first-response latency (mins) over tickets that received a response.
     ticketModel.aggregate([
-      { $match: { companyId: oid, firstResponseAt: { $ne: null } } },
+      { $match: { ...matchOid, firstResponseAt: { $ne: null } } },
       { $group: { _id: null, avgMs: { $avg: { $subtract: ["$firstResponseAt", "$createdAt"] } } } },
     ]),
   ]);
