@@ -98,18 +98,17 @@ export const useChat = () => {
     [dispatch]
   );
 
-  // Copilot pipeline: send message + handle resolved/escalate response
+  // Copilot pipeline: send message → backend returns { userMessage, aiMessage,
+  // escalated }. Add both to the thread (deduped against the socket broadcast).
   const sendCopilotMessage = useCallback(
     async ({ chatId, content, attachment }) => {
       return handleRequest(
         sendCopilotMessageAPI,
         { chatId, content, attachment },
         (res) => {
-          if (res?.escalate && res?.ticketDraft) {
-            dispatch(setTicketDraft({ chatId, ...res.ticketDraft }));
-          } else if (res?.resolved && res?.message) {
-            dispatch(addMessage(res.message));
-          }
+          const { userMessage, aiMessage } = res?.data || {};
+          if (userMessage) dispatch(addMessage(userMessage));
+          if (aiMessage) dispatch(addMessage(aiMessage));
         }
       );
     },

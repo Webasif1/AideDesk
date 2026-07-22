@@ -60,6 +60,11 @@ export const updateUserValidator = [
     .trim()
     .isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
 
+  body('phone')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isLength({ max: 30 }).withMessage('Phone number cannot exceed 30 characters'),
+
   body('profileImage')
     .optional()
     .trim()
@@ -71,10 +76,14 @@ export const updateUserValidator = [
 ];
 
 export const changeUserPasswordValidator = [
+  // Trim first — generated/allowed passwords never contain whitespace, so a
+  // copy-pasted trailing space must not cause a false "incorrect password".
   body('currentPassword')
+    .trim()
     .notEmpty().withMessage('Current password is required'),
 
   body('newPassword')
+    .trim()
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8, max: 32 }).withMessage('Password must be between 8 and 32 characters')
     .matches(/^[a-zA-Z0-9!@#\$%\^\&*\)\(+=._-]+$/g)

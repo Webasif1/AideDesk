@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
@@ -9,29 +10,66 @@ import ChatCustomerInfo from "../components/ChatCustomerInfo";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 import { useChat } from "../hooks/useChat";
 
+// Customer landing when they have no conversation open yet.
+const CustomerEmpty = ({ onCreate }) => (
+  <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50 dark:bg-[#111] gap-[14px] px-6 text-center">
+    <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+      <span className="material-symbols-outlined text-[32px] text-neutral-300 dark:text-neutral-600">
+        support_agent
+      </span>
+    </div>
+    <div>
+      <p className="text-[15px] font-semibold text-neutral-700 dark:text-neutral-200">
+        No conversations yet
+      </p>
+      <p className="text-[12px] text-neutral-400 mt-[2px] max-w-[320px]">
+        Create a support ticket and our AI assistant will start helping you right away.
+      </p>
+    </div>
+    <button
+      onClick={onCreate}
+      className="mt-[4px] flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
+    >
+      <span className="material-symbols-outlined text-[18px]">add</span>
+      Create a Ticket
+    </button>
+  </div>
+);
+
 const ChatScreen = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const chatParam = searchParams.get("chat");
+
   const [activeConversation, setActiveConversation] = useState(null);
   const [showInfo, setShowInfo] = useState(true);
 
-  const { getChats, createChat, chats } = useChat();
+  const { getChats, getChat, chats } = useChat();
   const role = useSelector((s) => s.auth.role);
+  const isCustomer = role === "customer";
 
-  // Load chats on mount; customers without an active chat get one created
   useEffect(() => {
     getChats({}).catch(() => {});
   }, [getChats]);
 
+  // Open the deep-linked chat (from a ticket row), else the most recent one.
   useEffect(() => {
-    if (role === "customer" && chats.length === 0) {
-      createChat()
-        .then((res) => {
-          if (res?.data) setActiveConversation(res.data);
-        })
-        .catch(() => {});
-    } else if (!activeConversation && chats.length > 0) {
-      setActiveConversation(chats[0]);
+    if (chatParam) {
+      if (activeConversation?._id === chatParam) return;
+      const found = chats.find((c) => c._id === chatParam);
+      if (found) {
+        setActiveConversation(found);
+      } else {
+        getChat(chatParam)
+          .then((res) => {
+            if (res?.data?.chat) setActiveConversation(res.data.chat);
+          })
+          .catch(() => {});
+      }
+      return;
     }
-  }, [role, chats, activeConversation, createChat]);
+    if (!activeConversation && chats.length > 0) setActiveConversation(chats[0]);
+  }, [chatParam, chats, activeConversation, getChat]);
 
   return (
     <PageWrapper>
@@ -45,21 +83,24 @@ const ChatScreen = () => {
             className="flex flex-1 overflow-hidden"
             style={{ height: "calc(100vh - 64px)" }}
           >
-            <motion.div
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
-            >
-              <ChatConversationList
-                conversations={chats}
-                activeId={activeConversation?._id}
-                onSelect={(conv) => {
-                  setActiveConversation(conv);
-                  setShowInfo(true);
-                }}
-              />
-            </motion.div>
+            {/* Conversation list — hidden for customers (single support thread) */}
+            {!isCustomer && (
+              <motion.div
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
+              >
+                <ChatConversationList
+                  conversations={chats}
+                  activeId={activeConversation?._id}
+                  onSelect={(conv) => {
+                    setActiveConversation(conv);
+                    setShowInfo(true);
+                  }}
+                />
+              </motion.div>
+            )}
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -70,15 +111,21 @@ const ChatScreen = () => {
                 transition={{ duration: 0.18 }}
                 className="flex-1 flex overflow-hidden"
               >
-                <ChatWindow
-                  conversation={activeConversation}
-                  onClose={() => setActiveConversation(null)}
-                />
+                {isCustomer && !activeConversation ? (
+                  <CustomerEmpty onCreate={() => navigate("/dashboard/tickets")} />
+                ) : (
+                  <ChatWindow
+                    conversation={activeConversation}
+                    onClose={
+                      isCustomer ? undefined : () => setActiveConversation(null)
+                    }
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
 
             <AnimatePresence>
-              {activeConversation && showInfo && role !== "customer" && (
+              {activeConversation && showInfo && !isCustomer && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -104,7 +151,7 @@ const ChatScreen = () => {
               )}
             </AnimatePresence>
 
-            {activeConversation && !showInfo && role !== "customer" && (
+            {activeConversation && !showInfo && !isCustomer && (
               <button
                 onClick={() => setShowInfo(true)}
                 className="w-[36px] border-l border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shrink-0"

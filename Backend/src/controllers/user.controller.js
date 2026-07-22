@@ -280,6 +280,7 @@ export const getMe = asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: req.role,
       companyId: req.companyId,
       profileImage: user.profileImage,
@@ -292,13 +293,14 @@ export const getMe = asyncHandler(async (req, res) => {
 
 // ============================================
 // PATCH /api/users/me  (protected — customer)
-// Allowed: name, profileImage, status
+// Allowed: name, phone, profileImage, status
 // ============================================
 export const updateMe = asyncHandler(async (req, res) => {
-  const { name, profileImage, status } = req.body;
+  const { name, phone, profileImage, status } = req.body;
 
   const updates = {};
   if (name !== undefined) updates.name = name;
+  if (phone !== undefined) updates.phone = phone;
   if (profileImage !== undefined) updates.profileImage = profileImage;
   if (status !== undefined) updates.status = status;
 
@@ -315,6 +317,7 @@ export const updateMe = asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
       profileImage: user.profileImage,
       status: user.status,

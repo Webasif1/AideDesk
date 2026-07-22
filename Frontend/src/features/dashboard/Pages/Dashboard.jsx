@@ -5,6 +5,7 @@ import TicketVolumeChart from "../components/TicketVolumeChart";
 import CsatBreakdown from "../components/CsatBreakdown";
 import RecentTicketsTable from "../components/RecentTicketsTable";
 import QuickActions from "../components/QuickActions";
+import CustomerDashboard from "../components/CustomerDashboard";
 import GenerateReportModal from "../components/GenerateReportModal";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 import { SkeletonCard } from "../../../components/ui/Skeleton";
@@ -233,15 +234,23 @@ const Dashboard = () => {
   const workspaceId = activeWorkspaceId || userWorkspaceId;
 
   const isAgent = role === "agent";
+  const isCustomer = role === "customer";
 
   const loadStats = useCallback(() => {
+    // Customers don't have access to the admin/agent stats endpoints.
+    if (isCustomer) return;
     getTicketStats().catch(() => {});
     if (!isAgent) getAgentStats().catch(() => {});
-  }, [getTicketStats, getAgentStats, isAgent]);
+  }, [getTicketStats, getAgentStats, isAgent, isCustomer]);
 
   useEffect(() => {
     loadStats();
   }, [loadStats, workspaceId]);
+
+  // ── Customer layout (mini dashboard) ─────────────────────────────────────────
+  if (isCustomer) {
+    return <CustomerDashboard user={user} />;
+  }
 
   // ── Agent layout ───────────────────────────────────────────────────────────
   if (isAgent) {

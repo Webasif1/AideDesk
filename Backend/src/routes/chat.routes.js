@@ -8,9 +8,11 @@ import {
   assignAgent,
   updateChatStatus,
   getChatStats,
+  sendCopilotMessage,
 } from '../controllers/chat.controller.js';
 
 import { protect, requireRole } from '../middleware/auth.middleware.js';
+import { handleChatUpload } from '../middleware/upload.middleware.js';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validation.middleware.js';
 
@@ -54,6 +56,14 @@ router.get('/', getChats);
  * @access  Private — All roles (access-checked per role inside controller)
  */
 router.get('/:id', getChat);
+
+/**
+ * @route   POST /api/chats/:id/messages
+ * @desc    Customer sends a message; copilot triages/replies or escalates.
+ *          Optional image/PDF attachment (multipart form-data).
+ * @access  Private — Customer (owns the chat)
+ */
+router.post('/:id/messages', requireRole('customer'), handleChatUpload, sendCopilotMessage);
 
 /**
  * @route   PATCH /api/chats/:id/assign

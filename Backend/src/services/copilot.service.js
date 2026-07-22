@@ -2,10 +2,12 @@ import { callOpenRouter } from './openrouter.service.js';
 import { triageMessage } from './triage.service.js';
 import { getRelevantKnowledge } from './knowledge.service.js';
 
+// Model chosen by triage complexity — cheaper/faster for simple, stronger for complex.
+// Adjust to whichever OpenRouter models the account has access to.
 const MODEL_MAP = {
-  simple: 'google/gemini-2.5-flash-image',
-  medium: 'minimax/minimax-m2.5:free',
-  complex: 'minimax/minimax-m2.5:free'
+  simple: 'x-ai/grok-3-mini-beta',
+  medium: 'deepseek/deepseek-chat-v3-0324:free',
+  complex: 'deepseek/deepseek-r1:free'
 };
 
 // Phrases that signal AI is not confident enough to answer

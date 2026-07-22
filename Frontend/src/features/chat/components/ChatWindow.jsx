@@ -8,13 +8,19 @@ import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
 import { clearMessages } from "../../message/state/message.slice";
 
+// Backend message role is `user` | `agent` | `ai`. Map it to the display roles
+// ChatBubble/ChatAvatar understand (`customer` | `agent` | `ai`).
 const senderFromMessage = (msg) => {
-  const role = msg.senderType || msg.sender?.role || "customer";
-  return {
-    role,
-    name: msg.sender?.name || (role === "copilot" ? "AideDesk AI" : role),
-    status: msg.sender?.status || "online",
-  };
+  const r = msg.role || msg.senderType;
+  if (r === "ai" || r === "copilot")
+    return { role: "ai", name: "AideDesk AI", status: "online" };
+  if (r === "agent")
+    return {
+      role: "agent",
+      name: msg.sender?.name || "Support Agent",
+      status: msg.sender?.status || "online",
+    };
+  return { role: "customer", name: msg.sender?.name || "You", status: "online" };
 };
 
 const DateDivider = ({ label }) => (
@@ -180,7 +186,7 @@ const ChatWindow = ({ conversation, onClose }) => {
                 <ChatBubble
                   message={{
                     sender: {
-                      role: copilotTyping ? "copilot" : "customer",
+                      role: copilotTyping ? "ai" : "customer",
                       name: copilotTyping ? "AideDesk AI" : "Customer",
                     },
                     text: "",

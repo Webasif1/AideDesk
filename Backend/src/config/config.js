@@ -44,6 +44,11 @@ export const config = {
   GOOGLE_USER_EMAIL: process.env.GOOGLE_USER_EMAIL,
   GOOGLE_USER_PASSWORD: process.env.GOOGLE_USER_PASSWORD,
   TEST_RECIEVER_EMAIL: process.env.TEST_RECIEVER_EMAIL,
+  // AI providers — copilot pipeline (OpenRouter for generation/triage, Gemini for
+  // attachment understanding, Anthropic optional for classification).
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   // Optional — defaults to localhost. Set in production to the deployed frontend URL.
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   BACKEND_URL: process.env.BACKEND_URL || null,

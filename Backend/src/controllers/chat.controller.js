@@ -3,6 +3,7 @@ import messageModel from "../models/message.model.js";
 import agentModel from "../models/aget.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { handleCustomerReply } from "../services/copilotFlow.service.js";
 
 // ============================================
 // POST /api/chats
@@ -26,6 +27,7 @@ export const createChat = asyncHandler(async (req, res) => {
 
   const chat = await chatModel.create({
     company: req.companyId,
+    workspaceId: req.workspaceId, // required by schema; comes from the customer JWT
     user: req.userId,
     status: "active"
   });
@@ -34,6 +36,45 @@ export const createChat = asyncHandler(async (req, res) => {
     success: true,
     message: "Chat session started.",
     data: chat
+  });
+});
+
+// ============================================
+// POST /api/chats/:id/messages
+// Customer sends a message in a copilot chat. The AI triages, replies, or
+// escalates to a human agent. Optional image/PDF attachment (multipart).
+// ============================================
+export const sendCopilotMessage = asyncHandler(async (req, res) => {
+  const { content = "" } = req.body;
+  const text = content.trim();
+
+  if (!text && !req.file) {
+    throw new AppError("Message content or an attachment is required", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const chat = await chatModel.findById(req.params.id);
+  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
+
+  // Customer-only endpoint; must own the chat.
+  if (req.role !== "customer" || chat.user.toString() !== req.userId) {
+    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  if (chat.status === "closed") {
+    throw new AppError("This conversation is closed. Please open a new ticket.", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const result = await handleCustomerReply({
+    chat,
+    content: text || "(sent an attachment)",
+    file: req.file,
+    req,
+  });
+
+  res.status(HTTP_STATUS.CREATED).json({
+    success: true,
+    message: "Message sent",
+    data: result,
   });
 });
 
