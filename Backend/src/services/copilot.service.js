@@ -1,25 +1,25 @@
 import { callOpenRouter } from './openrouter.service.js';
 import { triageMessage } from './triage.service.js';
 import { getRelevantKnowledge } from './knowledge.service.js';
+import { config } from '../config/config.js';
 
 // Model chosen by triage complexity — cheaper/faster for simple, stronger for complex.
-// Adjust to whichever OpenRouter models the account has access to.
+// Env-driven (config.MODELS) so slots can be swapped without code changes.
+// `escalate` complexity still gets the strongest model so the AI attempts a reply
+// before any hand-off decision is made downstream.
 const MODEL_MAP = {
-  simple: 'x-ai/grok-3-mini-beta',
-  medium: 'deepseek/deepseek-chat-v3-0324:free',
-  complex: 'deepseek/deepseek-r1:free'
+  simple: config.MODELS.simple,
+  medium: config.MODELS.medium,
+  complex: config.MODELS.complex,
+  escalate: config.MODELS.complex
 };
 
-// Phrases that signal AI is not confident enough to answer
-const LOW_CONFIDENCE_SIGNALS = [
-  "i'm not sure",
-  'i cannot help',
-  "i don't know",
-  'please contact support',
-  'i am unable to',
-  'i need to escalate',
-  'beyond my ability'
-];
+// The AI is told to emit this exact phrase when it genuinely cannot resolve.
+const ESCALATION_SENTINEL = 'i need to escalate';
+
+// Customer explicitly asking for a human — immediate hand-off regardless of AI.
+const WANTS_HUMAN_RE =
+  /\b(human|real (person|agent|human)|live (agent|person|chat)|actual person|speak (to|with) (a|an|someone|somebody|a person)|talk (to|with) (a|an|someone|somebody|a person|an agent)|customer (service|support) (rep|representative|agent)|representative|agent please)\b/i;
 
 const buildSystemPrompt = ({
   knowledge,
@@ -59,7 +59,7 @@ export const runCopilot = async ({
   attachmentTypes = [],
   workspaceContext = {}
 }) => {
-  // Step 1: triage
+  // Step 1: triage (classification only — decides which model handles the reply)
   const triage = await triageMessage({
     message,
     conversationHistory,
@@ -68,38 +68,23 @@ export const runCopilot = async ({
 
   const { complexity, intent, sentiment, sentimentScore, urgency } = triage;
 
-  if (complexity === 'escalate') {
-    return {
-      escalate: true,
-      complexity,
-      intent,
-      sentiment,
-      sentimentScore,
-      urgency,
-      aiResponse: null,
-      model: null,
-      triage,
-      escalationReason: 'triage_escalate'
-    };
-  }
-
-  // Step 2: knowledge retrieval
+  // Step 2: knowledge retrieval (the "resources" the AI gets to try with)
   const knowledge = await getRelevantKnowledge({
     query: message,
     workspaceId,
     topK: 3
   });
 
-  // Step 3: prompt
+  // Step 3: prompt + model selection by complexity (escalate → strongest model)
   const systemPrompt = buildSystemPrompt({
     knowledge,
     pdfSummary,
     imageSummary,
     workspaceContext
   });
-  const model = MODEL_MAP[complexity];
+  const model = MODEL_MAP[complexity] || MODEL_MAP.medium;
 
-  // Step 4: model call
+  // Step 4: model call — the AI always attempts, even for 'escalate' complexity.
   let aiResponse = null;
   let failed = false;
   try {
@@ -117,17 +102,17 @@ export const runCopilot = async ({
     failed = true;
   }
 
-  // Step 5: confidence check
-  const isLowConfidence =
-    !aiResponse ||
-    aiResponse.trim().length < 20 ||
-    LOW_CONFIDENCE_SIGNALS.some(s => aiResponse.toLowerCase().includes(s));
-
-  const emotionalEscalation = urgency >= 4 && sentimentScore <= 2;
+  // Step 5: signals only — the flow layer decides whether to escalate, applying a
+  // strike threshold so a human is brought in only after repeated genuine failure.
+  const text = (aiResponse || '').trim();
+  const gaveUp = text.toLowerCase().includes(ESCALATION_SENTINEL);
+  const unresolved = failed || text.length < 20 || gaveUp;
+  const wantsHuman = WANTS_HUMAN_RE.test(message || '');
 
   return {
-    escalate: failed || isLowConfidence || emotionalEscalation,
-    aiResponse: isLowConfidence ? null : aiResponse,
+    aiResponse: text || null,
+    unresolved,
+    wantsHuman,
     complexity,
     intent,
     sentiment,
@@ -135,12 +120,7 @@ export const runCopilot = async ({
     urgency,
     model,
     triage,
-    escalationReason: failed
-      ? 'model_failure'
-      : isLowConfidence
-        ? 'low_confidence'
-        : emotionalEscalation
-          ? 'user_frustration'
-          : null
+    reasoning: triage?.reasoning || null,
+    escalationReason: failed ? 'model_failure' : gaveUp ? 'ai_gave_up' : null
   };
 };

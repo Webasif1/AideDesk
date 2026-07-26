@@ -1,6 +1,7 @@
 import { callOpenRouter } from './openrouter.service.js';
+import { config } from '../config/config.js';
 
-const GROK_MODEL = 'x-ai/grok-3-mini-beta';
+const GROK_MODEL = config.MODELS.triage;
 
 const VALID_INTENTS = [
   'billing_issue',

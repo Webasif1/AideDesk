@@ -13,6 +13,7 @@ import { analyzeImage } from "./imageVision.service.js";
 import { uploadPDFAndExtract } from "./fileContext.service.js";
 import { generateAgentBriefing } from "./agentBriefing.service.js";
 import { socketEmit, emitDomain } from "../sockets/emit.js";
+import { config } from "../config/config.js";
 
 // triage intent → ticket.category enum (billing|technical|account|general)
 const INTENT_TO_CATEGORY = {
@@ -44,6 +45,11 @@ const INTENT_TO_TICKET_LABEL = {
 
 const HANDOFF_MESSAGE =
   "Thanks for the details — I'm connecting you with a human specialist who can help further. They'll join this conversation shortly.";
+
+// Posted when the AI is stuck but hasn't hit the escalation threshold yet — it
+// keeps trying and asks the customer for more to work with.
+const PROBE_MESSAGE =
+  "I want to make sure I get this right. Could you share a little more detail — the exact steps you took, any error message, or a screenshot? That'll help me solve it for you.";
 
 // Understand an uploaded reference file so the copilot (and agent) can use it.
 const processAttachment = async (file, userMessage) => {
@@ -134,6 +140,56 @@ const escalateTicket = async ({ ticket, chat, conversationHistory, copilotAttemp
   return handoff;
 };
 
+// Decide what happens after the copilot runs for one turn:
+//  - customer asked for a human            → escalate now
+//  - AI resolved (gave a real answer)       → post it, reset strikes
+//  - AI stuck but under the strike threshold→ post a "need more detail" probe
+//  - AI stuck and at/over the threshold      → escalate with full context
+// Mutates `chat.copilotStrikes`; the caller persists the chat.
+const resolveTurn = async ({ chat, ticket, result, conversationHistory, req }) => {
+  const escalate = async (reason) => {
+    const aiMessage = await escalateTicket({
+      ticket,
+      chat,
+      conversationHistory,
+      copilotAttempt: result.aiResponse,
+      escalationReason: reason,
+      req,
+    });
+    return { aiMessage, escalated: true };
+  };
+
+  if (result.wantsHuman) {
+    chat.copilotStrikes = 0;
+    return escalate("customer_requested_human");
+  }
+
+  if (result.unresolved) {
+    chat.copilotStrikes = (chat.copilotStrikes || 0) + 1;
+    if (chat.copilotStrikes >= config.COPILOT_ESCALATE_STRIKES) {
+      chat.copilotStrikes = 0;
+      return escalate(result.escalationReason || "ai_unresolved");
+    }
+    // Still trying — keep the copilot engaged, ask for more to work with.
+    const aiMessage = await messageModel.create({
+      chat: chat._id,
+      content: PROBE_MESSAGE,
+      role: "ai",
+    });
+    return { aiMessage, escalated: false };
+  }
+
+  // Resolved — post the answer and clear the strike streak.
+  chat.copilotStrikes = 0;
+  const aiMessage = await messageModel.create({
+    chat: chat._id,
+    content: result.aiResponse,
+    role: "ai",
+  });
+  if (ticket && !ticket.firstResponseAt) ticket.firstResponseAt = new Date();
+  return { aiMessage, escalated: false };
+};
+
 const broadcastTicket = async (companyId, ticketId) => {
   try {
     const populated = await ticketModel
@@ -166,30 +222,18 @@ export const startTicketCopilot = async ({ ticket, chat, firstMessage, file, req
     });
 
     // Set AI-decided metadata on the ticket (customer never picks these).
-    const meta = deriveTicketMeta(result);
-    Object.assign(ticket, meta);
+    Object.assign(ticket, deriveTicketMeta(result));
+    ticket.aiSummary = result.reasoning || ticket.aiSummary;
+    await ticket.save(); // persist meta before a possible escalation reads it
 
-    let aiMessage;
-    if (!result.escalate && result.aiResponse) {
-      aiMessage = await messageModel.create({
-        chat: chat._id,
-        content: result.aiResponse,
-        role: "ai",
-      });
-      ticket.firstResponseAt = new Date();
-      ticket.aiSummary = result.triage?.reasoning || ticket.aiSummary;
-      await ticket.save();
-    } else {
-      await ticket.save(); // persist meta before escalation reads it
-      aiMessage = await escalateTicket({
-        ticket,
-        chat,
-        conversationHistory: [{ role: "user", content: firstMessage }],
-        copilotAttempt: result.aiResponse,
-        escalationReason: result.escalationReason || "triage_escalate",
-        req,
-      });
-    }
+    const { aiMessage, escalated } = await resolveTurn({
+      chat,
+      ticket,
+      result,
+      conversationHistory: [{ role: "user", content: firstMessage }],
+      req,
+    });
+    await ticket.save(); // resolveTurn may set firstResponseAt
 
     chat.latestMessage = aiMessage._id;
     chat.lastActivity = new Date();
@@ -198,7 +242,7 @@ export const startTicketCopilot = async ({ ticket, chat, firstMessage, file, req
 
     socketEmit.newMessage(chat._id, aiMessage);
     await broadcastTicket(req.companyId, ticket._id);
-    return { aiMessage, escalated: !!result.escalate };
+    return { aiMessage, escalated };
   } catch (err) {
     console.error("[copilotFlow] startTicketCopilot failed:", err.message);
     return { aiMessage: null, escalated: false };
@@ -218,6 +262,17 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
     senderModel: "user",
   });
   socketEmit.newMessage(chat._id, userMessage);
+
+  // Already handed to a human — the agent owns the thread; don't re-engage the AI.
+  // The customer's message is saved + broadcast so the assigned agent sees it live.
+  if (chat.assignedAgent) {
+    chat.latestMessage = userMessage._id;
+    chat.lastActivity = new Date();
+    chat.messageCount = await messageModel.countDocuments({ chat: chat._id });
+    await chat.save();
+    return { userMessage, aiMessage: null, escalated: true };
+  }
+
   socketEmit.copilotTyping(chat._id, true);
 
   let aiMessage = null;
@@ -248,32 +303,25 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
     });
 
     const ticket = chat.ticket ? await ticketModel.findById(chat.ticket) : null;
-    if (ticket) Object.assign(ticket, deriveTicketMeta(result));
-
-    if (!result.escalate && result.aiResponse) {
-      aiMessage = await messageModel.create({
-        chat: chat._id,
-        content: result.aiResponse,
-        role: "ai",
-      });
-      if (ticket) {
-        if (!ticket.firstResponseAt) ticket.firstResponseAt = new Date();
-        await ticket.save();
-      }
-    } else {
-      escalated = true;
-      if (ticket) await ticket.save();
-      aiMessage = await escalateTicket({
-        ticket,
-        chat,
-        conversationHistory: [...conversationHistory, { role: "user", content }],
-        copilotAttempt: result.aiResponse,
-        escalationReason: result.escalationReason || "triage_escalate",
-        req,
-      });
+    if (ticket) {
+      Object.assign(ticket, deriveTicketMeta(result));
+      await ticket.save();
     }
 
-    if (ticket) await broadcastTicket(req.companyId, ticket._id);
+    const outcome = await resolveTurn({
+      chat,
+      ticket,
+      result,
+      conversationHistory: [...conversationHistory, { role: "user", content }],
+      req,
+    });
+    aiMessage = outcome.aiMessage;
+    escalated = outcome.escalated;
+
+    if (ticket) {
+      await ticket.save(); // resolveTurn may set firstResponseAt
+      await broadcastTicket(req.companyId, ticket._id);
+    }
   } catch (err) {
     console.error("[copilotFlow] handleCustomerReply failed:", err.message);
   } finally {

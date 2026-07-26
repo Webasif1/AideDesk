@@ -32,6 +32,19 @@ if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV is not defined in environment variable");
 }
 
+// ── Copilot model funnel (env-driven so models can be swapped without code) ──
+// Chosen by triage complexity: triage classifies → simple/medium/complex generate.
+const MODELS = {
+  // No free Gemini is currently offered on OpenRouter; Gemma 4 (Google, JSON-capable)
+  // is the verified free stand-in. Set MODEL_TRIAGE to a Gemini slug once one is free.
+  triage: process.env.MODEL_TRIAGE || "google/gemma-4-26b-a4b-it:free",
+  simple: process.env.MODEL_SIMPLE || "openai/gpt-oss-20b:free",
+  medium: process.env.MODEL_MEDIUM || "google/gemma-4-26b-a4b-it:free",
+  complex: process.env.MODEL_COMPLEX || "openai/gpt-oss-20b:free",
+};
+// Agent hand-off briefing model — defaults to the medium tier.
+MODELS.briefing = process.env.MODEL_BRIEFING || MODELS.medium;
+
 export const config = {
   PORT: process.env.PORT || 3000,
   MONGO_URI: process.env.MONGO_URI,
@@ -49,6 +62,9 @@ export const config = {
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  // Copilot model funnel + escalation patience (AI "give-up" turns before a human).
+  MODELS,
+  COPILOT_ESCALATE_STRIKES: Number(process.env.COPILOT_ESCALATE_STRIKES) || 2,
   // Optional — defaults to localhost. Set in production to the deployed frontend URL.
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   BACKEND_URL: process.env.BACKEND_URL || null,

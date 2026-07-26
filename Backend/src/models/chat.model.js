@@ -45,6 +45,12 @@ const chatSchema = new mongoose.Schema(
       default: 0
     },
 
+    // Consecutive turns the copilot could not resolve — escalates at the threshold.
+    copilotStrikes: {
+      type: Number,
+      default: 0
+    },
+
     latestMessage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "message",
