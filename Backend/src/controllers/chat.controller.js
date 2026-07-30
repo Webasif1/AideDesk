@@ -4,12 +4,8 @@ import agentModel from "../models/aget.model.js";
 import ticketModel from "../models/ticket.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
-<<<<<<< HEAD
-import { answerChatMessage } from "../services/ticketCopilot.service.js";
-import { socketEmit, emitDomain } from "../sockets/emit.js";
-=======
+import { emitDomain } from "../sockets/emit.js";
 import { handleCustomerReply } from "../services/copilotFlow.service.js";
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 // ============================================
 // POST /api/chats
@@ -43,11 +39,7 @@ export const createChat = asyncHandler(async (req, res) => {
 
   const chat = await chatModel.create({
     company: req.companyId,
-<<<<<<< HEAD
-    workspaceId: req.workspaceId,
-=======
     workspaceId: req.workspaceId, // required by schema; comes from the customer JWT
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
     user: req.userId,
     status: "active"
   });
@@ -271,95 +263,6 @@ export const updateChatStatus = asyncHandler(async (req, res) => {
     success: true,
     message: `Chat marked as ${status}`,
     data: { chatId: chat._id, status: chat.status }
-  });
-});
-
-// ============================================
-// POST /api/chats/:id/messages
-// Customer sends a message; the AI copilot answers inline.
-// Response shape is what the chat UI expects:
-//   { resolved: true,  message }      → AI answered
-//   { escalate: true,  ticketDraft }  → needs a human; UI offers to raise a ticket
-// ============================================
-export const sendCopilotMessage = asyncHandler(async (req, res) => {
-  const { content } = req.body;
-
-  if (!content || !content.trim()) {
-    throw new AppError("Message content is required", HTTP_STATUS.BAD_REQUEST);
-  }
-
-  const chat = await chatModel.findById(req.params.id);
-  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
-
-  const isOwner = req.role === "customer" && chat.user.toString() === req.userId;
-  const isStaff =
-    (req.role === "admin" || req.role === "agent") &&
-    chat.company.toString() === req.companyId.toString();
-
-  if (!isOwner && !isStaff) {
-    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
-  }
-
-  if (chat.status === "closed") {
-    throw new AppError(
-      "This chat session is closed. Please start a new one.",
-      HTTP_STATUS.BAD_REQUEST
-    );
-  }
-
-  const isCustomer = req.role === "customer";
-
-  const userMessage = await messageModel.create({
-    chat: chat._id,
-    content: content.trim(),
-    role: isCustomer ? "user" : "agent",
-    sender: req.userId,
-    senderModel: isCustomer ? "user" : "agent"
-  });
-
-  await chatModel.findByIdAndUpdate(chat._id, {
-    latestMessage: userMessage._id,
-    lastActivity: new Date(),
-    $inc: { messageCount: 1 }
-  });
-
-  socketEmit.newMessage(chat._id.toString(), userMessage);
-
-  // Only customer messages trigger the copilot, and only while no human has
-  // taken the chat over — otherwise the AI would talk over the agent.
-  if (!isCustomer || chat.assignedAgent) {
-    return res.status(HTTP_STATUS.CREATED).json({
-      success: true,
-      resolved: false,
-      message: userMessage
-    });
-  }
-
-  const result = await answerChatMessage({
-    chat,
-    content: content.trim(),
-    companyId: chat.company,
-    workspaceId: chat.workspaceId
-  });
-
-  if (result.escalate) {
-    return res.status(HTTP_STATUS.OK).json({
-      success: true,
-      escalate: true,
-      message: result.message,
-      ticketDraft: {
-        title: content.trim().slice(0, 120),
-        description: content.trim(),
-        priority: result.triage?.urgency >= 4 ? "high" : "medium",
-        reason: result.escalationReason || "unknown"
-      }
-    });
-  }
-
-  res.status(HTTP_STATUS.OK).json({
-    success: true,
-    resolved: true,
-    message: result.message
   });
 });
 

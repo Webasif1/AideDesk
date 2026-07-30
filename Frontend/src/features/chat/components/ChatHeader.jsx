@@ -1,12 +1,5 @@
 import { useSelector } from "react-redux";
 import ChatAvatar from "./ChatAvatar";
-<<<<<<< HEAD
-import {
-  conversationCustomer,
-  conversationPresence,
-  conversationTag,
-} from "../lib/conversation";
-=======
 import { customerName } from "../../../lib/format";
 
 const STATUS_TEXT = {
@@ -20,21 +13,14 @@ const CHAT_STATUS_TAG = {
   waiting: { label: "Waiting", color: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400" },
   closed: { label: "Closed", color: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400" },
 };
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 const ChatHeader = ({ conversation, onClose }) => {
   const role = useSelector((s) => s.auth.role);
   if (!conversation) return null;
 
-<<<<<<< HEAD
-  const customer = conversationCustomer(conversation);
-  const tag = conversationTag(conversation);
-  const presence = conversationPresence(conversation);
-=======
   const isCustomerView = role === "customer";
   const agent = conversation.assignedAgent; // populated when escalated
   const customer = conversation.user; // populated customer
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
   // Resolve the counterpart the current viewer is talking to.
   let counterpart;
@@ -93,15 +79,9 @@ const ChatHeader = ({ conversation, onClose }) => {
         )}
 
         <ChatAvatar
-<<<<<<< HEAD
-          name={customer.name}
-          role="customer"
-          status={presence}
-=======
           name={counterpart.name}
           role={counterpart.avatarRole}
           status={counterpart.status}
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
           size="md"
           showStatus={!isAI}
         />
@@ -111,22 +91,6 @@ const ChatHeader = ({ conversation, onClose }) => {
             <h3 className="text-[14px] font-semibold text-black dark:text-white">
               {counterpart.name}
             </h3>
-<<<<<<< HEAD
-            <span
-              className={`text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide ${tag.color}`}
-            >
-              {tag.label}
-            </span>
-          </div>
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-[1px] flex items-center gap-[4px]">
-            <span
-              className={`w-[6px] h-[6px] rounded-full inline-block ${
-                presence === "online" ? "bg-emerald-500" : "bg-neutral-300"
-              }`}
-            />
-            {customer.email ||
-              (presence === "online" ? "Active now" : "Offline")}
-=======
             {tag && !isCustomerView && (
               <span
                 className={`text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide ${tag.color}`}
@@ -148,7 +112,6 @@ const ChatHeader = ({ conversation, onClose }) => {
               />
             )}
             {counterpart.subtitle}
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
           </p>
         </div>
       </div>

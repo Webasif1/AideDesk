@@ -22,10 +22,10 @@ const TicketRow = ({
   time,
   created,
   timeColor,
-<<<<<<< HEAD
   chatId,
   aiHandled,
   onOpen,
+  showRequester = true,
 }) => (
   <tr
     onClick={onOpen}
@@ -42,15 +42,6 @@ const TicketRow = ({
       chatId
         ? "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800"
         : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
-=======
-  onClick,
-  showRequester = true,
-}) => (
-  <tr
-    onClick={onClick}
-    className={`hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors group ${
-      onClick ? "cursor-pointer" : ""
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
     }`}
   >
     <td className="py-4 px-6">
@@ -106,18 +97,13 @@ const TicketRow = ({
       </div>
     </td>
     <td className="py-4 px-6 text-right">
-<<<<<<< HEAD
       <button
         onClick={(e) => e.stopPropagation()}
         className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        <span className="material-symbols-outlined">more_horiz</span>
-=======
-      <button className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
         <span className="material-symbols-outlined">
-          {onClick ? "chat_bubble_outline" : "more_horiz"}
+          {chatId ? "chat_bubble_outline" : "more_horiz"}
         </span>
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
       </button>
     </td>
   </tr>

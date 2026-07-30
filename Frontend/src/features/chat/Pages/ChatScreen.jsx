@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-<<<<<<< HEAD
-import { useSearchParams } from "react-router-dom";
-=======
 import { useNavigate, useSearchParams } from "react-router-dom";
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
@@ -52,43 +48,10 @@ const ChatScreen = () => {
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
 
-<<<<<<< HEAD
-  // Deep link from a ticket row: /dashboard/chat?chat=<chatId>
-  const [searchParams] = useSearchParams();
-  const requestedChatId = searchParams.get("chat");
-
-  // Load chats on mount; customers without an active chat get one created
-=======
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
   useEffect(() => {
     getChats({}).catch(() => {});
   }, [getChats]);
 
-<<<<<<< HEAD
-  // Honour the deep link first, then fall back to the default selection.
-  useEffect(() => {
-    if (requestedChatId) {
-      if (activeConversation?._id === requestedChatId) return;
-      const target = chats.find((c) => c._id === requestedChatId);
-      if (target) {
-        setActiveConversation(target);
-        return;
-      }
-      // Chats not loaded yet — wait rather than selecting the wrong thread.
-      if (chats.length === 0) return;
-    }
-
-    if (role === "customer" && chats.length === 0) {
-      createChat()
-        .then((res) => {
-          if (res?.data) setActiveConversation(res.data);
-        })
-        .catch(() => {});
-    } else if (!activeConversation && chats.length > 0) {
-      setActiveConversation(chats[0]);
-    }
-  }, [role, chats, activeConversation, createChat, requestedChatId]);
-=======
   // Open the deep-linked chat (from a ticket row), else the most recent one.
   useEffect(() => {
     if (chatParam) {
@@ -107,7 +70,6 @@ const ChatScreen = () => {
     }
     if (!activeConversation && chats.length > 0) setActiveConversation(chats[0]);
   }, [chatParam, chats, activeConversation, getChat]);
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
   return (
     <PageWrapper>

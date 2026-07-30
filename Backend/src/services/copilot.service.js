@@ -1,29 +1,3 @@
-<<<<<<< HEAD
-import { callOpenRouter } from "./openrouter.service.js";
-import { triageMessage } from "./triage.service.js";
-import { getRelevantKnowledge } from "./knowledge.service.js";
-
-// Per-complexity model override. `null` means "use the active provider"s default"
-// — the safe choice, since a hard-coded ID is only valid on one provider and a
-// wrong one fails at request time. Set these to OpenRouter IDs ("vendor/model")
-// to tier cost by complexity when running on OpenRouter.
-const MODEL_MAP = {
-  simple: null,
-  medium: null,
-  complex: null,
-};
-
-// Phrases that signal AI is not confident enough to answer
-const LOW_CONFIDENCE_SIGNALS = [
-  "i'm not sure",
-  "i cannot help",
-  "i don't know",
-  "please contact support",
-  "i am unable to",
-  "i need to escalate",
-  "beyond my ability",
-];
-=======
 import { callOpenRouter } from './openrouter.service.js';
 import { triageMessage } from './triage.service.js';
 import { getRelevantKnowledge } from './knowledge.service.js';
@@ -46,7 +20,6 @@ const ESCALATION_SENTINEL = 'i need to escalate';
 // Customer explicitly asking for a human — immediate hand-off regardless of AI.
 const WANTS_HUMAN_RE =
   /\b(human|real (person|agent|human)|live (agent|person|chat)|actual person|speak (to|with) (a|an|someone|somebody|a person)|talk (to|with) (a|an|someone|somebody|a person|an agent)|customer (service|support) (rep|representative|agent)|representative|agent please)\b/i;
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 const buildSystemPrompt = ({
   knowledge,
@@ -95,26 +68,7 @@ export const runCopilot = async ({
 
   const { complexity, intent, sentiment, sentimentScore, urgency } = triage;
 
-<<<<<<< HEAD
-  if (complexity === "escalate") {
-    return {
-      escalate: true,
-      complexity,
-      intent,
-      sentiment,
-      sentimentScore,
-      urgency,
-      aiResponse: null,
-      model: null,
-      triage,
-      escalationReason: "triage_escalate"
-    };
-  }
-
-  // Step 2: knowledge retrieval
-=======
   // Step 2: knowledge retrieval (the "resources" the AI gets to try with)
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
   const knowledge = await getRelevantKnowledge({
     query: message,
     workspaceId,
@@ -166,17 +120,7 @@ export const runCopilot = async ({
     urgency,
     model,
     triage,
-<<<<<<< HEAD
-    escalationReason: failed
-      ? "model_failure"
-      : isLowConfidence
-        ? "low_confidence"
-        : emotionalEscalation
-          ? "user_frustration"
-          : null
-=======
     reasoning: triage?.reasoning || null,
     escalationReason: failed ? 'model_failure' : gaveUp ? 'ai_gave_up' : null
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
   };
 };

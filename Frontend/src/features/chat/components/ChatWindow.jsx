@@ -8,21 +8,6 @@ import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
 import { clearMessages } from "../../message/state/message.slice";
 
-<<<<<<< HEAD
-// The API stores role as 'user' | 'agent' | 'ai' on the message itself; `sender`
-// is an id and is null for AI messages. Map that onto the roles the bubble and
-// avatar components expect.
-const ROLE_FROM_API = { user: "customer", agent: "agent", ai: "ai" };
-const DEFAULT_NAME = { customer: "You", agent: "Support Agent", ai: "AideDesk AI" };
-
-const senderFromMessage = (msg) => {
-  const role = ROLE_FROM_API[msg.role] || msg.sender?.role || "customer";
-  return {
-    role,
-    name: msg.sender?.name || DEFAULT_NAME[role] || role,
-    status: msg.sender?.status || "online",
-  };
-=======
 // Backend message role is `user` | `agent` | `ai`. Map it to the display roles
 // ChatBubble/ChatAvatar understand (`customer` | `agent` | `ai`).
 const senderFromMessage = (msg) => {
@@ -36,7 +21,6 @@ const senderFromMessage = (msg) => {
       status: msg.sender?.status || "online",
     };
   return { role: "customer", name: msg.sender?.name || "You", status: "online" };
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 };
 
 const DateDivider = ({ label }) => (

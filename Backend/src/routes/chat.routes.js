@@ -9,10 +9,7 @@ import {
   updateChatStatus,
   getChatStats,
   sendCopilotMessage,
-<<<<<<< HEAD
   confirmTicket,
-=======
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 } from '../controllers/chat.controller.js';
 
 import { protect, requireRole } from '../middleware/auth.middleware.js';
@@ -63,17 +60,11 @@ router.get('/:id', getChat);
 
 /**
  * @route   POST /api/chats/:id/messages
-<<<<<<< HEAD
- * @desc    Send a message into a chat. Customer messages on an unassigned chat
- *          are answered inline by the AI copilot.
- * @access  Private — chat owner (customer) or company staff
+ * @desc    Customer sends a message; copilot triages/replies or escalates.
+ *          Optional image/PDF attachment (multipart form-data).
+ * @access  Private — Customer (owns the chat)
  */
-router.post(
-  '/:id/messages',
-  [body('content').trim().notEmpty().withMessage('Message content is required')],
-  validate,
-  sendCopilotMessage
-);
+router.post('/:id/messages', requireRole('customer'), handleChatUpload, sendCopilotMessage);
 
 /**
  * @route   POST /api/chats/:id/confirm-ticket
@@ -81,13 +72,6 @@ router.post(
  * @access  Private — chat owner (customer) only
  */
 router.post('/:id/confirm-ticket', requireRole('customer'), confirmTicket);
-=======
- * @desc    Customer sends a message; copilot triages/replies or escalates.
- *          Optional image/PDF attachment (multipart form-data).
- * @access  Private — Customer (owns the chat)
- */
-router.post('/:id/messages', requireRole('customer'), handleChatUpload, sendCopilotMessage);
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 /**
  * @route   PATCH /api/chats/:id/assign

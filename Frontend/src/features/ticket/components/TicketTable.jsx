@@ -52,7 +52,6 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
     return list;
   }, [tickets, activeTab]);
 
-<<<<<<< HEAD
   // Opening a ticket takes you to its conversation — that thread is where the
   // AI's reply and any human follow-up live.
   const openTicket = useCallback(
@@ -85,29 +84,6 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
         : "text-neutral-900 dark:text-white",
     };
   });
-=======
-  // Customer rows deep-link to the ticket's copilot chat.
-  const openTicketChat = (t) => {
-    if (!isCustomer) return;
-    if (t.chat) navigate(`/dashboard/chat?chat=${t.chat}`);
-    else navigate("/dashboard/chat");
-  };
-
-  const rows = filtered.map((t) => ({
-    key: t._id,
-    status: ticketStatusLabel(t.status, t.slaBreached),
-    subject: t.title,
-    ticketId: t.ticketNumber || shortId(t._id),
-    category: cap(t.category),
-    requester: customerName(t.customerId),
-    company: t.customerId?.email || "—",
-    priority: ticketPriorityLabel(t.priority),
-    time: formatRelative(t.updatedAt || t.createdAt),
-    created: formatClock(t.createdAt),
-    timeColor: t.slaBreached ? "text-red-600 dark:text-red-400" : "text-neutral-900 dark:text-white",
-    onClick: isCustomer ? () => openTicketChat(t) : undefined,
-  }));
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
   // Requester column is meaningless for a customer (always themselves).
   const showRequester = !isCustomer;

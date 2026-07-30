@@ -11,11 +11,8 @@ import {
   scoreSentiment,
   generateEscalationBriefing
 } from "../services/ai.service.js";
-<<<<<<< HEAD
 import { answerTicket } from "../services/ticketCopilot.service.js";
-=======
 import { startTicketCopilot } from "../services/copilotFlow.service.js";
->>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 // Friendly labels for the ticket `source` enum (used by the CSAT breakdown).
 const SOURCE_LABELS = {
