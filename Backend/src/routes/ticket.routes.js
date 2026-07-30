@@ -18,6 +18,7 @@ import {
 import { createTicketValidator, updateTicketValidator } from '../validator/ticket.validator.js';
 import { validate } from '../middleware/validation.middleware.js';
 import { protect, requireRole } from '../middleware/auth.middleware.js';
+import { handleChatUpload } from '../middleware/upload.middleware.js';
 import { body } from 'express-validator';
 
 // All ticket routes require authentication
@@ -61,6 +62,7 @@ router.get('/analytics/csat', requireRole('admin', 'agent'), getTicketCsat);
 router.post(
   '/',
   requireRole('customer', 'agent', 'admin'),
+  handleChatUpload, // parses optional multipart attachment (customer flow) into req.file
   createTicketValidator,
   validate,
   createTicket

@@ -21,63 +21,83 @@ const TicketMetrics = () => {
     if (isStaff) getTicketStats().catch(() => {});
   }, [getTicketStats, isStaff, workspaceId]);
 
-  // Customer fallback — compute from the customer's own ticket list.
+  // Customer fallback — compute simple, relevant counts from their own tickets.
+  // (Avg response / resolution rate / new-this-week are staff-facing and omitted.)
   const derived = useMemo(() => {
     const list = tickets || [];
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const resolvedClosed = list.filter((t) => ["resolved", "closed"].includes(t.status)).length;
-    const responded = list.filter((t) => t.firstResponseAt);
-    const avgMins = responded.length
-      ? Math.round(
-          responded.reduce(
-            (s, t) => s + (new Date(t.firstResponseAt) - new Date(t.createdAt)),
-            0
-          ) /
-            responded.length /
-            60000
-        )
-      : null;
     return {
       total: list.length,
-      avgFirstResponseMins: avgMins,
-      resolutionRate: list.length ? Math.round((resolvedClosed / list.length) * 1000) / 10 : 0,
-      newThisWeek: list.filter((t) => new Date(t.createdAt).getTime() >= weekAgo).length,
+      open: list.filter((t) => t.status === "open").length,
+      inProgress: list.filter((t) => ["in_progress", "pending"].includes(t.status)).length,
+      resolved: list.filter((t) => ["resolved", "closed"].includes(t.status)).length,
     };
   }, [tickets]);
 
   const s = isStaff ? stats : derived;
   const ready = isStaff ? !!stats : true;
 
-  const metrics = [
-    {
-      label: "Total Tickets",
-      value: ready ? (s?.total ?? 0).toLocaleString() : "—",
-      badge: ready ? `${s?.open ?? "·"} open` : "",
-      badgeColor: "text-neutral-400",
-      icon: "confirmation_number",
-    },
-    {
-      label: "Avg Response",
-      value: ready ? formatMinutes(s?.avgFirstResponseMins ?? null) : "—",
-      badge: "first reply",
-      badgeColor: "text-neutral-400",
-      icon: "schedule",
-    },
-    {
-      label: "Resolution Rate",
-      value: ready ? `${s?.resolutionRate ?? 0}%` : "—",
-      badge: "resolved",
-      badgeColor: "text-green-600",
-      icon: "check_circle",
-    },
-    {
-      label: "New This Week",
-      value: ready ? `${s?.newThisWeek ?? 0}` : "—",
-      badge: "last 7d",
-      badgeColor: "text-neutral-400",
-      icon: "trending_up",
-    },
-  ];
+  // Customers see only relevant counts; staff keep the full performance strip.
+  const metrics = isStaff
+    ? [
+        {
+          label: "Total Tickets",
+          value: ready ? (s?.total ?? 0).toLocaleString() : "—",
+          badge: ready ? `${s?.open ?? "·"} open` : "",
+          badgeColor: "text-neutral-400",
+          icon: "confirmation_number",
+        },
+        {
+          label: "Avg Response",
+          value: ready ? formatMinutes(s?.avgFirstResponseMins ?? null) : "—",
+          badge: "first reply",
+          badgeColor: "text-neutral-400",
+          icon: "schedule",
+        },
+        {
+          label: "Resolution Rate",
+          value: ready ? `${s?.resolutionRate ?? 0}%` : "—",
+          badge: "resolved",
+          badgeColor: "text-green-600",
+          icon: "check_circle",
+        },
+        {
+          label: "New This Week",
+          value: ready ? `${s?.newThisWeek ?? 0}` : "—",
+          badge: "last 7d",
+          badgeColor: "text-neutral-400",
+          icon: "trending_up",
+        },
+      ]
+    : [
+        {
+          label: "Total Tickets",
+          value: (s?.total ?? 0).toLocaleString(),
+          badge: "all time",
+          badgeColor: "text-neutral-400",
+          icon: "confirmation_number",
+        },
+        {
+          label: "Open",
+          value: `${s?.open ?? 0}`,
+          badge: "awaiting",
+          badgeColor: "text-neutral-400",
+          icon: "radio_button_checked",
+        },
+        {
+          label: "In Progress",
+          value: `${s?.inProgress ?? 0}`,
+          badge: "active",
+          badgeColor: "text-neutral-400",
+          icon: "pending",
+        },
+        {
+          label: "Resolved",
+          value: `${s?.resolved ?? 0}`,
+          badge: "completed",
+          badgeColor: "text-green-600",
+          icon: "check_circle",
+        },
+      ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[24px] mb-10">

@@ -1,6 +1,7 @@
 import { callOpenRouter } from './openrouter.service.js';
+import { config } from '../config/config.js';
 
-const BRIEFING_MODEL = 'deepseek/deepseek-chat-v3-0324:free';
+const BRIEFING_MODEL = config.MODELS.briefing;
 
 // Markdown briefing pushed to agent the moment they're assigned.
 export const generateAgentBriefing = async ({

@@ -11,7 +11,11 @@ import {
   scoreSentiment,
   generateEscalationBriefing
 } from "../services/ai.service.js";
+<<<<<<< HEAD
 import { answerTicket } from "../services/ticketCopilot.service.js";
+=======
+import { startTicketCopilot } from "../services/copilotFlow.service.js";
+>>>>>>> aae7b5cb8fd64ce2fd9c76e4a3b10a264c39f62f
 
 // Friendly labels for the ticket `source` enum (used by the CSAT breakdown).
 const SOURCE_LABELS = {
@@ -54,15 +58,62 @@ const emitTicketEvent = (companyId, ticketId, event) => {
 export const createTicket = asyncHandler(async (req, res) => {
   const { title, description, category, priority, source, tags, chat: chatId, customerId: bodyCustomerId } = req.body;
 
-  let customerId;
+  // ── Customer flow: ticket spawns a copilot-managed chat ────────────────────
+  // Customer never picks priority/category — the copilot triage sets them.
   if (req.role === "customer") {
-    customerId = req.userId;
-  } else {
-    if (!bodyCustomerId) {
-      throw new AppError("customerId is required when agent or admin creates a ticket", HTTP_STATUS.BAD_REQUEST);
-    }
-    customerId = bodyCustomerId;
+    const ticket = await ticketModel.create({
+      title,
+      description,
+      companyId: req.companyId,
+      customerId: req.userId,
+      source: "portal",
+    });
+
+    const chat = await chatModel.create({
+      company: req.companyId,
+      workspaceId: req.workspaceId,
+      user: req.userId,
+      ticket: ticket._id,
+      status: "active",
+    });
+    ticket.chat = chat._id;
+    await ticket.save();
+
+    // Seed the customer's opening message (the ticket description) into the chat.
+    const firstMsg = await messageModel.create({
+      chat: chat._id,
+      content: description,
+      role: "user",
+      sender: req.userId,
+      senderModel: "user",
+    });
+    chat.latestMessage = firstMsg._id;
+    chat.messageCount = 1;
+    await chat.save();
+
+    emitTicketEvent(req.companyId, ticket._id, "ticketCreated");
+
+    // Run the copilot in the background — the AI reply/escalation arrives via socket.
+    startTicketCopilot({
+      ticket,
+      chat,
+      firstMessage: description,
+      file: req.file,
+      req,
+    }).catch((err) => console.error("[createTicket] copilot flow failed:", err.message));
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: "Ticket created. Our assistant is reviewing it now.",
+      data: { ticket, chatId: chat._id },
+    });
   }
+
+  // ── Staff flow: create on behalf of a customer (unchanged) ─────────────────
+  if (!bodyCustomerId) {
+    throw new AppError("customerId is required when agent or admin creates a ticket", HTTP_STATUS.BAD_REQUEST);
+  }
+  const customerId = bodyCustomerId;
 
   if (chatId) {
     const chat = await chatModel.findById(chatId);

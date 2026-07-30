@@ -3,6 +3,7 @@ import chatModel from "../models/chat.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { classifyIntent, scoreSentiment, generateReplySuggestions } from "../services/ai.service.js";
+import { socketEmit } from "../sockets/emit.js";
 
 // ============================================
 // Helper — verify the requesting user has access to the given chat
@@ -50,6 +51,10 @@ export const sendMessage = asyncHandler(async (req, res) => {
     lastActivity: new Date(),
     $inc: { messageCount: 1 },
   });
+
+  // Broadcast to the chat room so the other party (e.g. the customer after an
+  // escalation) sees the agent's reply in real time.
+  socketEmit.newMessage(chatId, message);
 
   // Fire-and-forget AI classification for customer messages only
   if (req.role === "customer") {

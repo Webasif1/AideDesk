@@ -1,12 +1,30 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useAuth } from "../../auth/hooks/useAuth";
+import { useUser } from "../../user/hooks/useUser";
+import { toast } from "../../../components/ui/toast";
 
-const statusOptions = [
-  { value: "online", label: "Online", color: "bg-emerald-500" },
-  { value: "away", label: "Away", color: "bg-amber-400" },
-  { value: "offline", label: "Offline", color: "bg-neutral-400" },
-];
+const STATUS_META = {
+  online: { label: "Online", color: "bg-emerald-500", text: "text-emerald-600" },
+  away: { label: "Away", color: "bg-amber-400", text: "text-amber-500" },
+  offline: { label: "Offline", color: "bg-neutral-400", text: "text-neutral-400" },
+};
+
+const ROLE_LABEL = {
+  admin: "Administrator",
+  agent: "Agent",
+  customer: "Customer",
+};
+
+const initialsFromName = (name) =>
+  (name || "")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase() || "U";
 
 function useClickOutside(ref, handler) {
   useEffect(() => {
@@ -21,13 +39,37 @@ function useClickOutside(ref, handler) {
 
 const TopBar = () => {
   const navigate = useNavigate();
+  const { handleLogout, getMe } = useAuth();
+  const { updateMe } = useUser();
+
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [status, setStatus] = useState("online");
   const [readNotifs, setReadNotifs] = useState(new Set());
-  
+  const [savingStatus, setSavingStatus] = useState(false);
+
   const tickets = useSelector((state) => state.ticket.tickets || []);
   const user = useSelector((state) => state.auth.user);
+  const role = useSelector((state) => state.auth.role);
+
+  const isCustomer = role === "customer";
+
+  // Real profile values (fall back gracefully while hydrating)
+  const displayName = user?.fullName || user?.name || "User";
+  const email = user?.email || "";
+  const roleLabel = ROLE_LABEL[role] || "Member";
+  const initials = initialsFromName(displayName);
+  const profileImage = user?.profileImage;
+
+  // Status driven by the real user value. Customers are limited to online/offline.
+  const [status, setStatus] = useState(user?.status || "online");
+  useEffect(() => {
+    if (user?.status) setStatus(user.status);
+  }, [user?.status]);
+
+  const statusValues = isCustomer
+    ? ["online", "offline"]
+    : ["online", "away", "offline"];
+  const currentStatus = STATUS_META[status] || STATUS_META.online;
 
   const notifRef = useRef(null);
   const profileRef = useRef(null);
@@ -36,7 +78,6 @@ const TopBar = () => {
   useClickOutside(profileRef, () => setProfileOpen(false));
 
   const notifs = tickets.slice(0, 5).map((t) => {
-    // If assigned to current user
     const isAssignedToMe = (t.assignedAgent?._id || t.assignedAgent) === user?.id;
 
     return {
@@ -50,7 +91,6 @@ const TopBar = () => {
   });
 
   const unreadCount = notifs.filter((n) => n.unread).length;
-  const currentStatus = statusOptions.find((s) => s.value === status) || statusOptions[0];
 
   const markAllRead = () => {
     const allIds = notifs.map((n) => n.id);
@@ -61,9 +101,34 @@ const TopBar = () => {
     setReadNotifs(new Set([...readNotifs, id]));
   };
 
-  const handleStatusChange = (val) => {
-    setStatus(val);
+  const handleStatusChange = async (val) => {
+    if (val === status) {
+      setProfileOpen(false);
+      return;
+    }
+    const prev = status;
+    setStatus(val); // optimistic
     setProfileOpen(false);
+
+    // Only customers persist status here (backend PATCH /api/users/me).
+    if (!isCustomer) return;
+
+    setSavingStatus(true);
+    try {
+      await updateMe({ status: val });
+      await getMe({ silent: true }).catch(() => {});
+    } catch {
+      setStatus(prev); // revert on failure
+      toast("Couldn't update status.", { type: "error" });
+    } finally {
+      setSavingStatus(false);
+    }
+  };
+
+  const onLogout = async () => {
+    setProfileOpen(false);
+    await handleLogout();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -75,7 +140,9 @@ const TopBar = () => {
         </span>
         <input
           className="bg-transparent border-none focus:ring-0 text-[13px] w-full font-['Inter'] outline-none text-black dark:text-white placeholder:text-neutral-400"
-          placeholder="Search tickets, agents, or knowledge..."
+          placeholder={
+            isCustomer ? "Search your tickets..." : "Search tickets, agents, or knowledge..."
+          }
           type="text"
         />
         <span className="text-[10px] bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-[6px] py-[2px] rounded text-neutral-400 font-mono shrink-0">
@@ -131,6 +198,11 @@ const TopBar = () => {
 
                 {/* List */}
                 <div className="max-h-[340px] overflow-y-auto divide-y divide-neutral-50">
+                  {notifs.length === 0 && (
+                    <div className="px-[20px] py-[24px] text-center text-[12px] text-neutral-400">
+                      No notifications yet.
+                    </div>
+                  )}
                   {notifs.map((n) => (
                     <div
                       key={n.id}
@@ -178,8 +250,14 @@ const TopBar = () => {
 
                 {/* Footer */}
                 <div className="border-t border-neutral-100 px-[20px] py-[12px]">
-                  <button className="w-full text-[12px] font-semibold text-neutral-500 hover:text-black transition-colors text-center">
-                    View all notifications
+                  <button
+                    onClick={() => {
+                      setNotifOpen(false);
+                      navigate("/dashboard/tickets");
+                    }}
+                    className="w-full text-[12px] font-semibold text-neutral-500 hover:text-black transition-colors text-center"
+                  >
+                    View all tickets
                   </button>
                 </div>
               </div>
@@ -220,16 +298,10 @@ const TopBar = () => {
           >
             <div className="text-right">
               <p className="text-[13px] font-semibold leading-tight text-black dark:text-white">
-                Alex Sterling
+                {displayName}
               </p>
               <p
-                className={`text-[11px] leading-tight font-medium ${
-                  status === "online"
-                    ? "text-emerald-600"
-                    : status === "away"
-                      ? "text-amber-500"
-                      : "text-neutral-400"
-                }`}
+                className={`text-[11px] leading-tight font-medium ${currentStatus.text}`}
               >
                 {currentStatus.label}
               </p>
@@ -237,8 +309,18 @@ const TopBar = () => {
 
             {/* Avatar with status dot */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center border border-neutral-200 group-hover:border-neutral-400 transition-colors">
-                <span className="text-[13px] font-bold text-white">AS</span>
+              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center border border-neutral-200 group-hover:border-neutral-400 transition-colors overflow-hidden">
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[13px] font-bold text-white">
+                    {initials}
+                  </span>
+                )}
               </div>
               {/* Status badge on avatar */}
               <span
@@ -253,19 +335,29 @@ const TopBar = () => {
               {/* Profile summary */}
               <div className="px-[16px] py-[14px] border-b border-neutral-100 flex items-center gap-[12px]">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
-                    <span className="text-[13px] font-bold text-white">AS</span>
+                  <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center overflow-hidden">
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[13px] font-bold text-white">
+                        {initials}
+                      </span>
+                    )}
                   </div>
                   <span
                     className={`absolute -bottom-[3px] -right-[3px] w-[13px] h-[13px] rounded-full border-2 border-white ${currentStatus.color}`}
                   />
                 </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-black leading-tight">
-                    Alex Sterling
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-black leading-tight truncate">
+                    {displayName}
                   </p>
-                  <p className="text-[11px] text-neutral-500 leading-tight">
-                    Administrator
+                  <p className="text-[11px] text-neutral-500 leading-tight truncate">
+                    {email || roleLabel}
                   </p>
                 </div>
               </div>
@@ -275,38 +367,46 @@ const TopBar = () => {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-[8px] px-[4px]">
                   Status
                 </p>
-                {statusOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => handleStatusChange(opt.value)}
-                    className={`w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg text-left transition-all ${
-                      status === opt.value
-                        ? "bg-neutral-100"
-                        : "hover:bg-neutral-50"
-                    }`}
-                  >
-                    <span
-                      className={`w-[10px] h-[10px] rounded-full shrink-0 ${opt.color}`}
-                    />
-                    <span
-                      className={`text-[13px] font-medium ${
-                        status === opt.value ? "text-black" : "text-neutral-600"
+                {statusValues.map((val) => {
+                  const opt = STATUS_META[val];
+                  return (
+                    <button
+                      key={val}
+                      onClick={() => handleStatusChange(val)}
+                      disabled={savingStatus}
+                      className={`w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg text-left transition-all disabled:opacity-60 ${
+                        status === val ? "bg-neutral-100" : "hover:bg-neutral-50"
                       }`}
                     >
-                      {opt.label}
-                    </span>
-                    {status === opt.value && (
-                      <span className="material-symbols-outlined text-[16px] text-black ml-auto">
-                        check
+                      <span
+                        className={`w-[10px] h-[10px] rounded-full shrink-0 ${opt.color}`}
+                      />
+                      <span
+                        className={`text-[13px] font-medium ${
+                          status === val ? "text-black" : "text-neutral-600"
+                        }`}
+                      >
+                        {opt.label}
                       </span>
-                    )}
-                  </button>
-                ))}
+                      {status === val && (
+                        <span className="material-symbols-outlined text-[16px] text-black ml-auto">
+                          check
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Actions */}
               <div className="px-[12px] py-[8px] border-b border-neutral-100">
-                <button className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-neutral-50 text-left transition-colors">
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    navigate("/dashboard/settings");
+                  }}
+                  className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-neutral-50 text-left transition-colors"
+                >
                   <span className="material-symbols-outlined text-[18px] text-neutral-400">
                     manage_accounts
                   </span>
@@ -314,20 +414,12 @@ const TopBar = () => {
                     Profile Settings
                   </span>
                 </button>
-                <button className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-neutral-50 text-left transition-colors">
-                  <span className="material-symbols-outlined text-[18px] text-neutral-400">
-                    keyboard_alt
-                  </span>
-                  <span className="text-[13px] text-neutral-700">
-                    Keyboard Shortcuts
-                  </span>
-                </button>
               </div>
 
               {/* Logout */}
               <div className="px-[12px] py-[8px]">
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={onLogout}
                   className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-red-50 text-left transition-colors group/logout"
                 >
                   <span className="material-symbols-outlined text-[18px] text-neutral-400 group-hover/logout:text-red-500 transition-colors">

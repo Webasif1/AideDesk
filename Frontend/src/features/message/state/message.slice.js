@@ -26,8 +26,12 @@ const messageSlice = createSlice({
       }
     },
     addMessage: (state, action) => {
-      // Typically added to the end of the array
-      state.messages.push(action.payload);
+      // Dedupe by _id — the same message can arrive via the HTTP response and the
+      // socket `message:new` broadcast. Skip if we already have it.
+      const incoming = action.payload;
+      const id = incoming?._id;
+      if (id && state.messages.some((m) => m._id === id)) return;
+      state.messages.push(incoming);
     },
     setUnreadCount: (state, action) => {
       state.unreadCount = action.payload;

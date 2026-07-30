@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
@@ -11,6 +12,8 @@ import PageWrapper from "../../../App/Components/ui/PageWrapper";
 const Tickets = () => {
   const [activeTab, setActiveTab] = useState("All Tickets");
   const [showModal, setShowModal] = useState(false);
+  const role = useSelector((s) => s.auth.role);
+  const isCustomer = role === "customer";
 
   return (
     <PageWrapper>
@@ -27,10 +30,12 @@ const Tickets = () => {
             >
               <div>
                 <h2 className="text-[32px] font-bold text-black dark:text-white tracking-tight mb-2">
-                  Ticket Management
+                  {isCustomer ? "My Support Tickets" : "Ticket Management"}
                 </h2>
                 <p className="text-neutral-500 dark:text-neutral-400 text-[14px]">
-                  Review and manage support requests across all channels.
+                  {isCustomer
+                    ? "Track your requests and pick up the conversation with support."
+                    : "Review and manage support requests across all channels."}
                 </p>
               </div>
               <button

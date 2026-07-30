@@ -3,12 +3,12 @@ import { useSelector } from "react-redux";
 import Logo from "../../../components/ui/Logo";
 
 const baseItems = [
-  { label: "Dashboard", icon: "dashboard", path: "/dashboard", roles: ["admin", "agent"] },
+  { label: "Dashboard", icon: "dashboard", path: "/dashboard", roles: ["admin", "agent", "customer"] },
   { label: "Customers", icon: "group", path: "/dashboard/customers", roles: ["admin"] },
   { label: "Tickets", icon: "confirmation_number", path: "/dashboard/tickets", roles: ["admin", "agent", "customer"] },
   { label: "Chat", icon: "chat_bubble_outline", path: "/dashboard/chat", roles: ["admin", "agent", "customer"] },
   { label: "Team", icon: "badge", path: "/dashboard/team", roles: ["admin"] },
-  { label: "Settings", icon: "settings", path: "/dashboard/settings", roles: ["admin"] },
+  { label: "Settings", icon: "settings", path: "/dashboard/settings", roles: ["admin", "customer"] },
 ];
 
 const Sidebar = () => {

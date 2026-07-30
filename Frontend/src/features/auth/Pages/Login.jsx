@@ -32,7 +32,7 @@ const Login = () => {
       return;
     }
     if (role === "customer") {
-      navigate("/dashboard/chat", { replace: true });
+      navigate("/dashboard", { replace: true });
     } else if (role === "agent") {
       navigate("/dashboard", { replace: true });
     } else if (role === "admin") {

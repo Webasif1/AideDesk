@@ -5,6 +5,7 @@ import {
   getTicketVolume as getTicketVolumeAPI,
   getTicketCsat as getTicketCsatAPI,
   createTicket as createTicketAPI,
+  createCustomerTicket as createCustomerTicketAPI,
   getTickets as getTicketsAPI,
   getTicket as getTicketAPI,
   updateTicket as updateTicketAPI,
@@ -75,6 +76,13 @@ export const useTicket = () => {
       return handleRequest(createTicketAPI, ticketData, (res) => {
         // Option to prepend ticket or just fetch tickets again
       });
+    },
+    [dispatch]
+  );
+
+  const createCustomerTicket = useCallback(
+    async (data) => {
+      return handleRequest(createCustomerTicketAPI, data);
     },
     [dispatch]
   );
@@ -155,6 +163,7 @@ export const useTicket = () => {
     getTicketVolume,
     getTicketCsat,
     createTicket,
+    createCustomerTicket,
     getTickets,
     getTicket,
     updateTicket,
