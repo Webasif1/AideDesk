@@ -1,4 +1,10 @@
 import ChatAvatar from "./ChatAvatar";
+import {
+  conversationCustomer,
+  conversationPresence,
+  conversationTag,
+} from "../lib/conversation";
+import { formatClock } from "../../../lib/format";
 
 const InfoRow = ({ label, value, icon }) => (
   <div className="flex items-start gap-[10px] py-[10px] border-b border-neutral-50 dark:border-neutral-800 last:border-0">
@@ -17,28 +23,16 @@ const InfoRow = ({ label, value, icon }) => (
 const ChatCustomerInfo = ({ conversation }) => {
   if (!conversation) return null;
 
-  const { customer, tag } = conversation;
+  const customer = conversationCustomer(conversation);
+  const tag = conversationTag(conversation);
+  const presence = conversationPresence(conversation);
 
-  const ticketHistory = [
-    {
-      id: "#AD-4415",
-      subject: "Payment failed",
-      status: "Resolved",
-      date: "Mar 12",
-    },
-    {
-      id: "#AD-3901",
-      subject: "Plan upgrade query",
-      status: "Closed",
-      date: "Jan 28",
-    },
-    {
-      id: "#AD-3412",
-      subject: "Login issue",
-      status: "Resolved",
-      date: "Dec 05",
-    },
-  ];
+  // The chat document carries at most its own linked ticket; there is no
+  // per-customer ticket-history endpoint yet, so show that one when present.
+  const linkedTicket =
+    conversation.ticket && typeof conversation.ticket === "object"
+      ? conversation.ticket
+      : null;
 
   return (
     <div
@@ -53,24 +47,24 @@ const ChatCustomerInfo = ({ conversation }) => {
         <ChatAvatar
           name={customer.name}
           role="customer"
-          status={customer.status}
+          status={presence}
           size="lg"
         />
         <h3 className="text-[15px] font-bold text-black dark:text-white mt-[12px]">
           {customer.name}
         </h3>
         <p className="text-[12px] text-neutral-500 dark:text-neutral-400 mt-[2px]">
-          Customer · Growth Plan
+          Customer
         </p>
         <div className="flex items-center gap-[6px] mt-[10px]">
           <span
-            className={`text-[9px] font-bold px-[8px] py-[3px] rounded-full uppercase tracking-wide ${conversation.tagColor}`}
+            className={`text-[9px] font-bold px-[8px] py-[3px] rounded-full uppercase tracking-wide ${tag.color}`}
           >
-            {tag}
+            {tag.label}
           </span>
-          {conversation.priority === "high" && (
+          {linkedTicket?.priority === "urgent" && (
             <span className="text-[9px] font-bold px-[8px] py-[3px] rounded-full uppercase tracking-wide bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400">
-              High Priority
+              Urgent
             </span>
           )}
         </div>
@@ -81,42 +75,47 @@ const ChatCustomerInfo = ({ conversation }) => {
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-[12px] mb-[4px]">
           Contact Info
         </p>
-        <InfoRow icon="mail" label="Email" value="priya.sharma@email.com" />
-        <InfoRow icon="phone" label="Phone" value="+91 98765 43210" />
-        <InfoRow icon="language" label="Timezone" value="IST (UTC+5:30)" />
+        <InfoRow icon="mail" label="Email" value={customer.email || "—"} />
         <InfoRow
-          icon="calendar_today"
-          label="Customer since"
-          value="October 2023"
+          icon="forum"
+          label="Messages"
+          value={conversation.messageCount ?? 0}
+        />
+        <InfoRow
+          icon="schedule"
+          label="Last activity"
+          value={
+            conversation.lastActivity
+              ? formatClock(conversation.lastActivity)
+              : "—"
+          }
         />
       </div>
 
-      {/* Ticket history */}
+      {/* Linked ticket */}
       <div className="px-[20px] py-[12px] border-b border-neutral-100 dark:border-neutral-800">
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-[10px]">
-          Previous Tickets
+          Linked Ticket
         </p>
-        <div className="flex flex-col gap-[6px]">
-          {ticketHistory.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-lg px-[10px] py-[8px] hover:border-neutral-300 dark:hover:border-neutral-500 transition-colors cursor-pointer"
-            >
-              <div>
-                <p className="text-[11px] font-semibold text-black dark:text-white">{t.id}</p>
-                <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate max-w-[110px]">
-                  {t.subject}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[9px] font-bold text-emerald-600">
-                  {t.status}
-                </p>
-                <p className="text-[9px] text-neutral-400">{t.date}</p>
-              </div>
+        {linkedTicket ? (
+          <div className="flex items-center justify-between bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-lg px-[10px] py-[8px]">
+            <div>
+              <p className="text-[11px] font-semibold text-black dark:text-white">
+                {linkedTicket.ticketNumber || "Ticket"}
+              </p>
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate max-w-[110px]">
+                {linkedTicket.title}
+              </p>
             </div>
-          ))}
-        </div>
+            <p className="text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase">
+              {linkedTicket.status}
+            </p>
+          </div>
+        ) : (
+          <p className="text-[11px] text-neutral-400">
+            No ticket raised from this conversation.
+          </p>
+        )}
       </div>
 
       {/* Quick actions */}

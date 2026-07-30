@@ -1,9 +1,16 @@
 import ChatAvatar from "./ChatAvatar";
+import {
+  conversationCustomer,
+  conversationPresence,
+  conversationTag,
+} from "../lib/conversation";
 
 const ChatHeader = ({ conversation, onClose }) => {
   if (!conversation) return null;
 
-  const { customer, tag, tagColor } = conversation;
+  const customer = conversationCustomer(conversation);
+  const tag = conversationTag(conversation);
+  const presence = conversationPresence(conversation);
 
   const actions = [
     { icon: "call", label: "Call" },
@@ -33,7 +40,7 @@ const ChatHeader = ({ conversation, onClose }) => {
         <ChatAvatar
           name={customer.name}
           role="customer"
-          status={customer.status}
+          status={presence}
           size="md"
           showStatus
         />
@@ -44,26 +51,19 @@ const ChatHeader = ({ conversation, onClose }) => {
               {customer.name}
             </h3>
             <span
-              className={`text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide ${tagColor}`}
+              className={`text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide ${tag.color}`}
             >
-              {tag}
+              {tag.label}
             </span>
           </div>
           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-[1px] flex items-center gap-[4px]">
             <span
               className={`w-[6px] h-[6px] rounded-full inline-block ${
-                customer.status === "online"
-                  ? "bg-emerald-500"
-                  : customer.status === "away"
-                    ? "bg-amber-400"
-                    : "bg-neutral-300"
+                presence === "online" ? "bg-emerald-500" : "bg-neutral-300"
               }`}
             />
-            {customer.status === "online"
-              ? "Active now"
-              : customer.status === "away"
-                ? "Away"
-                : "Offline"}
+            {customer.email ||
+              (presence === "online" ? "Active now" : "Offline")}
           </p>
         </div>
       </div>

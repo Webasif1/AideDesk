@@ -1,34 +1,32 @@
-import OpenAI from 'openai';
-import { config } from '../config/config.js';
+import { chatComplete } from "./aiProvider.service.js";
 
-export const openrouter = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: config.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    'HTTP-Referer': config.FRONTEND_URL,
-    'X-Title': 'AideDesk Copilot'
-  }
-});
-
-// Single point for all OpenRouter calls. Retries once on 429.
+// Compatibility shim for the copilot pipeline (triage / knowledge / ticketDraft /
+// agentBriefing), which was written against an OpenRouter-specific client.
+//
+// Routing now goes through aiProvider.service.js so the same pipeline runs on
+// whichever provider is configured. The `model` argument is treated as a hint:
+// it is honoured when the active provider is OpenRouter (whose IDs are namespaced
+// like "vendor/model") and ignored otherwise, where the provider's own default
+// applies.
 export const callOpenRouter = async ({
   model,
   messages,
   maxTokens = 800,
-  jsonMode = false
+  jsonMode = false,
 }) => {
-  const options = { model, max_tokens: maxTokens, messages };
-  if (jsonMode) options.response_format = { type: 'json_object' };
+  // Callers put the system prompt in messages[0]; the provider layer takes it
+  // as a separate field.
+  const system = messages[0]?.role === "system" ? messages[0].content : null;
+  const turns = (system ? messages.slice(1) : messages).map((m) => ({
+    role: m.role === "assistant" ? "assistant" : "user",
+    content: m.content,
+  }));
 
-  try {
-    const res = await openrouter.chat.completions.create(options);
-    return res.choices[0].message.content;
-  } catch (err) {
-    if (err?.status === 429) {
-      await new Promise(r => setTimeout(r, 5000));
-      const res = await openrouter.chat.completions.create(options);
-      return res.choices[0].message.content;
-    }
-    throw err;
-  }
+  return chatComplete({
+    system,
+    messages: turns,
+    maxTokens,
+    jsonMode,
+    model: typeof model === "string" && model.includes("/") ? model : null,
+  });
 };

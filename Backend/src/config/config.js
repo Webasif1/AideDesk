@@ -47,4 +47,11 @@ export const config = {
   // Optional — defaults to localhost. Set in production to the deployed frontend URL.
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
   BACKEND_URL: process.env.BACKEND_URL || null,
+
+  // AI provider keys. None are required at boot — the copilot degrades to a
+  // handoff message when no provider is configured (see aiProvider.service.js).
+  AI_PROVIDER: process.env.AI_PROVIDER || null,
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || null,
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || null,
 };

@@ -8,6 +8,8 @@ import {
   assignAgent,
   updateChatStatus,
   getChatStats,
+  sendCopilotMessage,
+  confirmTicket,
 } from '../controllers/chat.controller.js';
 
 import { protect, requireRole } from '../middleware/auth.middleware.js';
@@ -54,6 +56,26 @@ router.get('/', getChats);
  * @access  Private — All roles (access-checked per role inside controller)
  */
 router.get('/:id', getChat);
+
+/**
+ * @route   POST /api/chats/:id/messages
+ * @desc    Send a message into a chat. Customer messages on an unassigned chat
+ *          are answered inline by the AI copilot.
+ * @access  Private — chat owner (customer) or company staff
+ */
+router.post(
+  '/:id/messages',
+  [body('content').trim().notEmpty().withMessage('Message content is required')],
+  validate,
+  sendCopilotMessage
+);
+
+/**
+ * @route   POST /api/chats/:id/confirm-ticket
+ * @desc    Customer accepts the AI's escalation draft → create a linked ticket
+ * @access  Private — chat owner (customer) only
+ */
+router.post('/:id/confirm-ticket', requireRole('customer'), confirmTicket);
 
 /**
  * @route   PATCH /api/chats/:id/assign

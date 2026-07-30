@@ -1,22 +1,26 @@
-import { callOpenRouter } from './openrouter.service.js';
-import { triageMessage } from './triage.service.js';
-import { getRelevantKnowledge } from './knowledge.service.js';
+import { callOpenRouter } from "./openrouter.service.js";
+import { triageMessage } from "./triage.service.js";
+import { getRelevantKnowledge } from "./knowledge.service.js";
 
+// Per-complexity model override. `null` means "use the active provider"s default"
+// — the safe choice, since a hard-coded ID is only valid on one provider and a
+// wrong one fails at request time. Set these to OpenRouter IDs ("vendor/model")
+// to tier cost by complexity when running on OpenRouter.
 const MODEL_MAP = {
-  simple: 'google/gemini-2.5-flash-image',
-  medium: 'minimax/minimax-m2.5:free',
-  complex: 'minimax/minimax-m2.5:free'
+  simple: null,
+  medium: null,
+  complex: null,
 };
 
 // Phrases that signal AI is not confident enough to answer
 const LOW_CONFIDENCE_SIGNALS = [
   "i'm not sure",
-  'i cannot help',
+  "i cannot help",
   "i don't know",
-  'please contact support',
-  'i am unable to',
-  'i need to escalate',
-  'beyond my ability'
+  "please contact support",
+  "i am unable to",
+  "i need to escalate",
+  "beyond my ability",
 ];
 
 const buildSystemPrompt = ({
@@ -25,7 +29,7 @@ const buildSystemPrompt = ({
   imageSummary,
   workspaceContext
 }) => {
-  const { companyName = 'the company', productInfo = '' } = workspaceContext;
+  const { companyName = "the company", productInfo = "" } = workspaceContext;
 
   let prompt = `You are Copilot, an expert AI support assistant for ${companyName}.
 Be concise, friendly, and solution-focused. Always provide actionable steps.
@@ -40,7 +44,7 @@ Do not guess. Do not hallucinate steps that may not work.`;
   if (knowledge.length > 0) {
     const kbText = knowledge
       .map(k => `- Problem: ${k.problemSummary}\n  Resolution: ${k.resolution}`)
-      .join('\n');
+      .join("\n");
     prompt += `\n\nRELEVANT PAST RESOLVED ISSUES (use these as reference):\n${kbText}`;
   }
 
@@ -66,7 +70,7 @@ export const runCopilot = async ({
 
   const { complexity, intent, sentiment, sentimentScore, urgency } = triage;
 
-  if (complexity === 'escalate') {
+  if (complexity === "escalate") {
     return {
       escalate: true,
       complexity,
@@ -77,7 +81,7 @@ export const runCopilot = async ({
       aiResponse: null,
       model: null,
       triage,
-      escalationReason: 'triage_escalate'
+      escalationReason: "triage_escalate"
     };
   }
 
@@ -105,13 +109,13 @@ export const runCopilot = async ({
       model,
       maxTokens: 900,
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: "system", content: systemPrompt },
         ...conversationHistory.slice(-10),
-        { role: 'user', content: message }
+        { role: "user", content: message }
       ]
     });
   } catch (err) {
-    console.error('[copilot] model call failed:', err.message);
+    console.error("[copilot] model call failed:", err.message);
     failed = true;
   }
 
@@ -134,11 +138,11 @@ export const runCopilot = async ({
     model,
     triage,
     escalationReason: failed
-      ? 'model_failure'
+      ? "model_failure"
       : isLowConfidence
-        ? 'low_confidence'
+        ? "low_confidence"
         : emotionalEscalation
-          ? 'user_frustration'
+          ? "user_frustration"
           : null
   };
 };

@@ -11,6 +11,7 @@ import {
   scoreSentiment,
   generateEscalationBriefing
 } from "../services/ai.service.js";
+import { answerTicket } from "../services/ticketCopilot.service.js";
 
 // Friendly labels for the ticket `source` enum (used by the CSAT breakdown).
 const SOURCE_LABELS = {
@@ -92,12 +93,32 @@ export const createTicket = asyncHandler(async (req, res) => {
       .catch(() => {});
   }).catch(() => {});
 
+  // AI first responder. Awaited so the response carries the chat the customer
+  // should be sent to — the ticket row deep-links straight into that thread.
+  // Never throws; on failure it posts a human-handoff message instead.
+  let aiOutcome = null;
+  try {
+    aiOutcome = await answerTicket({
+      ticket,
+      companyId: req.companyId,
+      workspaceId: req.workspaceId,
+    });
+  } catch (err) {
+    console.error("[tickets] AI first response failed:", err.message);
+  }
+
   emitTicketEvent(req.companyId, ticket._id, "ticketCreated");
+
+  const fresh = await ticketModel.findById(ticket._id).lean();
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
-    message: "Ticket created. AI classification running in background.",
-    data: ticket,
+    message:
+      aiOutcome?.outcome === "answered"
+        ? "Ticket created. Our AI assistant has replied in your chat."
+        : "Ticket created. A support agent will follow up shortly.",
+    data: fresh || ticket,
+    ai: aiOutcome,
   });
 });
 

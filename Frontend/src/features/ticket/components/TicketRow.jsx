@@ -22,8 +22,27 @@ const TicketRow = ({
   time,
   created,
   timeColor,
+  chatId,
+  aiHandled,
+  onOpen,
 }) => (
-  <tr className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors group">
+  <tr
+    onClick={onOpen}
+    role={chatId ? "button" : undefined}
+    tabIndex={chatId ? 0 : undefined}
+    onKeyDown={(e) => {
+      if (chatId && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onOpen?.();
+      }
+    }}
+    title={chatId ? "Open conversation" : undefined}
+    className={`transition-colors group ${
+      chatId
+        ? "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800"
+        : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
+    }`}
+  >
     <td className="py-4 px-6">
       <span
         className={`px-2 py-1 text-[10px] font-bold rounded uppercase ${statusStyle[status]}`}
@@ -33,7 +52,14 @@ const TicketRow = ({
     </td>
     <td className="py-4 px-6">
       <div className="flex flex-col">
-        <span className="font-semibold text-black dark:text-white text-sm">{subject}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-black dark:text-white text-sm">{subject}</span>
+          {aiHandled && (
+            <span className="text-[9px] font-bold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-[5px] py-[1px] rounded-full shrink-0">
+              AI
+            </span>
+          )}
+        </div>
         <span className="text-xs text-neutral-400">
           {ticketId} • {category}
         </span>
@@ -68,7 +94,10 @@ const TicketRow = ({
       </div>
     </td>
     <td className="py-4 px-6 text-right">
-      <button className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+      <button
+        onClick={(e) => e.stopPropagation()}
+        className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+      >
         <span className="material-symbols-outlined">more_horiz</span>
       </button>
     </td>

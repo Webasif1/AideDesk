@@ -1,4 +1,12 @@
 import ChatAvatar from "./ChatAvatar";
+import {
+  conversationCustomer,
+  conversationPresence,
+  conversationSubtitle,
+  conversationTag,
+  conversationTicket,
+  conversationTitle,
+} from "../lib/conversation";
 
 const formatTime = (date) => {
   if (!date) return "";
@@ -11,11 +19,6 @@ const formatTime = (date) => {
   return `${Math.floor(h / 24)}d`;
 };
 
-const STATUS_TAG = {
-  active: { label: "Active", color: "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400" },
-  waiting: { label: "Waiting", color: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400" },
-  closed: { label: "Closed", color: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400" },
-};
 
 const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
   return (
@@ -67,11 +70,13 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
         )}
         {conversations.map((conv, idx) => {
           const isActive = conv._id === activeId;
-          const customerName =
-            conv.user?.name || conv.user?.email || "Customer";
+          const customer = conversationCustomer(conv);
+          const title = conversationTitle(conv);
+          const subtitle = conversationSubtitle(conv);
+          const ticket = conversationTicket(conv);
           const lastText =
             conv.latestMessage?.content || "No messages yet";
-          const tag = STATUS_TAG[conv.status] || STATUS_TAG.active;
+          const tag = conversationTag(conv);
           return (
             <button
               key={conv._id}
@@ -85,9 +90,9 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
               }}
             >
               <ChatAvatar
-                name={customerName}
+                name={customer.name}
                 role="customer"
-                status={conv.user?.status || "online"}
+                status={conversationPresence(conv)}
                 size="md"
               />
 
@@ -96,12 +101,17 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
                   <span
                     className={`text-[13px] font-semibold truncate ${isActive ? "text-black dark:text-white" : "text-neutral-800 dark:text-neutral-200"}`}
                   >
-                    {customerName}
+                    {title}
                   </span>
                   <span className="text-[10px] text-neutral-400 shrink-0 ml-[4px]">
                     {formatTime(conv.lastActivity || conv.updatedAt)}
                   </span>
                 </div>
+                {subtitle && (
+                  <p className="text-[10px] text-neutral-400 truncate leading-tight">
+                    {subtitle}
+                  </p>
+                )}
                 <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate leading-tight">
                   {lastText}
                 </p>
@@ -111,6 +121,11 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
                   >
                     {tag.label}
                   </span>
+                  {ticket && (
+                    <span className="text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                      Ticket
+                    </span>
+                  )}
                 </div>
               </div>
             </button>

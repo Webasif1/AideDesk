@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
@@ -16,12 +17,28 @@ const ChatScreen = () => {
   const { getChats, createChat, chats } = useChat();
   const role = useSelector((s) => s.auth.role);
 
+  // Deep link from a ticket row: /dashboard/chat?chat=<chatId>
+  const [searchParams] = useSearchParams();
+  const requestedChatId = searchParams.get("chat");
+
   // Load chats on mount; customers without an active chat get one created
   useEffect(() => {
     getChats({}).catch(() => {});
   }, [getChats]);
 
+  // Honour the deep link first, then fall back to the default selection.
   useEffect(() => {
+    if (requestedChatId) {
+      if (activeConversation?._id === requestedChatId) return;
+      const target = chats.find((c) => c._id === requestedChatId);
+      if (target) {
+        setActiveConversation(target);
+        return;
+      }
+      // Chats not loaded yet — wait rather than selecting the wrong thread.
+      if (chats.length === 0) return;
+    }
+
     if (role === "customer" && chats.length === 0) {
       createChat()
         .then((res) => {
@@ -31,7 +48,7 @@ const ChatScreen = () => {
     } else if (!activeConversation && chats.length > 0) {
       setActiveConversation(chats[0]);
     }
-  }, [role, chats, activeConversation, createChat]);
+  }, [role, chats, activeConversation, createChat, requestedChatId]);
 
   return (
     <PageWrapper>

@@ -98,20 +98,17 @@ export const useChat = () => {
     [dispatch]
   );
 
-  // Copilot pipeline: send message + handle resolved/escalate response
+  // Copilot pipeline: send message + handle resolved/escalate response.
+  // The AI's reply is added in both branches — on escalation it is the
+  // human-handoff message, which the customer still needs to see.
   const sendCopilotMessage = useCallback(
-    async ({ chatId, content, attachment }) => {
-      return handleRequest(
-        sendCopilotMessageAPI,
-        { chatId, content, attachment },
-        (res) => {
-          if (res?.escalate && res?.ticketDraft) {
-            dispatch(setTicketDraft({ chatId, ...res.ticketDraft }));
-          } else if (res?.resolved && res?.message) {
-            dispatch(addMessage(res.message));
-          }
+    async ({ chatId, content }) => {
+      return handleRequest(sendCopilotMessageAPI, { chatId, content }, (res) => {
+        if (res?.message) dispatch(addMessage(res.message));
+        if (res?.escalate && res?.ticketDraft) {
+          dispatch(setTicketDraft({ chatId, ...res.ticketDraft }));
         }
-      );
+      });
     },
     [dispatch]
   );

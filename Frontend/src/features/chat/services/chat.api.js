@@ -32,17 +32,13 @@ export const updateChatStatus = async ({ id, status }) => {
   return response.data;
 };
 
-// Copilot pipeline — multipart form-data upload (content + optional file)
-export const sendCopilotMessage = async ({ chatId, content, attachment }) => {
-  const form = new FormData();
-  form.append("content", content);
-  if (attachment) form.append("attachment", attachment);
-
-  const response = await apiClient.post(
-    `${PREFIX}/${chatId}/messages`,
-    form,
-    { headers: { "Content-Type": "multipart/form-data" } }
-  );
+// Copilot pipeline — customer message in, AI reply out.
+// Attachments are not accepted yet: the backend has no multipart parser wired,
+// so sending form-data here would fail before reaching the copilot.
+export const sendCopilotMessage = async ({ chatId, content }) => {
+  const response = await apiClient.post(`${PREFIX}/${chatId}/messages`, {
+    content,
+  });
   return response.data;
 };
 

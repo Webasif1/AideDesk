@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import TicketRow from "./TicketRow";
 import { SkeletonRow } from "../../../components/ui/Skeleton";
 import { useTicket } from "../hooks/useTicket";
@@ -16,6 +17,7 @@ const cap = (s = "") => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const LIMIT = 10;
 
 const TicketTable = ({ activeTab = "All Tickets" }) => {
+  const navigate = useNavigate();
   const { getTickets } = useTicket();
   const tickets = useSelector((s) => s.ticket.tickets);
   const loading = useSelector((s) => s.ticket.loading);
@@ -45,19 +47,38 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
     return list;
   }, [tickets, activeTab]);
 
-  const rows = filtered.map((t) => ({
-    key: t._id,
-    status: ticketStatusLabel(t.status, t.slaBreached),
-    subject: t.title,
-    ticketId: t.ticketNumber || shortId(t._id),
-    category: cap(t.category),
-    requester: customerName(t.customerId),
-    company: t.customerId?.email || "—",
-    priority: ticketPriorityLabel(t.priority),
-    time: formatRelative(t.updatedAt || t.createdAt),
-    created: formatClock(t.createdAt),
-    timeColor: t.slaBreached ? "text-red-600 dark:text-red-400" : "text-neutral-900 dark:text-white",
-  }));
+  // Opening a ticket takes you to its conversation — that thread is where the
+  // AI's reply and any human follow-up live.
+  const openTicket = useCallback(
+    (chatId) => {
+      if (!chatId) return;
+      navigate(`/dashboard/chat?chat=${chatId}`);
+    },
+    [navigate]
+  );
+
+  const rows = filtered.map((t) => {
+    // `chat` is an id when lean, or a populated document on the detail route.
+    const chatId = typeof t.chat === "object" ? t.chat?._id : t.chat;
+    return {
+      key: t._id,
+      chatId,
+      onOpen: () => openTicket(chatId),
+      aiHandled: !t.assignedAgent,
+      status: ticketStatusLabel(t.status, t.slaBreached),
+      subject: t.title,
+      ticketId: t.ticketNumber || shortId(t._id),
+      category: cap(t.category),
+      requester: customerName(t.customerId),
+      company: t.customerId?.email || "—",
+      priority: ticketPriorityLabel(t.priority),
+      time: formatRelative(t.updatedAt || t.createdAt),
+      created: formatClock(t.createdAt),
+      timeColor: t.slaBreached
+        ? "text-red-600 dark:text-red-400"
+        : "text-neutral-900 dark:text-white",
+    };
+  });
 
   const total = pagination?.total ?? rows.length;
   const pages = pagination?.pages ?? 1;

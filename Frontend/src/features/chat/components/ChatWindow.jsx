@@ -8,11 +8,17 @@ import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
 import { clearMessages } from "../../message/state/message.slice";
 
+// The API stores role as 'user' | 'agent' | 'ai' on the message itself; `sender`
+// is an id and is null for AI messages. Map that onto the roles the bubble and
+// avatar components expect.
+const ROLE_FROM_API = { user: "customer", agent: "agent", ai: "ai" };
+const DEFAULT_NAME = { customer: "You", agent: "Support Agent", ai: "AideDesk AI" };
+
 const senderFromMessage = (msg) => {
-  const role = msg.senderType || msg.sender?.role || "customer";
+  const role = ROLE_FROM_API[msg.role] || msg.sender?.role || "customer";
   return {
     role,
-    name: msg.sender?.name || (role === "copilot" ? "AideDesk AI" : role),
+    name: msg.sender?.name || DEFAULT_NAME[role] || role,
     status: msg.sender?.status || "online",
   };
 };
@@ -65,14 +71,15 @@ const ChatWindow = ({ conversation, onClose }) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, copilotTyping]);
 
-  const handleSend = async ({ content, attachment }) => {
+  // Attachments are accepted by the input but not yet forwarded — the backend
+  // has no multipart parser wired up.
+  const handleSend = async ({ content }) => {
     if (!conversation?._id) return;
 
     if (role === "customer") {
       await sendCopilotMessage({
         chatId: conversation._id,
         content,
-        attachment,
       }).catch(() => {});
     } else {
       // Agent path: use plain message endpoint
@@ -180,7 +187,7 @@ const ChatWindow = ({ conversation, onClose }) => {
                 <ChatBubble
                   message={{
                     sender: {
-                      role: copilotTyping ? "copilot" : "customer",
+                      role: copilotTyping ? "ai" : "customer",
                       name: copilotTyping ? "AideDesk AI" : "Customer",
                     },
                     text: "",
