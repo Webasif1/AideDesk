@@ -178,6 +178,16 @@ const Login = () => {
                 Sign up
               </Link>
             </div>
+
+            <div className="mt-[12px] text-center text-[12px] text-on-surface-variant">
+              Here for support?{" "}
+              <Link
+                to="/customer/login"
+                className="text-primary font-medium hover:underline"
+              >
+                Customer sign in
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>

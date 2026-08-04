@@ -18,6 +18,7 @@ import Docs from "./Pages/Docs";
 
 // Auth
 import Login from "../features/auth/Pages/Login";
+import CustomerLogin from "../features/auth/Pages/CustomerLogin";
 import Signup from "../features/auth/Pages/Signup";
 import ForgotPassword from "../features/auth/Pages/ForgotPassword";
 import VerifyEmail from "../features/auth/Pages/VerifyEmail";
@@ -94,6 +95,9 @@ const AppRoutes = createBrowserRouter([
 
       // Public auth
       { path: "/login", element: <Login /> },
+      // Customer support portal — its own entry point and visual identity;
+      // signs in through the same endpoint and lands on the same workbench.
+      { path: "/customer/login", element: <CustomerLogin /> },
       { path: "/signup", element: <Signup /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/verify-email", element: <VerifyEmail /> },

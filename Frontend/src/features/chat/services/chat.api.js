@@ -35,7 +35,19 @@ export const updateChatStatus = async ({ id, status }) => {
 // Copilot pipeline — customer message in, AI reply out.
 // Attachments are not accepted yet: the backend has no multipart parser wired,
 // so sending form-data here would fail before reaching the copilot.
-export const sendCopilotMessage = async ({ chatId, content }) => {
+// Sent as multipart when the customer attaches a screenshot or PDF — the route
+// runs the same upload middleware either way, so plain JSON is fine without one.
+export const sendCopilotMessage = async ({ chatId, content, attachment }) => {
+  if (attachment) {
+    const form = new FormData();
+    form.append("content", content || "");
+    form.append("attachment", attachment);
+    const response = await apiClient.post(`${PREFIX}/${chatId}/messages`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  }
+
   const response = await apiClient.post(`${PREFIX}/${chatId}/messages`, {
     content,
   });

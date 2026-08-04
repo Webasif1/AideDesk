@@ -10,7 +10,9 @@ import { clearMessages } from "../../message/state/message.slice";
 
 // Backend message role is `user` | `agent` | `ai`. Map it to the display roles
 // ChatBubble/ChatAvatar understand (`customer` | `agent` | `ai`).
-const senderFromMessage = (msg) => {
+// `customerLabel` is what a customer message is credited to — "You" in the
+// customer's own view, the customer's name when staff read the thread.
+const senderFromMessage = (msg, customerLabel = "You") => {
   const r = msg.role || msg.senderType;
   if (r === "ai" || r === "copilot")
     return { role: "ai", name: "AideDesk AI", status: "online" };
@@ -20,7 +22,11 @@ const senderFromMessage = (msg) => {
       name: msg.sender?.name || "Support Agent",
       status: msg.sender?.status || "online",
     };
-  return { role: "customer", name: msg.sender?.name || "You", status: "online" };
+  return {
+    role: "customer",
+    name: msg.sender?.name || customerLabel,
+    status: "online",
+  };
 };
 
 const DateDivider = ({ label }) => (
@@ -71,15 +77,14 @@ const ChatWindow = ({ conversation, onClose }) => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, copilotTyping]);
 
-  // Attachments are accepted by the input but not yet forwarded — the backend
-  // has no multipart parser wired up.
-  const handleSend = async ({ content }) => {
+  const handleSend = async ({ content, attachment }) => {
     if (!conversation?._id) return;
 
     if (role === "customer") {
       await sendCopilotMessage({
         chatId: conversation._id,
         content,
+        attachment,
       }).catch(() => {});
     } else {
       // Agent path: use plain message endpoint
@@ -108,6 +113,9 @@ const ChatWindow = ({ conversation, onClose }) => {
       </div>
     );
   }
+
+  const customerLabel =
+    role === "customer" ? "You" : conversation.user?.name || "Customer";
 
   const someoneTyping =
     !!copilotTyping ||
@@ -148,14 +156,17 @@ const ChatWindow = ({ conversation, onClose }) => {
 
             {messages.map((msg, idx) => {
               const prevMsg = messages[idx - 1];
-              const sender = senderFromMessage(msg);
-              const prevSender = prevMsg ? senderFromMessage(prevMsg) : null;
+              const sender = senderFromMessage(msg, customerLabel);
+              const prevSender = prevMsg
+                ? senderFromMessage(prevMsg, customerLabel)
+                : null;
               const showAvatar =
                 !prevSender || prevSender.role !== sender.role;
-              const isOwn =
-                (role === "customer" && sender.role === "customer") ||
-                (role === "agent" && sender.role === "agent") ||
-                (role === "admin" && sender.role === "agent");
+              // Side is decided by who spoke, not by who is watching: the
+              // customer is always on the right, AI and agents always on the
+              // left. Staff reading a thread see the same layout the customer
+              // does, so a transcript reads identically for everyone.
+              const isOwn = sender.role === "customer";
 
               return (
                 <div
@@ -175,6 +186,7 @@ const ChatWindow = ({ conversation, onClose }) => {
                         : msg.time,
                     }}
                     isOwn={isOwn}
+                    showStatus={isOwn && role === "customer"}
                     showAvatar={showAvatar}
                     animate={true}
                   />

@@ -22,6 +22,10 @@ const ChatBubble = ({
   isTyping = false,
   showAvatar = true,
   animate = true,
+  // Delivery ticks belong to the person who sent the message. Right-aligned is
+  // not the same as authored-by-you (staff see customer bubbles on the right
+  // too), so this is opt-in rather than derived from `isOwn`.
+  showStatus = false,
 }) => {
   const [hovered, setHovered] = useState(false);
 
@@ -112,8 +116,8 @@ const ChatBubble = ({
           )}
         </div>
 
-        {/* Status tick (for own messages) */}
-        {isMine && !isTyping && (
+        {/* Status tick (only under messages the viewer sent) */}
+        {showStatus && !isTyping && (
           <div className="flex items-center gap-[3px] text-[10px] text-neutral-400 dark:text-neutral-600">
             <span className="material-symbols-outlined text-[13px]">
               {status === "read"

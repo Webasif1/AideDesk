@@ -13,6 +13,10 @@ const FloatingThemeToggle = () => {
   const inDashboard = path.startsWith("/dashboard");
   const inCompanyPortal = path.startsWith("/company-portal");
 
+  // The customer portal sign-in commits to its own dark aurora look, so a
+  // light/dark switch there would only break the page.
+  if (path.startsWith("/customer/")) return null;
+
   // Position safely past any sidebars
   let leftClass = "left-5";
   if (inDashboard) leftClass = "left-[288px]"; // past w-64 (256px) sidebar + 32px gap
