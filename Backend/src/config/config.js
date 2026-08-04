@@ -33,17 +33,26 @@ if (!process.env.NODE_ENV) {
 }
 
 // ── Copilot model funnel (env-driven so models can be swapped without code) ──
-// Chosen by triage complexity: triage classifies → simple/medium/complex generate.
+// Every slot is an OpenRouter model ID ("vendor/model"). Flow per customer turn:
+//   triage classifies complexity → the matching tier generates the reply.
+// All defaults are free-tier slugs verified against openrouter.ai/api/v1/models.
 const MODELS = {
-  // No free Gemini is currently offered on OpenRouter; Gemma 4 (Google, JSON-capable)
-  // is the verified free stand-in. Set MODEL_TRIAGE to a Gemini slug once one is free.
+  // Triage wants a Google model, but OpenRouter currently lists no free Gemini —
+  // Gemma 4 is Google's free entry there and handles the JSON classification.
+  // Set MODEL_TRIAGE to a Gemini slug the moment one becomes free.
   triage: process.env.MODEL_TRIAGE || "google/gemma-4-26b-a4b-it:free",
   simple: process.env.MODEL_SIMPLE || "openai/gpt-oss-20b:free",
   medium: process.env.MODEL_MEDIUM || "google/gemma-4-26b-a4b-it:free",
   complex: process.env.MODEL_COMPLEX || "openai/gpt-oss-20b:free",
 };
+// Triage may classify a turn as `escalate`; the AI still attempts a reply first,
+// so that slot gets the strongest tier rather than skipping generation.
+MODELS.escalate = MODELS.complex;
 // Agent hand-off briefing model — defaults to the medium tier.
 MODELS.briefing = process.env.MODEL_BRIEFING || MODELS.medium;
+// Vision (screenshots attached to a ticket). Gemma 4 accepts image input, so the
+// funnel still works when only an OpenRouter key is configured.
+MODELS.vision = process.env.MODEL_VISION || MODELS.medium;
 
 export const config = {
   PORT: process.env.PORT || 3000,
@@ -57,11 +66,6 @@ export const config = {
   GOOGLE_USER_EMAIL: process.env.GOOGLE_USER_EMAIL,
   GOOGLE_USER_PASSWORD: process.env.GOOGLE_USER_PASSWORD,
   TEST_RECIEVER_EMAIL: process.env.TEST_RECIEVER_EMAIL,
-  // AI providers — copilot pipeline (OpenRouter for generation/triage, Gemini for
-  // attachment understanding, Anthropic optional for classification).
-  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
-  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   // Copilot model funnel + escalation patience (AI "give-up" turns before a human).
   MODELS,
   COPILOT_ESCALATE_STRIKES: Number(process.env.COPILOT_ESCALATE_STRIKES) || 2,
@@ -71,8 +75,10 @@ export const config = {
 
   // AI provider keys. None are required at boot — the copilot degrades to a
   // handoff message when no provider is configured (see aiProvider.service.js).
+  // OpenRouter runs the whole funnel; GEMINI_API_KEY is optional and only adds
+  // PDF understanding (Gemini Files API), which OpenRouter has no free path for.
   AI_PROVIDER: process.env.AI_PROVIDER || null,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || null,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || null,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null,
 };

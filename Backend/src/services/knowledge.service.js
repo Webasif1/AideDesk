@@ -1,7 +1,9 @@
 import knowledgeChunkModel from '../models/knowledgeChunk.model.js';
 import { callOpenRouter } from './openrouter.service.js';
+import { config } from '../config/config.js';
 
-const SUMMARY_MODEL = 'meta-llama/llama-3.1-8b-instruct:free';
+// Summarising a resolved thread is a cheap job — run it on the funnel's simple tier.
+const SUMMARY_MODEL = config.MODELS.simple;
 
 // Keyword-overlap retrieval. Upgrade to vector embeddings when budget allows.
 export const getRelevantKnowledge = async ({

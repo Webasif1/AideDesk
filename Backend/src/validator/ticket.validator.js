@@ -27,8 +27,8 @@ export const createTicketValidator = [
 
   body('source')
     .optional()
-    .isIn(['chat', 'email', 'dashboard', 'api'])
-    .withMessage('Source must be chat, email, dashboard, or api'),
+    .isIn(['chat', 'email', 'dashboard', 'portal', 'api'])
+    .withMessage('Source must be chat, email, dashboard, portal, or api'),
 
   body('tags')
     .optional()

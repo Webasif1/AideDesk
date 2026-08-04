@@ -65,9 +65,11 @@ const ticketSchema = new mongoose.Schema(
       default: 'open'
     },
 
+    // `portal` = raised by the customer themselves from the support portal
+    // (the copilot-managed flow); `dashboard` = logged by staff on their behalf.
     source: {
       type: String,
-      enum: ['chat', 'email', 'dashboard', 'api'],
+      enum: ['chat', 'email', 'dashboard', 'portal', 'api'],
       default: 'dashboard'
     },
 

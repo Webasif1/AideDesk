@@ -37,8 +37,10 @@ export const activeProvider = () => {
 export const isAiConfigured = () => activeProvider() !== null;
 
 // Default model per provider. Callers may override via the `model` option.
+// OpenRouter falls back to the funnel's medium tier so a caller that forgets to
+// pass a model still lands on a configured (free-tier) slug rather than a paid one.
 const DEFAULT_MODEL = {
-  openrouter: "anthropic/claude-sonnet-4.5",
+  openrouter: config.MODELS.medium,
   anthropic: "claude-opus-5",
   gemini: "gemini-2.5-flash",
 };

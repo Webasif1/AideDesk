@@ -285,7 +285,7 @@ Your login credentials:
   Email:    ${loginEmail}
   Password: ${tempPassword}
 
-Log in here: ${loginUrl}
+Sign in to your support portal: ${loginUrl}
 
 After logging in, we recommend changing your password:
   Go to Profile → Change Password and set a password you"ll remember.
@@ -358,7 +358,7 @@ AideDesk Team
           <a href="${loginUrl}"
              style="display: inline-block; background: #0ea5e9; color: #ffffff; font-size: 15px;
                     font-weight: 600; text-decoration: none; padding: 14px 36px; border-radius: 8px;">
-            Go to Login
+            Open your support portal
           </a>
         </td>
       </tr>

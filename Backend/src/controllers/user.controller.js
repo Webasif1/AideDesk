@@ -79,7 +79,8 @@ export const createUser = asyncHandler(async (req, res) => {
     companyName: company.name,
     loginEmail: user.email,
     tempPassword,
-    loginUrl: `${config.FRONTEND_URL}/login?workspaceId=${workspace._id}`,
+    // Customers get the dedicated support-portal sign-in, not the staff login.
+    loginUrl: `${config.FRONTEND_URL}/customer/login`,
     frontendUrl: config.FRONTEND_URL,
   }).then((sent) => {
     console.log(

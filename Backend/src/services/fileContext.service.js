@@ -1,14 +1,26 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config/config.js';
 
-const genai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
-
 // Upload PDF buffer to Gemini Files API and extract a support-focused summary.
 // fileUri reusable for 48h within follow-up prompts.
+//
+// PDF parsing needs the Gemini Files API — OpenRouter has no free equivalent. On
+// an OpenRouter-only setup this degrades to a note naming the file, so the ticket
+// still reaches the AI (and the agent) with the attachment acknowledged instead
+// of the whole turn failing.
 export const uploadPDFAndExtract = async (
   fileBuffer,
   originalName = 'document.pdf'
 ) => {
+  if (!config.GEMINI_API_KEY) {
+    return {
+      fileUri: null,
+      summary: `The customer attached a PDF named "${originalName}". Its contents could not be read (no document-parsing provider configured) — ask the customer to paste the relevant text or describe what the document shows.`,
+      fileName: originalName
+    };
+  }
+
+  const genai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
   const blob = new Blob([fileBuffer], { type: 'application/pdf' });
   const uploaded = await genai.files.upload({
     file: blob,

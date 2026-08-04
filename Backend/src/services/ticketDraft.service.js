@@ -4,8 +4,9 @@ import {
   sentimentLabelFromScore
 } from './triage.service.js';
 import slaConfigModel from '../models/slaConfig.model.js';
+import { config } from '../config/config.js';
 
-const DRAFT_MODEL = 'deepseek/deepseek-chat-v3-0324:free';
+const DRAFT_MODEL = config.MODELS.simple;
 
 const DEFAULT_SLA = {
   firstResponseHours: { critical: 1, high: 4, medium: 8, low: 24 },

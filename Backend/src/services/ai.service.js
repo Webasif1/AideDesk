@@ -1,7 +1,15 @@
-import Anthropic from '@anthropic-ai/sdk';
+// Lightweight classification + drafting helpers used outside the copilot funnel
+// (staff-created tickets, agent co-pilot, escalation briefings).
+//
+// These used to call Anthropic directly, which meant they hard-failed whenever
+// ANTHROPIC_API_KEY was absent. They now go through aiProvider.service.js, so the
+// same OpenRouter funnel that powers the copilot serves them too — classification
+// on the cheap `simple` tier, drafting on `medium`.
+import { chatComplete } from './aiProvider.service.js';
+import { config } from '../config/config.js';
 
-const client = new Anthropic();
-const MODEL = 'claude-opus-4-7';
+const CLASSIFY_MODEL = config.MODELS.simple;
+const DRAFT_MODEL = config.MODELS.medium;
 
 const INTENT_SYSTEM = `You are an intent classifier for a customer support system.
 Classify the customer message into exactly ONE of these labels:
@@ -27,20 +35,14 @@ Respond with ONLY the number (1-5), nothing else.`;
 // classifyIntent — returns intentLabel enum string
 // ============================================
 export const classifyIntent = async (text) => {
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 20,
-    system: [
-      {
-        type: 'text',
-        text: INTENT_SYSTEM,
-        cache_control: { type: 'ephemeral' }
-      }
-    ],
+  const raw = await chatComplete({
+    model: CLASSIFY_MODEL,
+    maxTokens: 20,
+    system: INTENT_SYSTEM,
     messages: [{ role: 'user', content: text }]
   });
 
-  const label = response.content[0].text.trim().toLowerCase();
+  const label = raw.trim().toLowerCase();
   const valid = ['simple_faq', 'billing_issue', 'technical_problem', 'escalate_human', 'feedback'];
   return valid.includes(label) ? label : 'simple_faq';
 };
@@ -49,20 +51,15 @@ export const classifyIntent = async (text) => {
 // scoreSentiment — returns 1-5 integer
 // ============================================
 export const scoreSentiment = async (text) => {
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 5,
-    system: [
-      {
-        type: 'text',
-        text: SENTIMENT_SYSTEM,
-        cache_control: { type: 'ephemeral' }
-      }
-    ],
+  const raw = await chatComplete({
+    model: CLASSIFY_MODEL,
+    maxTokens: 5,
+    system: SENTIMENT_SYSTEM,
     messages: [{ role: 'user', content: text }]
   });
 
-  const score = parseInt(response.content[0].text.trim());
+  // Small models like to answer "4/5" or "Score: 4" — take the first digit.
+  const score = parseInt(raw.replace(/[^\d]/g, '').slice(0, 1), 10);
   return isNaN(score) || score < 1 || score > 5 ? 3 : score;
 };
 
@@ -71,25 +68,19 @@ export const scoreSentiment = async (text) => {
 // thread: array of { role: 'user'|'agent', content: string }
 // ============================================
 export const generateEscalationBriefing = async ({ thread, sentiment, ticketTitle }) => {
-  const threadText = thread
+  const threadText = (thread || [])
     .map(m => `${m.role === 'user' ? 'Customer' : 'Agent'}: ${m.content}`)
     .join('\n');
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 300,
-    system: [
-      {
-        type: 'text',
-        text: `You are a support escalation assistant. Write exactly 3 sentences summarizing this support conversation for a senior agent taking over the case:
+  const raw = await chatComplete({
+    model: DRAFT_MODEL,
+    maxTokens: 300,
+    system: `You are a support escalation assistant. Write exactly 3 sentences summarizing this support conversation for a senior agent taking over the case:
 Sentence 1: What the customer's issue is
 Sentence 2: What was tried and why it failed or what makes this urgent
 Sentence 3: Recommended immediate next step with urgency level
 
 Be concise and professional. Current sentiment score: ${sentiment}/5 (1=very frustrated, 5=happy).`,
-        cache_control: { type: 'ephemeral' }
-      }
-    ],
     messages: [
       {
         role: 'user',
@@ -98,7 +89,7 @@ Be concise and professional. Current sentiment score: ${sentiment}/5 (1=very fru
     ]
   });
 
-  return response.content[0].text.trim();
+  return raw.trim();
 };
 
 // ============================================
@@ -107,34 +98,38 @@ Be concise and professional. Current sentiment score: ${sentiment}/5 (1=very fru
 // Returns: [{ tone, reply, confidence }]
 // ============================================
 export const generateReplySuggestions = async ({ messages, companyName }) => {
-  const lastFive = messages.slice(-5);
-  const threadText = lastFive
+  const threadText = (messages || [])
+    .slice(-5)
     .map(m => `${m.role === 'user' ? 'Customer' : 'Agent'}: ${m.content}`)
     .join('\n');
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 500,
-    system: [
-      {
-        type: 'text',
-        text: `You are an AI co-pilot for ${companyName || 'our company'} support agents.
+  const raw = await chatComplete({
+    model: DRAFT_MODEL,
+    maxTokens: 500,
+    jsonMode: true,
+    system: `You are an AI co-pilot for ${companyName || 'our company'} support agents.
 Generate exactly 3 reply suggestions for the agent responding to the customer's latest message.
 Each suggestion: 1-2 sentences, professional, directly addresses the customer's message.
 Format response as JSON array only:
 [{"tone": "empathetic|professional|direct", "reply": "...", "confidence": "high|medium|low"}]
 No other text, just the JSON array.`,
-        cache_control: { type: 'ephemeral' }
-      }
-    ],
     messages: [{ role: 'user', content: threadText }]
   });
 
   try {
-    return JSON.parse(response.content[0].text.trim());
+    // Tolerate models that wrap the array in ```json fences or an object envelope.
+    const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(cleaned);
+    const list = Array.isArray(parsed) ? parsed : parsed.suggestions;
+    if (Array.isArray(list) && list.length > 0) return list;
+    throw new Error('unexpected shape');
   } catch {
     return [
-      { tone: 'professional', reply: 'Thank you for reaching out. I will look into this right away and get back to you shortly.', confidence: 'medium' }
+      {
+        tone: 'professional',
+        reply: 'Thank you for reaching out. I will look into this right away and get back to you shortly.',
+        confidence: 'medium'
+      }
     ];
   }
 };

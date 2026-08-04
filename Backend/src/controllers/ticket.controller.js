@@ -19,6 +19,7 @@ const SOURCE_LABELS = {
   chat: "Live Chat",
   email: "Email",
   dashboard: "Dashboard",
+  portal: "Support Portal",
   api: "API",
 };
 
