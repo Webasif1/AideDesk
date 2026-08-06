@@ -10,26 +10,20 @@ import { SkeletonCard } from "../../../components/ui/Skeleton";
 import { useTicket } from "../../ticket/hooks/useTicket";
 import {
   ticketStatusLabel,
+  ticketStatusBadgeClass,
   ticketPriorityLabel,
   formatRelative,
   shortId,
 } from "../../../lib/format";
 
-// Ordered status buckets for the "By Status" breakdown.
+// Ordered status buckets for the "By Status" breakdown. Raw backend keys are
+// grouped into the same three labels the rest of the app shows, so a customer
+// never sees "Open" here and "New" on the ticket list for the same ticket.
 const STATUS_ORDER = [
-  { key: "open", label: "Open", color: "bg-blue-500" },
-  { key: "pending", label: "Pending", color: "bg-amber-500" },
-  { key: "in_progress", label: "In Progress", color: "bg-yellow-500" },
+  { key: "open", label: "New", color: "bg-neutral-400" },
+  { key: "in_progress", label: "In Progress", color: "bg-blue-500" },
   { key: "resolved", label: "Resolved", color: "bg-emerald-500" },
-  { key: "closed", label: "Closed", color: "bg-neutral-400" },
 ];
-
-const STATUS_BADGE = {
-  New: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400",
-  "In Progress": "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400",
-  Resolved: "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400",
-  Overdue: "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400",
-};
 
 const CATEGORY_COLORS = [
   "bg-black dark:bg-white",
@@ -54,14 +48,17 @@ const CustomerDashboard = ({ user }) => {
       const byStatus = {};
       const byCategory = {};
       for (const t of tickets) {
-        byStatus[t.status] = (byStatus[t.status] || 0) + 1;
+        // `pending` is a legacy value the copilot used to set; fold it into
+        // in_progress so the breakdown matches the labels shown elsewhere.
+        const key = t.status === "pending" ? "in_progress" : t.status;
+        byStatus[key] = (byStatus[key] || 0) + 1;
         const cat = t.category || "general";
         byCategory[cat] = (byCategory[cat] || 0) + 1;
       }
       return {
         total: tickets.length,
         open: byStatus.open || 0,
-        inProgress: (byStatus.in_progress || 0) + (byStatus.pending || 0),
+        inProgress: byStatus.in_progress || 0,
         resolved: (byStatus.resolved || 0) + (byStatus.closed || 0),
         byStatus,
         byCategory,
@@ -269,9 +266,9 @@ const CustomerDashboard = ({ user }) => {
                         className="w-full text-left flex items-center gap-[16px] px-[24px] py-[14px] hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                       >
                         <span
-                          className={`px-2 py-1 text-[10px] font-bold rounded uppercase shrink-0 ${
-                            STATUS_BADGE[label] || STATUS_BADGE.New
-                          }`}
+                          className={`px-2 py-1 text-[10px] font-bold rounded uppercase shrink-0 ${ticketStatusBadgeClass(
+                            label
+                          )}`}
                         >
                           {label}
                         </span>

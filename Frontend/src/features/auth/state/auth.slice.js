@@ -37,14 +37,21 @@ const authSlice = createSlice({
 
 export const {
   setUser,
-  user,
   setRole,
-  role,
   setLoading,
-  loading,
-  error,
   setError,
   clearAuth,
 } = authSlice.actions;
+
+// A suspended account can still sign in and read its history, but every write
+// is rejected server-side. Screens use this to disable their actions up front
+// instead of letting the user click into a 403.
+export const selectIsReadOnly = (state) =>
+  state.auth.user?.accountStatus === "suspended";
+
+export const selectSuspensionReason = (state) =>
+  state.auth.user?.accountStatus === "suspended"
+    ? state.auth.user?.statusReason || ""
+    : "";
 
 export default authSlice.reducer;

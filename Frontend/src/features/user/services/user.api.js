@@ -63,7 +63,21 @@ export const getUserById = async (id) => {
   return response.data;
 };
 
-export const deleteUser = async (id) => {
-  const response = await apiClient.delete(`${PREFIX}/remove/${id}`);
+// Soft delete — the record and their tickets/chats survive; they simply cannot
+// log in until an admin restores them. A non-empty reason is emailed to them.
+export const deleteUser = async ({ id, reason = "" }) => {
+  const response = await apiClient.delete(`${PREFIX}/remove/${id}`, {
+    data: { reason },
+  });
+  return response.data;
+};
+
+// Suspend, restore, or soft-delete in one call.
+// accountStatus: 'active' | 'suspended' | 'deleted'
+export const updateUserAccountStatus = async ({ id, accountStatus, reason = "" }) => {
+  const response = await apiClient.patch(`${PREFIX}/${id}/account-status`, {
+    accountStatus,
+    reason,
+  });
   return response.data;
 };

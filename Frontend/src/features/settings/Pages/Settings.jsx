@@ -9,6 +9,7 @@ import SecuritySection from "../components/SecuritySection";
 import BillingSection from "../components/BillingSection";
 import DangerZone from "../components/DangerZone";
 import CustomerProfileSection from "../components/CustomerProfileSection";
+import AppearanceSection from "../components/AppearanceSection";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 
 const Settings = () => {
@@ -62,12 +63,16 @@ const Settings = () => {
               className="space-y-[32px]"
             >
               {isCustomer ? (
-                <CustomerProfileSection />
+                <>
+                  <CustomerProfileSection />
+                  <AppearanceSection />
+                </>
               ) : (
                 <>
                   {activeTab === "General" && (
                     <>
                       <GeneralSection />
+                      <AppearanceSection />
                       <DangerZone />
                     </>
                   )}

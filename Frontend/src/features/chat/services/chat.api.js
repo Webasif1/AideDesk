@@ -12,8 +12,15 @@ export const createChat = async () => {
   return response.data;
 };
 
+// Staff pass ?customerId= to scope the list to one customer.
 export const getChats = async (params) => {
   const response = await apiClient.get(`${PREFIX}/`, { params });
+  return response.data;
+};
+
+// Customers with at least one ticket — feeds the chat page's customer column.
+export const getChatCustomers = async (params) => {
+  const response = await apiClient.get(`${PREFIX}/customers`, { params });
   return response.data;
 };
 

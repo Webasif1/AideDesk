@@ -1,4 +1,4 @@
-const filters = ["All Agents", "Online", "Offline", "Pending"];
+const filters = ["All Agents", "Online", "Offline", "Pending", "Suspended"];
 
 const TeamFilter = ({ active, onChange, search, onSearch }) => (
   <div className="flex flex-col md:flex-row md:items-center justify-between p-[16px] border-b border-neutral-200 dark:border-neutral-700 gap-4">

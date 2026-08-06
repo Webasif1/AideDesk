@@ -8,12 +8,16 @@ import TicketTabs from "../components/TicketTabs";
 import TicketTable from "../components/TicketTable";
 import CreateTicketModal from "../components/CreateTicketModal";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
+import Tooltip from "../../../components/ui/Tooltip";
+import { selectIsReadOnly } from "../../auth/state/auth.slice";
 
 const Tickets = () => {
   const [activeTab, setActiveTab] = useState("All Tickets");
   const [showModal, setShowModal] = useState(false);
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
+  // Suspended accounts keep full read access but cannot raise anything new.
+  const isReadOnly = useSelector(selectIsReadOnly);
 
   return (
     <PageWrapper>
@@ -38,13 +42,22 @@ const Tickets = () => {
                     : "Review and manage support requests across all channels."}
                 </p>
               </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors font-medium text-sm active:scale-95"
+              <Tooltip
+                text={
+                  isReadOnly
+                    ? "Your account is suspended — you can view your history but not raise new tickets."
+                    : ""
+                }
               >
-                <span className="material-symbols-outlined text-sm">add</span>
-                Create New Ticket
-              </button>
+                <button
+                  onClick={() => setShowModal(true)}
+                  disabled={isReadOnly}
+                  className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors font-medium text-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Create New Ticket
+                </button>
+              </Tooltip>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 24 }}

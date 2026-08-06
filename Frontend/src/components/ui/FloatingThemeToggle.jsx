@@ -10,17 +10,16 @@ const FloatingThemeToggle = () => {
   const isDark = mode === "dark";
 
   const path = location.pathname;
-  const inDashboard = path.startsWith("/dashboard");
-  const inCompanyPortal = path.startsWith("/company-portal");
 
   // The customer portal sign-in commits to its own dark aurora look, so a
   // light/dark switch there would only break the page.
   if (path.startsWith("/customer/")) return null;
 
-  // Position safely past any sidebars
-  let leftClass = "left-5";
-  if (inDashboard) leftClass = "left-[288px]"; // past w-64 (256px) sidebar + 32px gap
-  else if (inCompanyPortal) leftClass = "left-[244px]"; // past w-[220px] sidebar + 24px gap
+  // Dashboard pages carry the toggle in their TopBar cluster instead — the
+  // floating pill used to sit bottom-left over the sidebar's status panel and
+  // the conversation list. This is now only the fallback for pages with no
+  // TopBar: marketing, auth, onboarding and the company portal.
+  if (path.startsWith("/dashboard")) return null;
 
   return (
     <motion.button
@@ -31,7 +30,7 @@ const FloatingThemeToggle = () => {
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.96 }}
-      className={`fixed bottom-6 ${leftClass} z-[9999] group flex items-center gap-2 pl-2 pr-4 py-2 rounded-full border backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] transition-colors ${
+      className={`fixed top-5 right-5 z-[9999] group flex items-center gap-2 pl-2 pr-4 py-2 rounded-full border backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] transition-colors ${
         isDark
           ? "border-white/10 bg-neutral-900/80 hover:bg-neutral-800/90 text-neutral-100"
           : "border-black/5 bg-white/85 hover:bg-white text-neutral-900"

@@ -2,7 +2,9 @@ import { useState, useRef } from "react";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf";
 
-const ChatInput = ({ onSend, disabled = false }) => {
+// `lockedReason` replaces the whole composer — used when the account is
+// suspended, where the conversation stays readable but nothing can be sent.
+const ChatInput = ({ onSend, disabled = false, lockedReason = "" }) => {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [focused, setFocused] = useState(false);
@@ -49,6 +51,21 @@ const ChatInput = ({ onSend, disabled = false }) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  if (lockedReason) {
+    return (
+      <div className="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#111] px-[16px] py-[18px]">
+        <div className="flex items-center justify-center gap-[10px] text-center">
+          <span className="material-symbols-outlined text-[18px] text-neutral-400">
+            lock
+          </span>
+          <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
+            {lockedReason}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[16px] pt-[12px] pb-[16px] transition-all ${
@@ -60,8 +77,9 @@ const ChatInput = ({ onSend, disabled = false }) => {
         <button
           type="button"
           title="Attach file"
+          disabled={disabled}
           onClick={() => fileInputRef.current?.click()}
-          className="p-[6px] rounded-lg transition-colors text-neutral-400 dark:text-neutral-600 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700"
+          className="p-[6px] rounded-lg transition-colors text-neutral-400 dark:text-neutral-600 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <span className="material-symbols-outlined text-[18px]">
             attach_file

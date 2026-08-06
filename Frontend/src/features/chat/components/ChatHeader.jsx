@@ -39,10 +39,12 @@ const ChatHeader = ({ conversation, onClose }) => {
           subtitle: "AI Assistant · Always available",
         };
   } else {
+    // Default to offline, not online — an absent presence value means we don't
+    // know they are connected, so a green dot would be a lie.
     counterpart = {
       name: customerName(customer),
       avatarRole: "customer",
-      status: customer?.status || "online",
+      status: customer?.status === "online" ? "online" : "offline",
       subtitle: STATUS_TEXT[customer?.status] || "Offline",
     };
   }
@@ -107,7 +109,7 @@ const ChatHeader = ({ conversation, onClose }) => {
                     ? "bg-emerald-500"
                     : counterpart.status === "away"
                       ? "bg-amber-400"
-                      : "bg-neutral-300"
+                      : "bg-neutral-400 dark:bg-neutral-600"
                 }`}
               />
             )}

@@ -4,6 +4,7 @@ import {
   getChatStats as getChatStatsAPI,
   createChat as createChatAPI,
   getChats as getChatsAPI,
+  getChatCustomers as getChatCustomersAPI,
   getChat as getChatAPI,
   assignAgent as assignAgentAPI,
   updateChatStatus as updateChatStatusAPI,
@@ -12,6 +13,8 @@ import {
 } from "../services/chat.api";
 import {
   setChats,
+  setChatCustomers,
+  setChatCustomersLoading,
   setCurrentChat,
   setStats,
   setLoading,
@@ -24,8 +27,17 @@ import { addMessage, setMessages } from "../../message/state/message.slice";
 
 export const useChat = () => {
   const dispatch = useDispatch();
-  const { chats, currentChat, stats, loading, error, ticketDraft, pagination } =
-    useSelector((state) => state.chat);
+  const {
+    chats,
+    customers,
+    customersLoading,
+    currentChat,
+    stats,
+    loading,
+    error,
+    ticketDraft,
+    pagination,
+  } = useSelector((state) => state.chat);
 
   const handleRequest = async (apiFunc, data = null, onSuccess = null) => {
     dispatch(setLoading(true));
@@ -64,6 +76,23 @@ export const useChat = () => {
       return handleRequest(getChatsAPI, params, (res) => {
         dispatch(setChats(res.data));
       });
+    },
+    [dispatch]
+  );
+
+  // Deliberately outside handleRequest: the customer column loads alongside the
+  // conversation list, and sharing the one `loading` flag made both columns
+  // flicker whenever either refetched.
+  const getChatCustomers = useCallback(
+    async (params) => {
+      dispatch(setChatCustomersLoading(true));
+      try {
+        const res = await getChatCustomersAPI(params);
+        dispatch(setChatCustomers(res.data));
+        return res;
+      } finally {
+        dispatch(setChatCustomersLoading(false));
+      }
     },
     [dispatch]
   );
@@ -133,6 +162,8 @@ export const useChat = () => {
 
   return {
     chats,
+    customers,
+    customersLoading,
     currentChat,
     stats,
     loading,
@@ -142,6 +173,7 @@ export const useChat = () => {
     getChatStats,
     createChat,
     getChats,
+    getChatCustomers,
     getChat,
     assignAgent,
     updateChatStatus,

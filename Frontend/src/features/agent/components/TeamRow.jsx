@@ -1,3 +1,5 @@
+import RowActionsMenu from "../../../components/ui/RowActionsMenu";
+
 const roleStyle = {
   Lead: "bg-black text-white dark:bg-white dark:text-black",
   Agent: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200",
@@ -17,6 +19,11 @@ const statusConfig = {
     text: "text-neutral-700 dark:text-neutral-300",
   },
   Pending: { dot: "bg-amber-400", label: "Pending", text: "text-black dark:text-white" },
+  Suspended: {
+    dot: "bg-amber-500",
+    label: "Suspended",
+    text: "text-amber-600 dark:text-amber-400",
+  },
 };
 
 const TeamRow = ({
@@ -28,6 +35,11 @@ const TeamRow = ({
   assigned,
   lastActive,
   pending,
+  suspended,
+  onSuspend,
+  onRestore,
+  onRemove,
+  onResendInvite,
 }) => {
   const s = statusConfig[status] || statusConfig.Offline;
   const rs = roleStyle[role] || roleStyle.Agent;
@@ -85,15 +97,40 @@ const TeamRow = ({
       </td>
       <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">{lastActive}</td>
       <td className="px-6 py-4 text-right">
-        {pending ? (
-          <button className="px-3 py-1 text-xs font-semibold text-black dark:text-white border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-            Resend
-          </button>
-        ) : (
-          <button className="p-2 text-neutral-400 hover:text-black dark:hover:text-white transition-colors">
-            <span className="material-symbols-outlined">more_vert</span>
-          </button>
-        )}
+        <div className="flex items-center justify-end gap-2">
+          {pending && (
+            <button
+              type="button"
+              onClick={onResendInvite}
+              className="px-3 py-1 text-xs font-semibold text-black dark:text-white border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Resend
+            </button>
+          )}
+          <RowActionsMenu
+            icon="more_vert"
+            label={`Actions for ${name || email}`}
+            items={[
+              suspended
+                ? {
+                    label: "Restore agent",
+                    icon: "lock_open",
+                    onSelect: onRestore,
+                  }
+                : {
+                    label: "Suspend agent",
+                    icon: "pause_circle",
+                    onSelect: onSuspend,
+                  },
+              {
+                label: "Remove agent",
+                icon: "person_remove",
+                tone: "danger",
+                onSelect: onRemove,
+              },
+            ]}
+          />
+        </div>
       </td>
     </tr>
   );

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { useUser } from "../../user/hooks/useUser";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { toast } from "../../../components/ui/toast";
 import { initialsOf } from "../../../lib/format";
+import { selectIsReadOnly } from "../../auth/state/auth.slice";
 
 const Field = ({ label, hint, children }) => (
   <div className="grid grid-cols-12 gap-[24px] items-center">
@@ -53,6 +55,8 @@ const PasswordInput = ({ value, onChange, placeholder }) => {
 const CustomerProfileSection = () => {
   const { getMe, updateMe, changeUserPassword } = useUser();
   const { getMe: refreshAuth } = useAuth();
+  // Suspended accounts are view-only — the server rejects these writes anyway.
+  const isReadOnly = useSelector(selectIsReadOnly);
 
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [original, setOriginal] = useState({ name: "", phone: "" });
@@ -180,7 +184,7 @@ const CustomerProfileSection = () => {
           <div className="flex justify-end pt-[8px]">
             <button
               onClick={handleSave}
-              disabled={!dirty || saving}
+              disabled={!dirty || saving || isReadOnly}
               className="bg-black dark:bg-white text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {saving && (
@@ -242,7 +246,7 @@ const CustomerProfileSection = () => {
           <div className="flex justify-end pt-[8px]">
             <button
               onClick={handlePassword}
-              disabled={!pwdValid || savingPwd}
+              disabled={!pwdValid || savingPwd || isReadOnly}
               className="bg-black dark:bg-white text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {savingPwd && (

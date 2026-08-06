@@ -1,7 +1,9 @@
 import ComingSoonOverlay from "../../../components/ui/ComingSoonOverlay";
 
-// Static decorative bars — purely visual, sits behind the "Coming Soon" overlay.
-const PREVIEW_BARS = [60, 90, 45, 120, 80, 140, 100, 70, 110, 95, 130, 75, 150, 85];
+// Empty placeholder columns. Deliberately uniform and value-free: this sits
+// behind a "Coming Soon" overlay, and invented bar heights read as real data
+// to anyone glancing at the dashboard.
+const PLACEHOLDER_COLUMNS = 14;
 
 const TicketVolumeChart = () => {
   return (
@@ -34,17 +36,9 @@ const TicketVolumeChart = () => {
 
         {/* Faux chart */}
         <div className="flex-1 min-h-[300px] px-[24px] pb-[24px] pt-[16px] flex items-end justify-between gap-[8px]">
-          {PREVIEW_BARS.map((h, i) => (
+          {[...Array(PLACEHOLDER_COLUMNS)].map((_, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-[6px]">
-              <div
-                className="w-full bg-neutral-100 dark:bg-neutral-800 rounded-t relative overflow-hidden"
-                style={{ height: `${h}px` }}
-              >
-                <div
-                  className="absolute bottom-0 w-full bg-black dark:bg-white rounded-t"
-                  style={{ height: `${Math.round(h * 0.55)}px` }}
-                />
-              </div>
+              <div className="w-full h-[8px] bg-neutral-100 dark:bg-neutral-800 rounded-t" />
             </div>
           ))}
         </div>

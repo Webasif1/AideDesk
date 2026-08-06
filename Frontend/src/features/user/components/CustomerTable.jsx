@@ -1,13 +1,80 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { SkeletonRow } from "../../../components/ui/Skeleton";
+import RowActionsMenu from "../../../components/ui/RowActionsMenu";
+import ConfirmActionModal from "../../../components/ui/ConfirmActionModal";
+import { toast } from "../../../components/ui/toast";
 import { useUser } from "../hooks/useUser";
 import { formatRelative, initialsOf, shortId } from "../../../lib/format";
 
 const LIMIT = 10;
 
+// Tab → server query. Filtering happens on the backend so the counts, the rows
+// and the pagination all agree; the old client-side filter only ever saw the
+// ten rows of the current page.
+const TAB_QUERY = {
+  "All Customers": {},
+  Active: { accountStatus: "active", verified: "true" },
+  Suspended: { accountStatus: "suspended" },
+  "Pending Review": { accountStatus: "active", verified: "false" },
+};
+
+const ACCOUNT_PILL = {
+  active: {
+    label: "Active",
+    className:
+      "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400",
+  },
+  suspended: {
+    label: "Suspended",
+    className: "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400",
+  },
+  pending: {
+    label: "Pending",
+    className:
+      "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+  },
+};
+
+const accountPillFor = (user) => {
+  if (user.accountStatus === "suspended") return ACCOUNT_PILL.suspended;
+  if (!user.isVerified) return ACCOUNT_PILL.pending;
+  return ACCOUNT_PILL.active;
+};
+
+// The three admin actions, each rendered through the same confirm modal.
+const ACTION_COPY = {
+  suspend: {
+    title: "Suspend this customer?",
+    description:
+      "They will still be able to sign in and read their tickets and conversations, but they will not be able to create tickets, send messages, or change anything until you restore them.",
+    confirmLabel: "Suspend customer",
+    tone: "warning",
+    accountStatus: "suspended",
+    success: "Customer suspended",
+  },
+  restore: {
+    title: "Restore this customer?",
+    description:
+      "Full access is returned immediately. They pick up their existing tickets and conversations exactly where they left off.",
+    confirmLabel: "Restore customer",
+    tone: "neutral",
+    accountStatus: "active",
+    success: "Customer restored",
+  },
+  delete: {
+    title: "Delete this customer?",
+    description:
+      "They will no longer be able to sign in. Their tickets, chats and message history are kept, so restoring the account later puts them straight back into their conversations.",
+    confirmLabel: "Delete customer",
+    tone: "danger",
+    accountStatus: "deleted",
+    success: "Customer removed",
+  },
+};
+
 const CustomerTable = ({ activeTab = "All Customers" }) => {
-  const { getUsers } = useUser();
+  const { getUsers, getUserStats, updateUserAccountStatus } = useUser();
   const users = useSelector((s) => s.user.users);
   const loading = useSelector((s) => s.user.loading);
   const pagination = useSelector((s) => s.user.pagination);
@@ -16,42 +83,117 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
   const workspaceId = activeWorkspaceId || userWorkspaceId;
 
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  // { action: 'suspend'|'restore'|'delete', customer }
+  const [pending, setPending] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState("");
 
-  useEffect(() => {
+  // Changing tab, workspace or search restarts pagination — otherwise page 3 of
+  // "All" becomes an empty page 3 of "Suspended". Adjusted during render rather
+  // than in an effect so the fetch below never fires once against a stale page.
+  const scope = `${workspaceId}|${activeTab}|${debouncedSearch}`;
+  const [prevScope, setPrevScope] = useState(scope);
+  if (scope !== prevScope) {
+    setPrevScope(scope);
     setPage(1);
-  }, [workspaceId]);
+  }
 
   useEffect(() => {
-    getUsers({ page, limit: LIMIT }).catch(() => {});
-  }, [getUsers, page, workspaceId]);
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
-  const filtered = useMemo(() => {
-    const list = users || [];
-    if (activeTab === "Active") return list.filter((u) => u.status === "online");
-    if (activeTab === "Pending Review") return list.filter((u) => !u.isVerified);
-    if (activeTab === "Suspended") return list.filter((u) => u.status === "offline" && u.isVerified === false);
-    return list;
-  }, [users, activeTab]);
+  const query = useMemo(
+    () => ({
+      page,
+      limit: LIMIT,
+      ...(TAB_QUERY[activeTab] || {}),
+      ...(debouncedSearch && { search: debouncedSearch }),
+    }),
+    [page, activeTab, debouncedSearch]
+  );
 
-  const rows = filtered.map((u) => ({
+  useEffect(() => {
+    getUsers(query).catch(() => {});
+  }, [getUsers, query, workspaceId]);
+
+  const rows = (users || []).map((u) => ({
     key: u._id,
+    raw: u,
     name: u.name,
     id: shortId(u._id, "#C-"),
     email: u.email,
     updated: formatRelative(u.lastLogin || u.updatedAt || u.createdAt),
     initials: initialsOf(u.name),
+    pill: accountPillFor(u),
+    isSuspended: u.accountStatus === "suspended",
   }));
 
   const total = pagination?.total ?? rows.length;
   const pages = pagination?.pages ?? 1;
 
+  const copy = pending ? ACTION_COPY[pending.action] : null;
+
+  const runAction = async (reason) => {
+    if (!pending || !copy) return;
+    setSubmitting(true);
+    setModalError("");
+    try {
+      const res = await updateUserAccountStatus({
+        id: pending.customer._id,
+        accountStatus: copy.accountStatus,
+        reason,
+      });
+      toast(
+        res?.emailed ? `${copy.success} — they were emailed the reason.` : copy.success,
+        { type: "success" }
+      );
+      setPending(null);
+      // Counts and the current page both shift, so refresh both.
+      getUsers(query).catch(() => {});
+      getUserStats().catch(() => {});
+    } catch (err) {
+      setModalError(
+        err?.response?.data?.message || err?.message || "That didn't work. Try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+      {/* Page-specific search — the global one in the header was decorative */}
+      <div className="px-[24px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
+        <div className="flex items-center bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
+          <span className="material-symbols-outlined text-neutral-400 text-[18px]">
+            search
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customers by name or email…"
+            className="bg-transparent text-[13px] text-black dark:text-white outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600 w-full"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-100 dark:border-neutral-700">
-              {["Name", "Email", "Last Active", ""].map((h) => (
+              {["Name", "Email", "Account", "Last Active", ""].map((h) => (
                 <th
                   key={h}
                   className="px-[24px] py-[16px] text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest"
@@ -65,14 +207,14 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
             {loading && rows.length === 0 ? (
               [...Array(6)].map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={4} className="px-0 py-0">
+                  <td colSpan={5} className="px-0 py-0">
                     <SkeletonRow />
                   </td>
                 </tr>
               ))
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-[24px] py-16 text-center">
+                <td colSpan={5} className="px-[24px] py-16 text-center">
                   <span className="material-symbols-outlined text-[40px] text-neutral-300 dark:text-neutral-700 block mb-2">
                     group_off
                   </span>
@@ -80,9 +222,11 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
                     No customers to show
                   </p>
                   <p className="text-[12px] text-neutral-400 mt-1">
-                    {activeTab === "All Customers"
-                      ? "Add a customer to get started."
-                      : `No customers match "${activeTab}".`}
+                    {debouncedSearch
+                      ? `Nothing matches "${debouncedSearch}".`
+                      : activeTab === "All Customers"
+                        ? "Add a customer to get started."
+                        : `No customers match "${activeTab}".`}
                   </p>
                 </td>
               </tr>
@@ -108,13 +252,42 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
                   <td className="px-[24px] py-[16px] text-[13px] text-neutral-600 dark:text-neutral-400">
                     {c.email}
                   </td>
+                  <td className="px-[24px] py-[16px]">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wide px-[8px] py-[3px] rounded-full ${c.pill.className}`}
+                    >
+                      {c.pill.label}
+                    </span>
+                  </td>
                   <td className="px-[24px] py-[16px] text-[13px] text-neutral-500 dark:text-neutral-400">
                     {c.updated}
                   </td>
                   <td className="px-[24px] py-[16px] text-right">
-                    <button className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white transition-colors p-[4px] rounded-lg">
-                      <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                    </button>
+                    <RowActionsMenu
+                      label={`Actions for ${c.name}`}
+                      items={[
+                        c.isSuspended
+                          ? {
+                              label: "Restore access",
+                              icon: "lock_open",
+                              onSelect: () =>
+                                setPending({ action: "restore", customer: c.raw }),
+                            }
+                          : {
+                              label: "Suspend customer",
+                              icon: "pause_circle",
+                              onSelect: () =>
+                                setPending({ action: "suspend", customer: c.raw }),
+                            },
+                        {
+                          label: "Delete customer",
+                          icon: "delete",
+                          tone: "danger",
+                          onSelect: () =>
+                            setPending({ action: "delete", customer: c.raw }),
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))
@@ -147,6 +320,24 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
           </button>
         </div>
       </div>
+
+      <ConfirmActionModal
+        open={Boolean(pending)}
+        title={copy?.title}
+        description={copy?.description}
+        entityName={
+          pending ? `${pending.customer.name} · ${pending.customer.email}` : ""
+        }
+        confirmLabel={copy?.confirmLabel}
+        tone={copy?.tone}
+        loading={submitting}
+        error={modalError}
+        onCancel={() => {
+          setPending(null);
+          setModalError("");
+        }}
+        onConfirm={runAction}
+      />
     </div>
   );
 };

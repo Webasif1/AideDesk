@@ -13,6 +13,7 @@ import {
   getUserStats as getUserStatsAPI,
   getUserById as getUserByIdAPI,
   deleteUser as deleteUserAPI,
+  updateUserAccountStatus as updateUserAccountStatusAPI,
 } from "../services/user.api";
 import {
   setUsers,
@@ -134,10 +135,26 @@ export const useUser = () => {
   );
 
   const deleteUser = useCallback(
-    async (id) => {
-      return handleRequest(deleteUserAPI, id, () => {
+    async ({ id, reason = "" }) => {
+      return handleRequest(deleteUserAPI, { id, reason }, () => {
         dispatch(removeUserFromList(id));
       });
+    },
+    [dispatch]
+  );
+
+  // Suspend / restore / soft-delete. A removed customer drops out of the list
+  // immediately; a suspended or restored one is updated in place.
+  const updateUserAccountStatus = useCallback(
+    async ({ id, accountStatus, reason = "" }) => {
+      return handleRequest(
+        updateUserAccountStatusAPI,
+        { id, accountStatus, reason },
+        (res) => {
+          if (accountStatus === "deleted") dispatch(removeUserFromList(id));
+          else if (res?.data) dispatch(updateUserInList(res.data));
+        }
+      );
     },
     [dispatch]
   );
@@ -161,5 +178,6 @@ export const useUser = () => {
     getUserStats,
     getUserById,
     deleteUser,
+    updateUserAccountStatus,
   };
 };

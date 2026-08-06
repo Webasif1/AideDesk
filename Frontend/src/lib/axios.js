@@ -1,5 +1,7 @@
 import axios from "axios";
 import { store } from "../App/app.store";
+import { clearAuth } from "../features/auth/state/auth.slice";
+import { toast } from "../components/ui/toast";
 
 const apiClient = axios.create({
   baseURL: "/api",
@@ -19,5 +21,31 @@ apiClient.interceptors.request.use((cfg) => {
   }
   return cfg;
 });
+
+// Account-state responses are handled once, here, rather than in every caller.
+// The server tags them with a `code` so we don't string-match messages.
+apiClient.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const code = error?.response?.data?.code;
+
+    if (code === "ACCOUNT_DELETED") {
+      // The account was removed while the tab was open — drop the session and
+      // send them back to sign-in rather than leaving a dead UI on screen.
+      store.dispatch(clearAuth());
+      toast("This account is no longer active.", { type: "error" });
+      if (!window.location.pathname.endsWith("/login")) {
+        window.location.assign("/login");
+      }
+    } else if (code === "ACCOUNT_SUSPENDED") {
+      toast(
+        error.response.data.message || "Your account is suspended.",
+        { type: "error" }
+      );
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;

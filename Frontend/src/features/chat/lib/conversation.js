@@ -62,7 +62,33 @@ export const conversationSubtitle = (conv) => {
   return conversationCustomer(conv).email || null;
 };
 
-// Chats carry a session status, not a presence status — an open chat reads as
-// online, anything else as offline.
-export const conversationPresence = (conv) =>
-  conv?.status === "active" ? "online" : "offline";
+// Real presence of the customer, from the populated user document. This used to
+// read the *chat's* session status, which meant every active conversation showed
+// a green dot regardless of whether the customer was actually connected.
+export const conversationPresence = (conv) => {
+  const user = conv?.user;
+  const presence = user && typeof user === "object" ? user.status : null;
+  return presence === "online" ? "online" : "offline";
+};
+
+// Priority order for the conversation list's "Priority" filter.
+const PRIORITY_RANK = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+export const conversationPriorityRank = (conv) =>
+  PRIORITY_RANK[conversationTicket(conv)?.priority] ?? PRIORITY_RANK.medium;
+
+// "Unread" for staff = this conversation has never been opened by me.
+// The backend records an entry in chat.openedBy the first time it is fetched.
+export const conversationIsUnreadFor = (conv, userId) => {
+  if (!userId) return false;
+  return !(conv?.openedBy || []).some(
+    (entry) => String(entry?.user) === String(userId)
+  );
+};
+
+// "Mine" for staff = I raised this ticket on the customer's behalf.
+export const conversationCreatedBy = (conv, userId) => {
+  const ticket = conversationTicket(conv);
+  if (!ticket?.createdBy || !userId) return false;
+  return String(ticket.createdBy) === String(userId);
+};

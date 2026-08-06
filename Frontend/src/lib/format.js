@@ -30,7 +30,12 @@ export const formatMinutes = (m) => {
   return rem ? `${h}h ${rem}m` : `${h}h`;
 };
 
-// Backend ticket status (+ slaBreached) → display label used by TicketRow styling.
+// Backend ticket status (+ slaBreached) → display label. The single source of
+// truth for status wording — every table, badge and dashboard reads through it.
+//
+// "New" means the customer has not replied yet. The AI opening the conversation
+// does not move a ticket off New; the backend flips it to in_progress on the
+// customer's first genuine reply (Backend/src/services/ticketStatus.service.js).
 export const ticketStatusLabel = (status, slaBreached) => {
   if (slaBreached && !["resolved", "closed"].includes(status)) return "Overdue";
   switch (status) {
@@ -46,6 +51,19 @@ export const ticketStatusLabel = (status, slaBreached) => {
       return "New";
   }
 };
+
+// Tailwind classes for a status badge, keyed by the label above so the colours
+// cannot drift between the ticket table and the dashboard.
+export const ticketStatusBadgeClass = (label) =>
+  ({
+    New: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
+    "In Progress":
+      "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400",
+    Resolved:
+      "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400",
+    Overdue: "bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400",
+  })[label] ||
+  "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300";
 
 // Backend priority (low/medium/high/urgent) → TicketRow's High/Normal/Low buckets.
 export const ticketPriorityLabel = (priority) => {

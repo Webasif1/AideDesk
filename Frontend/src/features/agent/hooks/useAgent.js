@@ -9,6 +9,7 @@ import {
   getAgent as getAgentAPI,
   updateAgent as updateAgentAPI,
   deleteAgent as deleteAgentAPI,
+  updateAgentAccountStatus as updateAgentAccountStatusAPI,
 } from "../services/agent.api";
 import {
   setAgents,
@@ -105,10 +106,26 @@ export const useAgent = () => {
   );
 
   const deleteAgent = useCallback(
-    async (id) => {
-      return handleRequest(deleteAgentAPI, id, () => {
+    async ({ id, reason = "" }) => {
+      return handleRequest(deleteAgentAPI, { id, reason }, () => {
         dispatch(removeAgentFromList(id));
       });
+    },
+    [dispatch]
+  );
+
+  // Suspend / restore / remove. A removed agent drops out of the list; a
+  // suspended or restored one is updated in place.
+  const updateAgentAccountStatus = useCallback(
+    async ({ id, accountStatus, reason = "" }) => {
+      return handleRequest(
+        updateAgentAccountStatusAPI,
+        { id, accountStatus, reason },
+        (res) => {
+          if (accountStatus === "deleted") dispatch(removeAgentFromList(id));
+          else if (res?.data) dispatch(updateAgentInList(res.data));
+        }
+      );
     },
     [dispatch]
   );
@@ -128,5 +145,6 @@ export const useAgent = () => {
     getAgent,
     updateAgent,
     deleteAgent,
+    updateAgentAccountStatus,
   };
 };

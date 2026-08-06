@@ -40,7 +40,19 @@ export const updateAgent = async ({ id, ...updateData }) => {
   return response.data;
 };
 
-export const deleteAgent = async (id) => {
-  const response = await apiClient.delete(`${PREFIX}/${id}`);
+// Soft removal — the agent's handled tickets keep a real name on them, and any
+// live tickets they hold are handed to other active agents.
+export const deleteAgent = async ({ id, reason = "" }) => {
+  const response = await apiClient.delete(`${PREFIX}/${id}`, { data: { reason } });
+  return response.data;
+};
+
+// Suspend, restore, or remove an agent. Suspending/removing triggers ticket
+// reassignment server-side; the response carries { reassigned, unassigned }.
+export const updateAgentAccountStatus = async ({ id, accountStatus, reason = "" }) => {
+  const response = await apiClient.patch(`${PREFIX}/${id}/account-status`, {
+    accountStatus,
+    reason,
+  });
   return response.data;
 };

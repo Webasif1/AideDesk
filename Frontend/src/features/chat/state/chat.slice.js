@@ -2,6 +2,9 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   chats: [],
+  // Customers with at least one ticket — the chat page's first column.
+  customers: [],
+  customersLoading: false,
   currentChat: null,
   stats: null,
   loading: false,
@@ -24,6 +27,12 @@ const chatSlice = createSlice({
       if (action.payload.pagination) {
         state.pagination = action.payload.pagination;
       }
+    },
+    setChatCustomers: (state, action) => {
+      state.customers = action.payload || [];
+    },
+    setChatCustomersLoading: (state, action) => {
+      state.customersLoading = action.payload;
     },
     setCurrentChat: (state, action) => {
       state.currentChat = action.payload;
@@ -60,6 +69,8 @@ const chatSlice = createSlice({
 
 export const {
   setChats,
+  setChatCustomers,
+  setChatCustomersLoading,
   setCurrentChat,
   setStats,
   setLoading,

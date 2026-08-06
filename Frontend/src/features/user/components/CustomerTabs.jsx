@@ -1,13 +1,16 @@
 import { useSelector } from "react-redux";
 
+// Counts come from GET /api/users/stats, not from the rows currently on screen.
+// The list is paginated, so counting the visible page made the badges disagree
+// with the list the moment there was more than one page of customers.
 const CustomerTabs = ({ active, onChange }) => {
-  const users = useSelector((state) => state.user.users || []);
+  const tabCounts = useSelector((state) => state.user.stats?.tabs);
 
   const tabs = [
-    { label: "All Customers", count: users.length },
-    { label: "Active", count: users.filter((u) => u.status === "online").length },
-    { label: "Suspended", count: users.filter((u) => u.status === "offline" && u.isVerified === false).length },
-    { label: "Pending Review", count: users.filter((u) => !u.isVerified).length },
+    { label: "All Customers", count: tabCounts?.all },
+    { label: "Active", count: tabCounts?.active },
+    { label: "Suspended", count: tabCounts?.suspended },
+    { label: "Pending Review", count: tabCounts?.pendingReview },
   ];
 
   return (

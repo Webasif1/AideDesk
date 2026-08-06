@@ -1,7 +1,17 @@
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+// Plan names are read from the company record. This card used to hardcode
+// "Enterprise Plus" for every workspace regardless of what they were actually on.
+const PLAN_LABEL = {
+  free: "Free",
+  pro: "Pro",
+  enterprise: "Enterprise",
+};
 
 const QuickActions = () => {
   const navigate = useNavigate();
+  const plan = useSelector((s) => s.company.currentCompany?.plan);
 
   const actions = [
     {
@@ -37,24 +47,30 @@ const QuickActions = () => {
         ))}
       </div>
 
-      {/* Upgrade card */}
-      <div className="mt-auto pt-[24px]">
-        <div className="bg-neutral-900 dark:bg-black border border-transparent dark:border-neutral-800 text-white rounded-xl p-[16px] relative overflow-hidden">
-          <div className="relative z-10">
-            <h5 className="text-[10px] font-bold uppercase tracking-widest mb-[4px] text-neutral-300">
-              Support Tier
-            </h5>
-            <p className="text-[17px] font-bold mb-[12px]">Enterprise Plus</p>
-            <button
-              onClick={() => navigate("/dashboard/billing")}
-              className="text-[10px] font-bold bg-white text-black px-[12px] py-[6px] rounded-lg uppercase hover:opacity-90 transition-opacity active:scale-95"
-            >
-              Upgrade
-            </button>
+      {/* Plan card — only rendered once we actually know the plan */}
+      {plan && (
+        <div className="mt-auto pt-[24px]">
+          <div className="bg-neutral-900 dark:bg-black border border-transparent dark:border-neutral-800 text-white rounded-xl p-[16px] relative overflow-hidden">
+            <div className="relative z-10">
+              <h5 className="text-[10px] font-bold uppercase tracking-widest mb-[4px] text-neutral-300">
+                Support Tier
+              </h5>
+              <p className="text-[17px] font-bold mb-[12px]">
+                {PLAN_LABEL[plan] || plan}
+              </p>
+              {plan !== "enterprise" && (
+                <button
+                  onClick={() => navigate("/dashboard/billing")}
+                  className="text-[10px] font-bold bg-white text-black px-[12px] py-[6px] rounded-lg uppercase hover:opacity-90 transition-opacity active:scale-95"
+                >
+                  Upgrade
+                </button>
+              )}
+            </div>
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
         </div>
-      </div>
+      )}
     </div>
   );
 };

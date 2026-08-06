@@ -13,6 +13,8 @@ const baseItems = [
 
 const Sidebar = () => {
   const role = useSelector((s) => s.auth.role);
+  // Reflects the real-time connection rather than always claiming green.
+  const socketConnected = useSelector((s) => s.socket.connected);
   const navItems = baseItems.filter((item) => item.roles.includes(role));
 
   return (
@@ -52,8 +54,16 @@ const Sidebar = () => {
             System Status
           </p>
           <div className="flex items-center gap-[8px]">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[13px] font-medium text-neutral-700 dark:text-neutral-200">All systems normal</span>
+            <div
+              className={`w-2 h-2 rounded-full ${
+                socketConnected
+                  ? "bg-emerald-500 animate-pulse"
+                  : "bg-neutral-400 dark:bg-neutral-600"
+              }`}
+            />
+            <span className="text-[13px] font-medium text-neutral-700 dark:text-neutral-200">
+              {socketConnected ? "Live updates on" : "Reconnecting…"}
+            </span>
           </div>
         </div>
       </div>

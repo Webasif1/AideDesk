@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
 import ChatConversationList from "../components/ChatConversationList";
+import ChatCustomerList from "../components/ChatCustomerList";
 import ChatWindow from "../components/ChatWindow";
 import ChatCustomerInfo from "../components/ChatCustomerInfo";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
@@ -43,14 +44,54 @@ const ChatScreen = () => {
 
   const [activeConversation, setActiveConversation] = useState(null);
   const [showInfo, setShowInfo] = useState(true);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
 
-  const { getChats, getChat, chats } = useChat();
+  const {
+    getChats,
+    getChatCustomers,
+    getChat,
+    chats,
+    customers,
+    customersLoading,
+  } = useChat();
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
 
+  // Staff browse by customer first; the conversation list is scoped to whoever
+  // is selected. Customers only ever have their own thread, so they skip both
+  // the customer column and the scoping.
   useEffect(() => {
-    getChats({}).catch(() => {});
-  }, [getChats]);
+    if (isCustomer) {
+      getChats({}).catch(() => {});
+      return;
+    }
+    // A deep link (?chat=…) needs the full list to resolve the conversation, so
+    // don't scope until the operator has actually picked somebody.
+    if (selectedCustomerId) {
+      getChats({ customerId: selectedCustomerId }).catch(() => {});
+    } else if (chatParam) {
+      getChats({}).catch(() => {});
+    }
+  }, [getChats, isCustomer, selectedCustomerId, chatParam]);
+
+  useEffect(() => {
+    if (!isCustomer) getChatCustomers({}).catch(() => {});
+  }, [getChatCustomers, isCustomer]);
+
+  // Single entry point for opening a thread. Staff arriving via a deep link
+  // (?chat=… from a ticket row) also get that customer lit up in the column,
+  // so the three panes never disagree about who is being looked at.
+  const openConversation = useCallback(
+    (conv) => {
+      if (!conv) return;
+      setActiveConversation(conv);
+      if (!isCustomer) {
+        const ownerId = conv.user?._id || conv.user || null;
+        if (ownerId) setSelectedCustomerId(String(ownerId));
+      }
+    },
+    [isCustomer]
+  );
 
   // Open the deep-linked chat (from a ticket row), else the most recent one.
   useEffect(() => {
@@ -58,18 +99,29 @@ const ChatScreen = () => {
       if (activeConversation?._id === chatParam) return;
       const found = chats.find((c) => c._id === chatParam);
       if (found) {
-        setActiveConversation(found);
+        openConversation(found);
       } else {
         getChat(chatParam)
           .then((res) => {
-            if (res?.data?.chat) setActiveConversation(res.data.chat);
+            if (res?.data?.chat) openConversation(res.data.chat);
           })
           .catch(() => {});
       }
       return;
     }
-    if (!activeConversation && chats.length > 0) setActiveConversation(chats[0]);
-  }, [chatParam, chats, activeConversation, getChat]);
+    // Staff only get an auto-selected conversation once they have picked a
+    // customer — otherwise the page would open somebody's thread at random.
+    if (!isCustomer && !selectedCustomerId) return;
+    if (!activeConversation && chats.length > 0) openConversation(chats[0]);
+  }, [
+    chatParam,
+    chats,
+    activeConversation,
+    getChat,
+    openConversation,
+    isCustomer,
+    selectedCustomerId,
+  ]);
 
   return (
     <PageWrapper>
@@ -83,19 +135,48 @@ const ChatScreen = () => {
             className="flex flex-1 overflow-hidden"
             style={{ height: "calc(100vh - 64px)" }}
           >
-            {/* Conversation list — hidden for customers (single support thread) */}
+            {/* Customer column — staff pick a person before seeing threads */}
             {!isCustomer && (
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
+                className="w-[240px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
+              >
+                <ChatCustomerList
+                  customers={customers}
+                  loading={customersLoading}
+                  selectedId={selectedCustomerId}
+                  onSelect={(customer) => {
+                    setSelectedCustomerId(customer._id);
+                    // The previously open thread belongs to somebody else.
+                    setActiveConversation(null);
+                    setShowInfo(true);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* Conversation list — hidden for customers (single support thread) */}
+            {!isCustomer && (
+              <motion.div
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
                 className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
               >
                 <ChatConversationList
-                  conversations={chats}
+                  // Empty until a customer is chosen, rather than every
+                  // conversation in the company at once.
+                  conversations={selectedCustomerId ? chats : []}
                   activeId={activeConversation?._id}
+                  emptyLabel={
+                    selectedCustomerId
+                      ? "This customer has no conversations yet."
+                      : "Select a customer to see their conversations."
+                  }
                   onSelect={(conv) => {
-                    setActiveConversation(conv);
+                    openConversation(conv);
                     setShowInfo(true);
                   }}
                 />
@@ -133,13 +214,13 @@ const ChatScreen = () => {
                   transition={{ duration: 0.22, ease: "easeOut" }}
                   className="w-[260px] shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden flex flex-col"
                 >
-                  <div className="flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-100">
-                    <span className="text-[12px] font-bold uppercase tracking-widest text-neutral-500">
+                  <div className="flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
+                    <span className="text-[12px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                       Customer
                     </span>
                     <button
                       onClick={() => setShowInfo(false)}
-                      className="p-[4px] rounded-lg hover:bg-neutral-100 transition-colors"
+                      className="p-[4px] rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                     >
                       <span className="material-symbols-outlined text-[16px] text-neutral-400">
                         chevron_right
@@ -154,7 +235,7 @@ const ChatScreen = () => {
             {activeConversation && !showInfo && !isCustomer && (
               <button
                 onClick={() => setShowInfo(true)}
-                className="w-[36px] border-l border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors shrink-0"
+                className="w-[36px] border-l border-neutral-200 dark:border-neutral-800 flex items-center justify-center hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shrink-0"
                 title="Show customer info"
               >
                 <span className="material-symbols-outlined text-[18px] text-neutral-400">

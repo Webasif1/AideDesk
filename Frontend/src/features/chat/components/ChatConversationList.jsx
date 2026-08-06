@@ -1,7 +1,12 @@
+import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import ChatAvatar from "./ChatAvatar";
 import {
+  conversationCreatedBy,
   conversationCustomer,
+  conversationIsUnreadFor,
   conversationPresence,
+  conversationPriorityRank,
   conversationSubtitle,
   conversationTag,
   conversationTicket,
@@ -20,7 +25,61 @@ const formatTime = (date) => {
 };
 
 
-const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
+const FILTERS = ["All", "Mine", "Unread", "Priority"];
+
+const ChatConversationList = ({
+  conversations = [],
+  activeId,
+  onSelect,
+  emptyLabel = "No conversations yet.",
+}) => {
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const myId = useSelector((s) => s.auth.user?.id || s.auth.user?._id);
+
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    let list = conversations.filter((conv) => {
+      if (!term) return true;
+      const customer = conversationCustomer(conv);
+      return [
+        conversationTitle(conv),
+        conversationSubtitle(conv),
+        customer.name,
+        customer.email,
+        conv.latestMessage?.content,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(term));
+    });
+
+    // Mine  → tickets this staff member raised on a customer's behalf.
+    // Unread→ conversations they have never opened.
+    if (filter === "Mine") {
+      list = list.filter((conv) => conversationCreatedBy(conv, myId));
+    } else if (filter === "Unread") {
+      list = list.filter((conv) => conversationIsUnreadFor(conv, myId));
+    } else if (filter === "Priority") {
+      // Sort rather than filter — urgent first, then newest within a priority.
+      list = [...list].sort(
+        (a, b) =>
+          conversationPriorityRank(a) - conversationPriorityRank(b) ||
+          new Date(b.lastActivity || b.updatedAt || 0) -
+            new Date(a.lastActivity || a.updatedAt || 0)
+      );
+    }
+
+    return list;
+  }, [conversations, filter, search, myId]);
+
+  const emptyMessage =
+    conversations.length === 0
+      ? emptyLabel
+      : search.trim()
+        ? `Nothing matches "${search.trim()}".`
+        : `No conversations under "${filter}".`;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -39,6 +98,8 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
             search
           </span>
           <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="bg-transparent text-[12px] text-black dark:text-white outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 w-full"
             placeholder="Search conversations..."
           />
@@ -47,12 +108,13 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
 
       {/* Filter pills */}
       <div className="flex gap-[6px] px-[16px] py-[10px] border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto scrollbar-none">
-        {["All", "Mine", "Unread", "Priority"].map((f, i) => (
+        {FILTERS.map((f) => (
           <button
             key={f}
+            onClick={() => setFilter(f)}
             className={`shrink-0 text-[11px] font-semibold px-[10px] py-[4px] rounded-full transition-all ${
-              i === 0
-                ? "bg-black text-white"
+              filter === f
+                ? "bg-black dark:bg-white text-white dark:text-black"
                 : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
             }`}
           >
@@ -63,12 +125,12 @@ const ChatConversationList = ({ conversations = [], activeId, onSelect }) => {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {conversations.length === 0 && (
+        {visible.length === 0 && (
           <div className="px-4 py-8 text-center text-[12px] text-neutral-400">
-            No conversations yet.
+            {emptyMessage}
           </div>
         )}
-        {conversations.map((conv, idx) => {
+        {visible.map((conv, idx) => {
           const isActive = conv._id === activeId;
           const customer = conversationCustomer(conv);
           const title = conversationTitle(conv);

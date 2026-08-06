@@ -1,23 +1,20 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTicket } from "../../ticket/hooks/useTicket";
-import { formatRelative, initialsOf, shortId } from "../../../lib/format";
+import {
+  formatRelative,
+  initialsOf,
+  shortId,
+  ticketStatusBadgeClass,
+  ticketStatusLabel,
+} from "../../../lib/format";
 import { SkeletonRow } from "../../../components/ui/Skeleton";
 
-const statusStyle = {
-  New: "bg-black dark:bg-white text-white dark:text-black",
-  "In Progress": "bg-neutral-200 dark:bg-neutral-700 text-black dark:text-white",
-  Resolved: "border border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-500",
-};
-
-// Recent-table only has three visual buckets.
-const toStatus = (status) => {
-  if (["resolved", "closed"].includes(status)) return "Resolved";
-  if (["in_progress", "pending"].includes(status)) return "In Progress";
-  return "New";
-};
-
+// Status wording and colours come from lib/format so this table, the ticket
+// list and the customer dashboard can never disagree about what "New" means.
 const RecentTicketsTable = () => {
+  const navigate = useNavigate();
   const { getTickets } = useTicket();
   const tickets = useSelector((s) => s.ticket.tickets);
   const loading = useSelector((s) => s.ticket.loading);
@@ -38,7 +35,7 @@ const RecentTicketsTable = () => {
       initials: ai ? "AI" : initialsOf(agentName),
       id: t.ticketNumber || shortId(t._id, "#"),
       subject: t.title,
-      status: toStatus(t.status),
+      status: ticketStatusLabel(t.status, t.slaBreached),
       time: formatRelative(t.updatedAt || t.createdAt),
       ai,
     };
@@ -48,7 +45,10 @@ const RecentTicketsTable = () => {
     <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="p-[24px] border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
         <h4 className="font-bold text-black dark:text-white">Recent Ticket Updates</h4>
-        <button className="text-[12px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors">
+        <button
+          onClick={() => navigate("/dashboard/tickets")}
+          className="text-[12px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
+        >
           View All
         </button>
       </div>
@@ -112,7 +112,7 @@ const RecentTicketsTable = () => {
                   </td>
                   <td className="px-[24px] py-[16px]">
                     <span
-                      className={`px-[8px] py-[4px] text-[10px] font-bold rounded-lg ${statusStyle[t.status]}`}
+                      className={`px-[8px] py-[4px] text-[10px] font-bold rounded-lg ${ticketStatusBadgeClass(t.status)}`}
                     >
                       {t.status}
                     </span>

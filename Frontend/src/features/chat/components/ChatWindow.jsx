@@ -7,6 +7,7 @@ import TicketConfirmModal from "./TicketConfirmModal";
 import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
 import { clearMessages } from "../../message/state/message.slice";
+import { selectIsReadOnly } from "../../auth/state/auth.slice";
 
 // Backend message role is `user` | `agent` | `ai`. Map it to the display roles
 // ChatBubble/ChatAvatar understand (`customer` | `agent` | `ai`).
@@ -27,6 +28,19 @@ const senderFromMessage = (msg, customerLabel = "You") => {
     name: msg.sender?.name || customerLabel,
     status: "online",
   };
+};
+
+// Real day label for a message. The divider used to be hardcoded to "Today",
+// so a month-old thread still claimed every message was sent today.
+const dayLabel = (date) => {
+  if (!date) return "";
+  const d = new Date(date);
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return d.toLocaleDateString([], { weekday: "long" });
+  return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 };
 
 const DateDivider = ({ label }) => (
@@ -54,6 +68,8 @@ const ChatWindow = ({ conversation, onClose }) => {
 
   const messages = useSelector((s) => s.message.messages);
   const role = useSelector((s) => s.auth.role);
+  // Suspended accounts read the thread but cannot post into it.
+  const isReadOnly = useSelector(selectIsReadOnly);
   const copilotTyping = useSelector(
     (s) => conversation && s.socket.copilotTyping[conversation._id]
   );
@@ -152,11 +168,13 @@ const ChatWindow = ({ conversation, onClose }) => {
           </div>
         ) : (
           <>
-            <DateDivider label="Today" />
-
             {messages.map((msg, idx) => {
               const prevMsg = messages[idx - 1];
               const sender = senderFromMessage(msg, customerLabel);
+              // Insert a divider whenever the calendar day changes.
+              const thisDay = dayLabel(msg.createdAt);
+              const showDayDivider =
+                !prevMsg || dayLabel(prevMsg.createdAt) !== thisDay;
               const prevSender = prevMsg
                 ? senderFromMessage(prevMsg, customerLabel)
                 : null;
@@ -169,27 +187,27 @@ const ChatWindow = ({ conversation, onClose }) => {
               const isOwn = sender.role === "customer";
 
               return (
-                <div
-                  key={msg._id || msg.id}
-                  className={showAvatar ? "mt-[10px]" : "mt-[2px]"}
-                >
-                  <ChatBubble
-                    message={{
-                      ...msg,
-                      sender,
-                      text: msg.content || msg.text,
-                      time: msg.createdAt
-                        ? new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : msg.time,
-                    }}
-                    isOwn={isOwn}
-                    showStatus={isOwn && role === "customer"}
-                    showAvatar={showAvatar}
-                    animate={true}
-                  />
+                <div key={msg._id || msg.id}>
+                  {showDayDivider && thisDay && <DateDivider label={thisDay} />}
+                  <div className={showAvatar ? "mt-[10px]" : "mt-[2px]"}>
+                    <ChatBubble
+                      message={{
+                        ...msg,
+                        sender,
+                        text: msg.content || msg.text,
+                        time: msg.createdAt
+                          ? new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : msg.time,
+                      }}
+                      isOwn={isOwn}
+                      showStatus={isOwn && role === "customer"}
+                      showAvatar={showAvatar}
+                      animate={true}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -218,9 +236,19 @@ const ChatWindow = ({ conversation, onClose }) => {
         )}
       </div>
 
-      <ChatInput onSend={handleSend} disabled={loading} />
+      <ChatInput
+        onSend={handleSend}
+        disabled={loading}
+        lockedReason={
+          isReadOnly
+            ? "Your account is suspended. You can read this conversation, but you can't send messages."
+            : ""
+        }
+      />
 
-      {ticketDraft && ticketDraft.chatId === conversation._id && (
+      {/* A suspended customer can't confirm a ticket draft either — the write
+          would be rejected server-side, so don't offer it. */}
+      {ticketDraft && ticketDraft.chatId === conversation._id && !isReadOnly && (
         <TicketConfirmModal
           draft={ticketDraft}
           onConfirm={(edited) =>

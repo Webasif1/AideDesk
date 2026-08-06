@@ -33,10 +33,12 @@ import WorkspaceList from "../features/company/pages/WorkspaceList";
 // Dashboard / app
 import Dashboard from "../features/dashboard/Pages/Dashboard";
 import Settings from "../features/settings/Pages/Settings";
-import Customers from "../features/user/Pages/Customers";
+// NOTE: these three live in lowercase `pages/` on disk. Windows resolves either
+// spelling, Linux and Docker do not — keep the casing exact.
+import Customers from "../features/user/pages/Customers";
 import Tickets from "../features/ticket/Pages/Tickets";
-import Team from "../features/agent/Pages/Team";
-import ChatScreen from "../features/chat/Pages/ChatScreen";
+import Team from "../features/agent/pages/Team";
+import ChatScreen from "../features/chat/pages/ChatScreen";
 import Billing from "../features/billing/Pages/Billing";
 
 // Onboarding

@@ -4,6 +4,11 @@ import { useSelector } from "react-redux";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useUser } from "../../user/hooks/useUser";
 import { toast } from "../../../components/ui/toast";
+import ThemeToggleButton from "../../../components/ui/ThemeToggleButton";
+import {
+  selectIsReadOnly,
+  selectSuspensionReason,
+} from "../../auth/state/auth.slice";
 
 const STATUS_META = {
   online: { label: "Online", color: "bg-emerald-500", text: "text-emerald-600" },
@@ -50,6 +55,8 @@ const TopBar = () => {
   const tickets = useSelector((state) => state.ticket.tickets || []);
   const user = useSelector((state) => state.auth.user);
   const role = useSelector((state) => state.auth.role);
+  const isReadOnly = useSelector(selectIsReadOnly);
+  const suspensionReason = useSelector(selectSuspensionReason);
 
   const isCustomer = role === "customer";
 
@@ -106,6 +113,13 @@ const TopBar = () => {
       setProfileOpen(false);
       return;
     }
+    // Changing status is a write, which a suspended account cannot make. Stop
+    // here rather than letting the optimistic update flash and then revert.
+    if (isReadOnly) {
+      setProfileOpen(false);
+      toast("Your account is suspended — this is view-only.", { type: "error" });
+      return;
+    }
     const prev = status;
     setStatus(val); // optimistic
     setProfileOpen(false);
@@ -133,26 +147,28 @@ const TopBar = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md flex justify-between items-center h-16 px-[32px]">
-      {/* Search */}
-      <div className="flex items-center bg-surface-container-low dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[6px] w-96 transition-all focus-within:border-black dark:focus-within:border-white gap-[8px]">
-        <span className="material-symbols-outlined text-neutral-400 text-[20px]">
-          search
-        </span>
-        <input
-          className="bg-transparent border-none focus:ring-0 text-[13px] w-full font-['Inter'] outline-none text-black dark:text-white placeholder:text-neutral-400"
-          placeholder={
-            isCustomer ? "Search your tickets..." : "Search tickets, agents, or knowledge..."
-          }
-          type="text"
-        />
-        <span className="text-[10px] bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 px-[6px] py-[2px] rounded text-neutral-400 font-mono shrink-0">
-          ⌘K
-        </span>
+      {/* Left: read-only notice for suspended accounts, otherwise nothing.
+          The global search that used to live here was decorative — it had no
+          handler at all. Pages that need search now carry their own. */}
+      <div className="flex items-center min-w-0">
+        {isReadOnly && (
+          <div className="flex items-center gap-[8px] px-[12px] py-[6px] bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 rounded-lg max-w-[560px]">
+            <span className="material-symbols-outlined text-amber-500 text-[18px] shrink-0">
+              lock
+            </span>
+            <p className="text-[12px] text-amber-700 dark:text-amber-400 truncate">
+              <span className="font-semibold">View-only —</span> your account is
+              suspended{suspensionReason ? `: ${suspensionReason}` : "."}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Right side */}
       <div className="flex items-center gap-[16px]">
         <div className="flex items-center gap-[4px]">
+          <ThemeToggleButton />
+
           {/* ── Notifications ── */}
           <div className="relative" ref={notifRef}>
             <button
@@ -173,15 +189,15 @@ const TopBar = () => {
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-[calc(100%+8px)] w-[360px] bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
+              <div className="absolute right-0 top-[calc(100%+8px)] w-[360px] bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
                 {/* Header */}
-                <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-neutral-100">
+                <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
                   <div>
-                    <h3 className="text-[14px] font-semibold text-black">
+                    <h3 className="text-[14px] font-semibold text-black dark:text-white">
                       Notifications
                     </h3>
                     {unreadCount > 0 && (
-                      <p className="text-[11px] text-neutral-500 mt-[1px]">
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-[1px]">
                         {unreadCount} unread
                       </p>
                     )}
@@ -189,7 +205,7 @@ const TopBar = () => {
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
-                      className="text-[11px] font-semibold text-neutral-500 hover:text-black transition-colors"
+                      className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors"
                     >
                       Mark all read
                     </button>
@@ -197,7 +213,7 @@ const TopBar = () => {
                 </div>
 
                 {/* List */}
-                <div className="max-h-[340px] overflow-y-auto divide-y divide-neutral-50">
+                <div className="max-h-[340px] overflow-y-auto divide-y divide-neutral-50 dark:divide-neutral-800">
                   {notifs.length === 0 && (
                     <div className="px-[20px] py-[24px] text-center text-[12px] text-neutral-400">
                       No notifications yet.
@@ -209,15 +225,15 @@ const TopBar = () => {
                       onClick={() => markRead(n.id)}
                       className={`flex items-start gap-[12px] px-[20px] py-[14px] cursor-pointer transition-colors ${
                         n.unread
-                          ? "bg-neutral-50 hover:bg-neutral-100"
-                          : "hover:bg-neutral-50"
+                          ? "bg-neutral-50 dark:bg-neutral-800/60 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                       }`}
                     >
                       <div
                         className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                           n.unread
-                            ? "bg-black text-white"
-                            : "bg-neutral-100 text-neutral-400"
+                            ? "bg-black dark:bg-white text-white dark:text-black"
+                            : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"
                         }`}
                       >
                         <span className="material-symbols-outlined text-[18px]">
@@ -228,8 +244,8 @@ const TopBar = () => {
                         <p
                           className={`text-[13px] leading-tight mb-[2px] ${
                             n.unread
-                              ? "font-semibold text-black"
-                              : "text-neutral-600"
+                              ? "font-semibold text-black dark:text-white"
+                              : "text-neutral-600 dark:text-neutral-300"
                           }`}
                         >
                           {n.title}
@@ -242,20 +258,20 @@ const TopBar = () => {
                         </p>
                       </div>
                       {n.unread && (
-                        <div className="w-2 h-2 rounded-full bg-black shrink-0 mt-[6px]" />
+                        <div className="w-2 h-2 rounded-full bg-black dark:bg-white shrink-0 mt-[6px]" />
                       )}
                     </div>
                   ))}
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-neutral-100 px-[20px] py-[12px]">
+                <div className="border-t border-neutral-100 dark:border-neutral-800 px-[20px] py-[12px]">
                   <button
                     onClick={() => {
                       setNotifOpen(false);
                       navigate("/dashboard/tickets");
                     }}
-                    className="w-full text-[12px] font-semibold text-neutral-500 hover:text-black transition-colors text-center"
+                    className="w-full text-[12px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-black dark:hover:text-white transition-colors text-center"
                   >
                     View all tickets
                   </button>
@@ -331,11 +347,11 @@ const TopBar = () => {
 
           {/* Profile dropdown */}
           {profileOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] w-[240px] bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
+            <div className="absolute right-0 top-[calc(100%+10px)] w-[240px] bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
               {/* Profile summary */}
-              <div className="px-[16px] py-[14px] border-b border-neutral-100 flex items-center gap-[12px]">
+              <div className="px-[16px] py-[14px] border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-[12px]">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-black dark:bg-neutral-700 flex items-center justify-center overflow-hidden">
                     {profileImage ? (
                       <img
                         src={profileImage}
@@ -349,21 +365,21 @@ const TopBar = () => {
                     )}
                   </div>
                   <span
-                    className={`absolute -bottom-[3px] -right-[3px] w-[13px] h-[13px] rounded-full border-2 border-white ${currentStatus.color}`}
+                    className={`absolute -bottom-[3px] -right-[3px] w-[13px] h-[13px] rounded-full border-2 border-white dark:border-[#1a1a1a] ${currentStatus.color}`}
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-black leading-tight truncate">
+                  <p className="text-[13px] font-semibold text-black dark:text-white leading-tight truncate">
                     {displayName}
                   </p>
-                  <p className="text-[11px] text-neutral-500 leading-tight truncate">
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-tight truncate">
                     {email || roleLabel}
                   </p>
                 </div>
               </div>
 
               {/* Status selector */}
-              <div className="px-[12px] py-[10px] border-b border-neutral-100">
+              <div className="px-[12px] py-[10px] border-b border-neutral-100 dark:border-neutral-800">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 mb-[8px] px-[4px]">
                   Status
                 </p>
@@ -373,9 +389,11 @@ const TopBar = () => {
                     <button
                       key={val}
                       onClick={() => handleStatusChange(val)}
-                      disabled={savingStatus}
-                      className={`w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg text-left transition-all disabled:opacity-60 ${
-                        status === val ? "bg-neutral-100" : "hover:bg-neutral-50"
+                      disabled={savingStatus || isReadOnly}
+                      className={`w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                        status === val
+                          ? "bg-neutral-100 dark:bg-neutral-800"
+                          : "hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
                       }`}
                     >
                       <span
@@ -383,13 +401,15 @@ const TopBar = () => {
                       />
                       <span
                         className={`text-[13px] font-medium ${
-                          status === val ? "text-black" : "text-neutral-600"
+                          status === val
+                            ? "text-black dark:text-white"
+                            : "text-neutral-600 dark:text-neutral-300"
                         }`}
                       >
                         {opt.label}
                       </span>
                       {status === val && (
-                        <span className="material-symbols-outlined text-[16px] text-black ml-auto">
+                        <span className="material-symbols-outlined text-[16px] text-black dark:text-white ml-auto">
                           check
                         </span>
                       )}
@@ -399,18 +419,18 @@ const TopBar = () => {
               </div>
 
               {/* Actions */}
-              <div className="px-[12px] py-[8px] border-b border-neutral-100">
+              <div className="px-[12px] py-[8px] border-b border-neutral-100 dark:border-neutral-800">
                 <button
                   onClick={() => {
                     setProfileOpen(false);
                     navigate("/dashboard/settings");
                   }}
-                  className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-neutral-50 text-left transition-colors"
+                  className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800/60 text-left transition-colors"
                 >
                   <span className="material-symbols-outlined text-[18px] text-neutral-400">
                     manage_accounts
                   </span>
-                  <span className="text-[13px] text-neutral-700">
+                  <span className="text-[13px] text-neutral-700 dark:text-neutral-300">
                     Profile Settings
                   </span>
                 </button>
@@ -420,12 +440,12 @@ const TopBar = () => {
               <div className="px-[12px] py-[8px]">
                 <button
                   onClick={onLogout}
-                  className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-red-50 text-left transition-colors group/logout"
+                  className="w-full flex items-center gap-[10px] px-[8px] py-[8px] rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors group/logout"
                 >
                   <span className="material-symbols-outlined text-[18px] text-neutral-400 group-hover/logout:text-red-500 transition-colors">
                     logout
                   </span>
-                  <span className="text-[13px] text-neutral-700 group-hover/logout:text-red-600 transition-colors">
+                  <span className="text-[13px] text-neutral-700 dark:text-neutral-300 group-hover/logout:text-red-600 dark:group-hover/logout:text-red-400 transition-colors">
                     Log out
                   </span>
                 </button>

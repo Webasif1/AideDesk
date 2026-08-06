@@ -1,7 +1,9 @@
+// Offline reads grey, never green — presence comes from the customer's own
+// `status`, not from whether their chat session happens to be open.
 const statusColors = {
   online: "bg-emerald-500",
   away: "bg-amber-400",
-  offline: "bg-neutral-300",
+  offline: "bg-neutral-400 dark:bg-neutral-600",
   busy: "bg-red-500",
 };
 
@@ -50,7 +52,7 @@ const ChatAvatar = ({
       </div>
       {showStatus && !isAI && (
         <span
-          className={`absolute -bottom-0.5 -right-0.5 rounded-full border-white dark:border-[#1a1a1a] ${dotSizes[size]} ${statusColors[status] || "bg-neutral-300"}`}
+          className={`absolute -bottom-0.5 -right-0.5 rounded-full border-white dark:border-[#1a1a1a] ${dotSizes[size]} ${statusColors[status] || statusColors.offline}`}
         />
       )}
     </div>
