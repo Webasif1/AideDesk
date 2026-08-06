@@ -4,9 +4,11 @@ import agentModel from "../models/aget.model.js";
 import ticketModel from "../models/ticket.model.js";
 import companyModel from "../models/company.model.js";
 import workspaceModel from "../models/workSpace.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { sendAgentInviteEmail } from "../utils/email.js";
+import { sendAccountStatusEmail } from "../utils/accountEmails.js";
+import { reassignAgentTickets } from "../services/agentAssignment.service.js";
 import { emitDomain } from "../sockets/emit.js";
 import { config } from "../config/config.js";
 import jwt from "jsonwebtoken";
@@ -140,11 +142,14 @@ export const createAgent = asyncHandler(async (req, res) => {
 export const getAgentStats = asyncHandler(async (req, res) => {
   const filter = { companyId: req.companyId };
   if (req.workspaceId) filter.workspaceId = req.workspaceId;
+  // Removed agents are soft-deleted — they should not inflate team counts.
+  filter.accountStatus = { $ne: ACCOUNT_STATUS.DELETED };
 
-  const [total, active, pendingInvites, csatAgg] = await Promise.all([
+  const [total, active, pendingInvites, suspended, csatAgg] = await Promise.all([
     agentModel.countDocuments(filter),
     agentModel.countDocuments({ ...filter, status: "online" }),
     agentModel.countDocuments({ ...filter, isVerified: false }),
+    agentModel.countDocuments({ ...filter, accountStatus: ACCOUNT_STATUS.SUSPENDED }),
     // Team CSAT proxy: avg sentiment over human-handled (agent-assigned) tickets.
     ticketModel.aggregate([
       {
@@ -165,6 +170,7 @@ export const getAgentStats = asyncHandler(async (req, res) => {
       total,
       active,
       pendingInvites,
+      suspended,
       avgCsat: avg != null ? Math.round((avg / 5) * 100) : null,
     },
   });
@@ -175,12 +181,20 @@ export const getAgentStats = asyncHandler(async (req, res) => {
 // Admin: all agents in their company
 // ============================================
 export const getAgents = asyncHandler(async (req, res) => {
-  const { status, page = 1, limit = 20 } = req.query;
+  const { status, accountStatus, page = 1, limit = 20 } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const filter = { companyId: req.companyId };
   if (req.workspaceId) {filter.workspaceId = req.workspaceId;}
   if (status) {filter.status = status;}
+
+  // Removed agents are soft-deleted so their handled tickets keep a real name,
+  // but they must not appear in the team list.
+  if (accountStatus) {
+    filter.accountStatus = accountStatus;
+  } else {
+    filter.accountStatus = { $ne: ACCOUNT_STATUS.DELETED };
+  }
 
   const [agents, total] = await Promise.all([
     agentModel
@@ -307,10 +321,13 @@ export const changePassword = asyncHandler(async (req, res) => {
 });
 
 // ============================================
-// DELETE /api/agents/:id
-// Admin removes an agent from their company
+// Shared by PATCH /:id/account-status and DELETE /:id.
+//
+// Removal is a soft delete so the agent's handled tickets keep a real name on
+// them. Suspending or removing an agent hands their live tickets to another
+// active agent — an agent who cannot act must not sit on open work.
 // ============================================
-export const deleteAgent = asyncHandler(async (req, res) => {
+const applyAgentAccountStatus = async ({ req, accountStatus, reason }) => {
   const agent = await agentModel.findById(req.params.id);
 
   if (!agent) {
@@ -321,13 +338,101 @@ export const deleteAgent = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
-  await agentModel.findByIdAndDelete(req.params.id);
+  const trimmedReason = (reason || "").trim();
 
-  emitDomain.agentDeleted(agent.companyId, { _id: req.params.id });
+  agent.accountStatus = accountStatus;
+  agent.statusReason = trimmedReason;
+  agent.statusChangedAt = new Date();
+  agent.statusChangedBy = req.userId;
+  if (accountStatus !== ACCOUNT_STATUS.ACTIVE) agent.status = "offline";
+
+  await agent.save({ validateBeforeSave: false });
+
+  // Only hand work off when the agent is losing access. Restoring one does not
+  // claw tickets back from whoever picked them up.
+  const reassignment =
+    accountStatus === ACCOUNT_STATUS.ACTIVE
+      ? { reassigned: 0, unassigned: 0, total: 0 }
+      : await reassignAgentTickets(agent._id, {
+          companyId: agent.companyId,
+          workspaceId: agent.workspaceId,
+        });
+
+  if (trimmedReason) {
+    const company = await companyModel.findById(req.companyId).select("name");
+    sendAccountStatusEmail({
+      email: agent.email,
+      recipientName: agent.name,
+      companyName: company?.name || "your support team",
+      accountStatus,
+      reason: trimmedReason,
+      loginUrl: `${config.FRONTEND_URL || "http://localhost:5173"}/login`,
+    }).catch((err) =>
+      console.error("[agent] account status email failed:", err.message)
+    );
+  }
+
+  if (accountStatus === ACCOUNT_STATUS.DELETED) {
+    emitDomain.agentDeleted(agent.companyId, { _id: agent._id });
+  } else {
+    emitDomain.agentUpdated(agent.companyId, agent.toObject());
+  }
+
+  return { agent, reassignment, emailed: Boolean(trimmedReason) };
+};
+
+// ============================================
+// PATCH /api/agents/:id/account-status
+// Body: { accountStatus: 'active' | 'suspended' | 'deleted', reason?: string }
+// Distinct from PATCH /api/agents/status, which is an agent's own presence.
+// ============================================
+export const updateAgentAccountStatus = asyncHandler(async (req, res) => {
+  const { accountStatus, reason } = req.body;
+
+  if (!Object.values(ACCOUNT_STATUS).includes(accountStatus)) {
+    throw new AppError(
+      `accountStatus must be one of: ${Object.values(ACCOUNT_STATUS).join(", ")}`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  const { agent, reassignment, emailed } = await applyAgentAccountStatus({
+    req,
+    accountStatus,
+    reason,
+  });
+
+  const messages = {
+    active: "Agent restored",
+    suspended: "Agent suspended",
+    deleted: "Agent removed",
+  };
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: messages[accountStatus],
+    emailed,
+    reassignment,
+    data: agent,
+  });
+});
+
+// ============================================
+// DELETE /api/agents/:id
+// Soft-removes an agent and rehomes their live tickets.
+// ============================================
+export const deleteAgent = asyncHandler(async (req, res) => {
+  const { reassignment, emailed } = await applyAgentAccountStatus({
+    req,
+    accountStatus: ACCOUNT_STATUS.DELETED,
+    reason: req.body?.reason,
+  });
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     message: "Agent removed successfully",
+    emailed,
+    reassignment,
   });
 });
 

@@ -2,10 +2,16 @@ import crypto from 'crypto';
 import userModel from '../models/user.model.js';
 import companyModel from '../models/company.model.js';
 import workspaceModel from '../models/workSpace.model.js';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../config/constants.js';
+import {
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+  ERROR_CODES,
+  ACCOUNT_STATUS,
+} from '../config/constants.js';
 import { AppError, asyncHandler } from '../utils/errorHandler.js';
 import { generateToken, generateResetToken } from '../utils/tokens.js';
 import { sendPasswordResetEmail, sendCustomerInviteEmail } from '../utils/email.js';
+import { sendAccountStatusEmail } from '../utils/accountEmails.js';
 import { emitDomain } from '../sockets/emit.js';
 import { config } from '../config/config.js';
 import jwt from 'jsonwebtoken';
@@ -129,19 +135,43 @@ export const getUserStats = asyncHandler(async (req, res) => {
   monthStart.setHours(0, 0, 0, 0);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [total, active, newThisMonth] = await Promise.all([
-    userModel.countDocuments(filter),
-    userModel.countDocuments({ ...filter, lastLogin: { $gte: thirtyDaysAgo } }),
-    userModel.countDocuments({ ...filter, createdAt: { $gte: monthStart } }),
-  ]);
+  // Soft-deleted customers are excluded from every count — they are gone as far
+  // as the workspace is concerned, even though the documents survive.
+  const visible = { ...filter, accountStatus: { $ne: ACCOUNT_STATUS.DELETED } };
+
+  const [total, active, newThisMonth, suspended, pendingReview, activeAccounts] =
+    await Promise.all([
+      userModel.countDocuments(visible),
+      userModel.countDocuments({ ...visible, lastLogin: { $gte: thirtyDaysAgo } }),
+      userModel.countDocuments({ ...visible, createdAt: { $gte: monthStart } }),
+      userModel.countDocuments({ ...filter, accountStatus: ACCOUNT_STATUS.SUSPENDED }),
+      userModel.countDocuments({
+        ...visible,
+        accountStatus: ACCOUNT_STATUS.ACTIVE,
+        isVerified: false,
+      }),
+      userModel.countDocuments({
+        ...visible,
+        accountStatus: ACCOUNT_STATUS.ACTIVE,
+        isVerified: true,
+      }),
+    ]);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: {
       total,
+      // `active` stays "logged in within 30 days" — it drives the Active (30d)
+      // metric card. The tab counts below are account state, not recency.
       active,
       newThisMonth,
       activeRate: total ? Math.round((active / total) * 1000) / 10 : 0,
+      tabs: {
+        all: total,
+        active: activeAccounts,
+        suspended,
+        pendingReview,
+      },
     },
   });
 });
@@ -163,6 +193,17 @@ export const loginUser = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
   }
 
+  // Soft-deleted customers keep their tickets and chats but cannot log in until
+  // an admin restores them. Suspended customers can log in — their session is
+  // made read-only per-request by the auth middleware instead.
+  if (user.accountStatus === 'deleted') {
+    throw new AppError(
+      ERROR_MESSAGES.ACCOUNT_DELETED,
+      HTTP_STATUS.UNAUTHORIZED,
+      ERROR_CODES.ACCOUNT_DELETED
+    );
+  }
+
   user.lastLogin = new Date();
   user.status = 'online';
   await user.save({ validateBeforeSave: false });
@@ -181,6 +222,8 @@ export const loginUser = asyncHandler(async (req, res) => {
       workspaceId: user.workspaceId,
       profileImage: user.profileImage,
       status: user.status,
+      accountStatus: user.accountStatus ?? 'active',
+      statusReason: user.statusReason ?? '',
       lastLogin: user.lastLogin,
     },
     token,
@@ -286,6 +329,9 @@ export const getMe = asyncHandler(async (req, res) => {
       companyId: req.companyId,
       profileImage: user.profileImage,
       status: user.status,
+      // Drives the client's read-only mode for suspended accounts.
+      accountStatus: user.accountStatus ?? 'active',
+      statusReason: user.statusReason ?? '',
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
     },
@@ -353,10 +399,24 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 // Query: ?status=online&search=&page=1&limit=20
 // ============================================
 export const getUsers = asyncHandler(async (req, res) => {
-  const { status, search, page = 1, limit = 20 } = req.query;
+  const { status, accountStatus, verified, search, page = 1, limit = 20 } = req.query;
 
   const filter = { companyId: req.companyId };
   if (req.workspaceId) filter.workspaceId = req.workspaceId;
+
+  // Soft-deleted customers stay in the database but must never appear in a
+  // list. An explicit ?accountStatus=deleted is the only way to see them.
+  if (accountStatus) {
+    filter.accountStatus = accountStatus;
+  } else {
+    filter.accountStatus = { $ne: ACCOUNT_STATUS.DELETED };
+  }
+
+  // "Pending Review" = signed up but never verified their email.
+  if (verified === 'true') filter.isVerified = true;
+  if (verified === 'false') filter.isVerified = false;
+
+  // Presence, a separate axis from account state.
   if (status) filter.status = status;
   if (search) {
     filter.$or = [
@@ -405,10 +465,15 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 // ============================================
-// DELETE /api/users/:id  (protected — admin)
+// Shared by PATCH /:id/account-status and DELETE /remove/:id.
+//
+// Nothing is ever hard-deleted: the customer document, their tickets and their
+// chats all stay, so restoring an account puts them straight back into their
+// conversations. `reason` is optional — when the admin leaves it blank the
+// account changes silently and no email goes out.
 // ============================================
-export const deleteUser = asyncHandler(async (req, res) => {
-  const user = await userModel.findOneAndDelete({
+const applyUserAccountStatus = async ({ req, accountStatus, reason }) => {
+  const user = await userModel.findOne({
     _id: req.params.id,
     companyId: req.companyId,
   });
@@ -417,7 +482,86 @@ export const deleteUser = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
 
-  emitDomain.customerDeleted(req.companyId, { _id: req.params.id });
+  const trimmedReason = (reason || '').trim();
 
-  res.status(HTTP_STATUS.OK).json({ success: true, message: 'Customer account removed' });
+  user.accountStatus = accountStatus;
+  user.statusReason = trimmedReason;
+  user.statusChangedAt = new Date();
+  user.statusChangedBy = req.userId;
+
+  // Suspended/removed customers should not keep showing as online in lists.
+  if (accountStatus !== ACCOUNT_STATUS.ACTIVE) user.status = 'offline';
+
+  await user.save({ validateBeforeSave: false });
+
+  if (trimmedReason) {
+    const company = await companyModel.findById(req.companyId).select('name');
+    // A mail failure must not fail the admin's action.
+    sendAccountStatusEmail({
+      email: user.email,
+      recipientName: user.name,
+      companyName: company?.name || 'your support team',
+      accountStatus,
+      reason: trimmedReason,
+    }).catch((err) =>
+      console.error('[user] account status email failed:', err.message)
+    );
+  }
+
+  if (accountStatus === ACCOUNT_STATUS.DELETED) {
+    emitDomain.customerDeleted(req.companyId, { _id: user._id });
+  } else {
+    emitDomain.customerCreated(req.companyId, user);
+  }
+
+  return { user, emailed: Boolean(trimmedReason) };
+};
+
+// ============================================
+// PATCH /api/users/:id/account-status  (protected — admin)
+// Body: { accountStatus: 'active' | 'suspended' | 'deleted', reason?: string }
+// One endpoint covers suspend, restore and soft delete.
+// ============================================
+export const updateUserAccountStatus = asyncHandler(async (req, res) => {
+  const { accountStatus, reason } = req.body;
+
+  if (!Object.values(ACCOUNT_STATUS).includes(accountStatus)) {
+    throw new AppError(
+      `accountStatus must be one of: ${Object.values(ACCOUNT_STATUS).join(', ')}`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  const { user, emailed } = await applyUserAccountStatus({ req, accountStatus, reason });
+
+  const messages = {
+    active: 'Customer account restored',
+    suspended: 'Customer account suspended',
+    deleted: 'Customer account removed',
+  };
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: messages[accountStatus],
+    emailed,
+    data: user,
+  });
+});
+
+// ============================================
+// DELETE /api/users/remove/:id  (protected — admin)
+// Soft delete — see applyUserAccountStatus.
+// ============================================
+export const deleteUser = asyncHandler(async (req, res) => {
+  const { emailed } = await applyUserAccountStatus({
+    req,
+    accountStatus: ACCOUNT_STATUS.DELETED,
+    reason: req.body?.reason,
+  });
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: 'Customer account removed',
+    emailed,
+  });
 });

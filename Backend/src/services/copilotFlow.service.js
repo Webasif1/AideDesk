@@ -12,6 +12,7 @@ import { derivePriority } from "./triage.service.js";
 import { analyzeImage } from "./imageVision.service.js";
 import { uploadPDFAndExtract } from "./fileContext.service.js";
 import { generateAgentBriefing } from "./agentBriefing.service.js";
+import { markCustomerReplied } from "./ticketStatus.service.js";
 import { socketEmit, emitDomain } from "../sockets/emit.js";
 import { config } from "../config/config.js";
 
@@ -71,11 +72,15 @@ const processAttachment = async (file, userMessage) => {
 };
 
 // First online agent in the workspace, else any agent in the workspace/company.
+// Suspended and removed agents are excluded — they cannot act on a ticket, so
+// handing them an escalation would silently park it.
 const pickAgent = async (workspaceId, companyId) => {
+  const active = { accountStatus: "active" };
   return (
-    (workspaceId && (await agentModel.findOne({ workspaceId, status: "online" }))) ||
-    (workspaceId && (await agentModel.findOne({ workspaceId }))) ||
-    (await agentModel.findOne({ companyId }))
+    (workspaceId &&
+      (await agentModel.findOne({ ...active, workspaceId, status: "online" }))) ||
+    (workspaceId && (await agentModel.findOne({ ...active, workspaceId }))) ||
+    (await agentModel.findOne({ ...active, companyId }))
   );
 };
 
@@ -262,6 +267,10 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
     senderModel: "user",
   });
   socketEmit.newMessage(chat._id, userMessage);
+
+  // The customer engaging is what moves the linked ticket off "New". The AI's
+  // opening reply and the seeded description deliberately do not.
+  await markCustomerReplied(chat);
 
   // Already handed to a human — the agent owns the thread; don't re-engage the AI.
   // The customer's message is saved + broadcast so the assigned agent sees it live.

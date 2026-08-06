@@ -78,6 +78,20 @@ const ticketSchema = new mongoose.Schema(
       default: []
     },
 
+    // Who raised the ticket. Staff-raised tickets are what the chat sidebar's
+    // "Mine" filter keys off; customer-raised ones carry the customer's id.
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: 'createdByModel',
+      default: null
+    },
+
+    createdByModel: {
+      type: String,
+      enum: ['admin', 'agent', 'user'],
+      default: 'user'
+    },
+
     // AI engine fields
     sentimentScore: {
       type: Number,
@@ -127,6 +141,14 @@ const ticketSchema = new mongoose.Schema(
     lastMessageAt: {
       type: Date,
       default: Date.now
+    },
+
+    // Set the first time the customer replies *after* the AI's opening message.
+    // A ticket reads as "New" until this exists — the AI starting the
+    // conversation must not make it look like the customer engaged.
+    customerRepliedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }

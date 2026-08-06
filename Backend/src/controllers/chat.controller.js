@@ -1,8 +1,10 @@
+import mongoose from "mongoose";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import agentModel from "../models/aget.model.js";
 import ticketModel from "../models/ticket.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import userModel from "../models/user.model.js";
+import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { emitDomain } from "../sockets/emit.js";
 import { handleCustomerReply } from "../services/copilotFlow.service.js";
@@ -98,7 +100,7 @@ export const sendCopilotMessage = asyncHandler(async (req, res) => {
 // Supports: ?status=active&page=1&limit=20
 // ============================================
 export const getChats = asyncHandler(async (req, res) => {
-  const { status, page = 1, limit = 20 } = req.query;
+  const { status, customerId, page = 1, limit = 20 } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   let filter = {};
@@ -114,15 +116,21 @@ export const getChats = asyncHandler(async (req, res) => {
 
   if (status) filter.status = status;
 
+  // Staff pick a customer in the sidebar first; the conversation list is then
+  // scoped to that person rather than showing every chat in the company.
+  if (customerId && req.role !== "customer") filter.user = customerId;
+
   const [chats, total] = await Promise.all([
     chatModel
       .find(filter)
-      .populate("user", "name email profileImage")
+      // `status` here is the customer's presence — it drives the online/offline
+      // dot in the conversation list.
+      .populate("user", "name email profileImage status accountStatus")
       .populate("assignedAgent", "name email status profileImage")
       .populate("latestMessage", "content role createdAt")
       // Each chat belongs to at most one ticket — the list labels rows by it,
       // since a customer's own chats would otherwise all read as their name.
-      .populate("ticket", "ticketNumber title status priority")
+      .populate("ticket", "ticketNumber title status priority createdBy createdByModel")
       .sort({ lastActivity: -1 })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -148,9 +156,9 @@ export const getChats = asyncHandler(async (req, res) => {
 export const getChat = asyncHandler(async (req, res) => {
   const chat = await chatModel
     .findById(req.params.id)
-    .populate("user", "name email profileImage")
+    .populate("user", "name email profileImage status accountStatus")
     .populate("assignedAgent", "name email status profileImage")
-    .populate("ticket", "ticketNumber title status priority");
+    .populate("ticket", "ticketNumber title status priority createdBy createdByModel");
 
   if (!chat) {
     throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
@@ -166,6 +174,20 @@ export const getChat = asyncHandler(async (req, res) => {
 
   if (!hasAccess) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  // Record that this staff member has now seen the conversation. The chat
+  // sidebar's "Unread" filter is exactly "my id is not in openedBy".
+  if (req.role === "admin" || req.role === "agent") {
+    const seen = chat.openedBy?.find(
+      (entry) => entry.user?.toString() === req.userId
+    );
+    if (seen) {
+      seen.lastOpenedAt = new Date();
+    } else {
+      chat.openedBy.push({ user: req.userId, role: req.role, lastOpenedAt: new Date() });
+    }
+    await chat.save();
   }
 
   // Include last 50 messages so the agent/customer doesn"t need a second request
@@ -301,8 +323,13 @@ export const confirmTicket = asyncHandler(async (req, res) => {
     category: category || "general",
     source: "chat",
     chat: chat._id,
+    createdBy: chat.user,
+    createdByModel: "user",
     // Escalated by the AI — left unassigned for an admin to route to a human.
-    escalatedAt: new Date()
+    escalatedAt: new Date(),
+    // The customer was already talking when this was raised, so it is not "New".
+    customerRepliedAt: new Date(),
+    status: "in_progress"
   });
 
   chat.ticket = ticket._id;
@@ -316,6 +343,77 @@ export const confirmTicket = asyncHandler(async (req, res) => {
     message: "Ticket created from this conversation.",
     data: ticket
   });
+});
+
+// ============================================
+// GET /api/chats/customers
+// Feeds the chat page's customer column: every customer in the workspace who
+// has at least one ticket, newest activity first. Staff pick a person here and
+// the conversation list is then scoped to them.
+// Query: ?search=
+// ============================================
+export const getChatCustomers = asyncHandler(async (req, res) => {
+  const { search } = req.query;
+
+  const match = { companyId: new mongoose.Types.ObjectId(req.companyId) };
+
+  // Group the company's tickets by customer so we only ever return people who
+  // actually have support history.
+  const grouped = await ticketModel.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: "$customerId",
+        ticketCount: { $sum: 1 },
+        openCount: {
+          $sum: {
+            $cond: [{ $in: ["$status", ["open", "pending", "in_progress"]] }, 1, 0],
+          },
+        },
+        lastActivity: { $max: "$lastMessageAt" },
+      },
+    },
+  ]);
+
+  if (!grouped.length) {
+    return res.status(HTTP_STATUS.OK).json({ success: true, data: [] });
+  }
+
+  const customerFilter = {
+    _id: { $in: grouped.map((g) => g._id) },
+    // Soft-deleted customers keep their tickets but drop out of the list.
+    accountStatus: { $ne: ACCOUNT_STATUS.DELETED },
+  };
+  if (req.workspaceId) customerFilter.workspaceId = req.workspaceId;
+  if (search) {
+    customerFilter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const customers = await userModel
+    .find(customerFilter)
+    .select("name email profileImage status accountStatus")
+    .lean();
+
+  const statsById = new Map(grouped.map((g) => [g._id.toString(), g]));
+
+  const data = customers
+    .map((customer) => {
+      const stats = statsById.get(customer._id.toString());
+      return {
+        ...customer,
+        ticketCount: stats?.ticketCount || 0,
+        openCount: stats?.openCount || 0,
+        lastActivity: stats?.lastActivity || null,
+      };
+    })
+    .sort(
+      (a, b) => new Date(b.lastActivity || 0) - new Date(a.lastActivity || 0)
+    );
+
+  res.status(HTTP_STATUS.OK).json({ success: true, data });
 });
 
 // ============================================

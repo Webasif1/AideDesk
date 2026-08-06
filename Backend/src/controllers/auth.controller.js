@@ -1,7 +1,7 @@
 import adminModel from "../models/admin.model.js";
 import agentModel from "../models/aget.model.js";
 import userModel from "../models/user.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { HTTP_STATUS, ERROR_MESSAGES, ERROR_CODES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { generateToken, generateResetToken } from "../utils/tokens.js";
 import {
@@ -175,6 +175,17 @@ export const loginController = asyncHandler(async (req, res) => {
     );
   }
 
+  // Soft-deleted accounts keep all their data but cannot get back in until an
+  // admin restores them. Suspended accounts *can* log in — read-only is the
+  // whole point — and are gated per-request by the auth middleware instead.
+  if (user.accountStatus === "deleted") {
+    throw new AppError(
+      ERROR_MESSAGES.ACCOUNT_DELETED,
+      HTTP_STATUS.UNAUTHORIZED,
+      ERROR_CODES.ACCOUNT_DELETED
+    );
+  }
+
   // Update last login
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
@@ -198,7 +209,9 @@ export const loginController = asyncHandler(async (req, res) => {
       role,
       companyId: user.companyId ?? null,
       workspaceId: user.workspaceId ?? null,
-      isVerified: user.isVerified
+      isVerified: user.isVerified,
+      accountStatus: user.accountStatus ?? "active",
+      statusReason: user.statusReason ?? ""
     },
     token
   });
@@ -366,6 +379,9 @@ export const getMeController = asyncHandler( (req, res) => {
       isVerified: user.isVerified,
       profileImage: user.profileImage,
       status: user.status,
+      // Drives the client's read-only mode for suspended accounts.
+      accountStatus: user.accountStatus ?? "active",
+      statusReason: user.statusReason ?? "",
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
     },

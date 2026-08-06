@@ -4,6 +4,7 @@ import adminModel from '../models/admin.model.js';
 import agentModel from '../models/aget.model.js';
 import userModel from '../models/user.model.js';
 import { AppError, asyncHandler } from '../utils/errorHandler.js';
+import { assertAccountUsable } from './accountStatus.middleware.js';
 import jwt from 'jsonwebtoken';
 
 // Verifies the JWT cookie, loads the user from the correct model, and injects
@@ -33,6 +34,10 @@ export const protect = asyncHandler(async (req, res, next) => {
   if (!user) {
     throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND);
   }
+
+  // Blocks deleted accounts outright and makes suspended accounts read-only.
+  // Lives here rather than on individual routes so no write route can miss it.
+  assertAccountUsable(user, req);
 
   req.user = user;
   req.userId = decoded.userId;

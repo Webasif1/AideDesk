@@ -65,6 +65,8 @@ export const createTicket = asyncHandler(async (req, res) => {
       companyId: req.companyId,
       customerId: req.userId,
       source: "portal",
+      createdBy: req.userId,
+      createdByModel: "user",
     });
 
     const chat = await chatModel.create({
@@ -130,6 +132,9 @@ export const createTicket = asyncHandler(async (req, res) => {
     source: source || "dashboard",
     tags: tags || [],
     chat: chatId || null,
+    // Staff-raised tickets — this is what the chat sidebar's "Mine" filter keys off.
+    createdBy: req.userId,
+    createdByModel: req.role === "admin" ? "admin" : "agent",
   });
 
   // Fire-and-forget AI classification — don"t block response
@@ -437,7 +442,8 @@ export const updateTicket = asyncHandler(async (req, res) => {
 
 // ============================================
 // PATCH /api/tickets/:id/assign
-// Admin assigns agent to ticket; auto-advances status to in_progress
+// Admin assigns agent to ticket. Status is deliberately untouched — a ticket
+// is "New" until the customer replies, regardless of who owns it.
 // ============================================
 export const assignAgent = asyncHandler(async (req, res) => {
   const { agentId } = req.body;
@@ -452,7 +458,6 @@ export const assignAgent = asyncHandler(async (req, res) => {
   if (!agent) throw new AppError("Agent not found in your company", HTTP_STATUS.NOT_FOUND);
 
   ticket.assignedAgent = agentId;
-  if (ticket.status === "open") ticket.status = "in_progress";
   if (!ticket.firstResponseAt) ticket.firstResponseAt = new Date();
   await ticket.save();
 

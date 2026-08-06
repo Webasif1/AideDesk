@@ -162,9 +162,9 @@ export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
 
   await postMessage({ chat, role: "ai", content: result.aiResponse });
 
-  // "pending" = answered, waiting on the customer. Left unassigned so the
-  // dashboard attributes the resolution to AI.
-  updates.status = "pending";
+  // Deliberately does NOT touch status. The ticket stays "New" until the
+  // customer replies to this opening answer — see ticketStatus.service.js.
+  // Left unassigned so the dashboard attributes the resolution to AI.
   updates.firstResponseAt = ticket.firstResponseAt || new Date();
   updates.lastMessageAt = new Date();
   await ticketModel.findByIdAndUpdate(ticket._id, updates);

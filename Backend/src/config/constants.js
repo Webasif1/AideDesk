@@ -27,6 +27,23 @@ export const ERROR_MESSAGES = {
   USER_NOT_VERIFIED: "Please verify your email before logging in",
   USER_ALREADY_VERIFIED: "User already verified",
   VERIFICATION_LINK_EXPIRED: "Verification link has expired",
+  ACCOUNT_SUSPENDED:
+    "Your account is suspended. You can still view your history, but you cannot make changes.",
+  ACCOUNT_DELETED: "This account is no longer active. Contact support for help.",
+};
+
+// Machine-readable tags attached to AppError so the client can branch without
+// string-matching the message.
+export const ERROR_CODES = {
+  ACCOUNT_SUSPENDED: "ACCOUNT_SUSPENDED",
+  ACCOUNT_DELETED: "ACCOUNT_DELETED",
+};
+
+// Shared account lifecycle states for customers and agents.
+export const ACCOUNT_STATUS = {
+  ACTIVE: "active",
+  SUSPENDED: "suspended",
+  DELETED: "deleted",
 };
 
 export const API_VERSION = "/api/v1";

@@ -7,9 +7,12 @@ export const asyncHandler = (fn) => {
 };
 
 export class AppError extends Error {
-  constructor(message, statusCode) {
+  // `code` is an optional machine-readable tag (e.g. "ACCOUNT_SUSPENDED") the
+  // client can branch on without string-matching the message.
+  constructor(message, statusCode, code = null) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
     this.isOperational = true;
 
     Error.captureStackTrace(this, this.constructor);
@@ -32,6 +35,7 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     statusCode,
     message,
+    ...(err.code && { code: err.code }),
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };

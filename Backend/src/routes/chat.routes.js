@@ -8,6 +8,7 @@ import {
   assignAgent,
   updateChatStatus,
   getChatStats,
+  getChatCustomers,
   sendCopilotMessage,
   confirmTicket,
 } from '../controllers/chat.controller.js';
@@ -30,6 +31,15 @@ router.use(protect);
  * @access  Private — Admin only
  */
 router.get('/stats', requireRole('admin'), getChatStats);
+
+/**
+ * @route   GET /api/chats/customers
+ * @desc    Customers with at least one ticket — feeds the chat page's customer
+ *          column. Selecting one scopes GET /api/chats via ?customerId=
+ *          Query: ?search=
+ * @access  Private — Admin or Agent
+ */
+router.get('/customers', requireRole('admin', 'agent'), getChatCustomers);
 
 // ============================================
 // Shared routes

@@ -58,14 +58,41 @@ const agentSchema = new mongoose.Schema(
       default: null
     },
 
+    // Presence — whether they currently have a session open.
     status: {
       type: String,
       enum: ["online", "offline", "away"],
       default: "offline"
+    },
+
+    // Account state — a different axis from presence. Suspended/removed agents
+    // keep their history but stop receiving work and lose write access.
+    accountStatus: {
+      type: String,
+      enum: ["active", "suspended", "deleted"],
+      default: "active"
+    },
+
+    statusReason: {
+      type: String,
+      default: ""
+    },
+
+    statusChangedAt: {
+      type: Date,
+      default: null
+    },
+
+    statusChangedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "admin",
+      default: null
     }
   },
   { timestamps: true }
 );
+
+agentSchema.index({ companyId: 1, workspaceId: 1, accountStatus: 1 });
 
 agentSchema.pre("save", async function () {
   if (!this.isModified("password")) return;

@@ -9,6 +9,7 @@ import {
   updateAgent,
   deleteAgent,
   updateOwnStatus,
+  updateAgentAccountStatus,
   changePassword
 } from '../controllers/agent.controller.js';
 
@@ -103,8 +104,17 @@ router.patch(
 );
 
 /**
+ * @route   PATCH /api/agents/:id/account-status
+ * @desc    Suspend, restore, or remove an agent. Live tickets held by a
+ *          suspended/removed agent are handed to other active agents.
+ *          Body: { accountStatus: 'active'|'suspended'|'deleted', reason?: string }
+ * @access  Private — Admin only
+ */
+router.patch('/:id/account-status', requireRole('admin'), updateAgentAccountStatus);
+
+/**
  * @route   DELETE /api/agents/:id
- * @desc    Admin removes an agent from their company
+ * @desc    Admin removes an agent (soft delete) and rehomes their tickets
  * @access  Private — Admin only
  */
 router.delete('/:id', requireRole('admin'), deleteAgent);

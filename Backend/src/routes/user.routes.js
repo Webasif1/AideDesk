@@ -13,7 +13,8 @@ import {
   getUsers,
   getUserStats,
   getUserById,
-  deleteUser
+  deleteUser,
+  updateUserAccountStatus
 } from '../controllers/user.controller.js';
 
 import {
@@ -146,8 +147,22 @@ router.get('/stats', requireRole('admin', 'agent'), getUserStats);
 router.get('/:id', requireRole('admin'), getUserById);
 
 /**
- * @route  DELETE /api/users/:id
- * @desc   Remove a customer from the company
+ * @route  PATCH /api/users/:id/account-status
+ * @desc   Suspend, restore, or soft-delete a customer.
+ *         Body: { accountStatus: 'active'|'suspended'|'deleted', reason?: string }
+ *         A non-empty reason is emailed to the customer; blank sends nothing.
+ * @access Private — Admin
+ */
+router.patch(
+  '/:id/account-status',
+  requireRole('admin'),
+  updateUserAccountStatus
+);
+
+/**
+ * @route  DELETE /api/users/remove/:id
+ * @desc   Soft-delete a customer — the record and their tickets/chats survive,
+ *         they simply cannot log in until an admin restores them.
  * @access Private — Admin
  */
 router.delete('/remove/:id', requireRole('admin'), deleteUser);

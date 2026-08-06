@@ -60,7 +60,18 @@ const chatSchema = new mongoose.Schema(
     lastActivity: {
       type: Date,
       default: Date.now
-    }
+    },
+
+    // Staff members who have opened this conversation at least once. The chat
+    // sidebar's "Unread" filter is "my id is not in here".
+    openedBy: [
+      {
+        _id: false,
+        user: { type: mongoose.Schema.Types.ObjectId, required: true },
+        role: { type: String, enum: ["admin", "agent"], required: true },
+        lastOpenedAt: { type: Date, default: Date.now }
+      }
+    ]
   },
   { timestamps: true }
 );

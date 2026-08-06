@@ -3,6 +3,7 @@ import chatModel from "../models/chat.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { classifyIntent, scoreSentiment, generateReplySuggestions } from "../services/ai.service.js";
+import { markCustomerReplied } from "../services/ticketStatus.service.js";
 import { socketEmit } from "../sockets/emit.js";
 
 // ============================================
@@ -55,6 +56,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
   // Broadcast to the chat room so the other party (e.g. the customer after an
   // escalation) sees the agent's reply in real time.
   socketEmit.newMessage(chatId, message);
+
+  // A customer replying is what moves a ticket off "New" — not the AI opening
+  // the conversation, and not an agent being assigned.
+  if (req.role === "customer") {
+    await markCustomerReplied(chat);
+  }
 
   // Fire-and-forget AI classification for customer messages only
   if (req.role === "customer") {
