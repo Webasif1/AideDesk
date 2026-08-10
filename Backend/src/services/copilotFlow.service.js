@@ -290,15 +290,23 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
   try {
     const { imageSummary, pdfSummary, attachmentTypes } = await processAttachment(file, content);
 
+    const ticket = chat.ticket ? await ticketModel.findById(chat.ticket) : null;
+
     const history = await messageModel
       .find({ chat: chat._id })
       .sort({ createdAt: 1 })
       .limit(20)
       .lean();
     // Exclude the just-saved message; runCopilot appends the current one itself.
-    const conversationHistory = history
+    // The ticket's original description is never persisted as a message (see
+    // createTicket), so prepend it here — otherwise the AI loses the customer's
+    // original problem statement on every turn after the first.
+    const dbHistory = history
       .slice(0, -1)
       .map((m) => ({ role: toChatRole(m.role), content: m.content }));
+    const conversationHistory = ticket
+      ? [{ role: "user", content: ticket.description }, ...dbHistory]
+      : dbHistory;
 
     const result = await runCopilot({
       message: content,
@@ -311,7 +319,6 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
       workspaceContext: {},
     });
 
-    const ticket = chat.ticket ? await ticketModel.findById(chat.ticket) : null;
     if (ticket) {
       Object.assign(ticket, deriveTicketMeta(result));
       await ticket.save();

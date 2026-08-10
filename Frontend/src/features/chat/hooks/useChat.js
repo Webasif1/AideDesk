@@ -13,6 +13,7 @@ import {
 } from "../services/chat.api";
 import {
   setChats,
+  clearChats,
   setChatCustomers,
   setChatCustomersLoading,
   setCurrentChat,
@@ -160,6 +161,10 @@ export const useChat = () => {
     dispatch(clearTicketDraft());
   }, [dispatch]);
 
+  const clearChatList = useCallback(() => {
+    dispatch(clearChats());
+  }, [dispatch]);
+
   return {
     chats,
     customers,
@@ -173,6 +178,7 @@ export const useChat = () => {
     getChatStats,
     createChat,
     getChats,
+    clearChatList,
     getChatCustomers,
     getChat,
     assignAgent,

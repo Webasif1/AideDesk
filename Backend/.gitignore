@@ -1,5 +1,7 @@
 node_modules
 .env
+uploads/*
+!uploads/.gitkeep
 
 AideDesk_Copilot_Test.postman_collection.json
 CLAUDE.md

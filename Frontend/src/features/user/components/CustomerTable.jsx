@@ -6,6 +6,7 @@ import ConfirmActionModal from "../../../components/ui/ConfirmActionModal";
 import { toast } from "../../../components/ui/toast";
 import { useUser } from "../hooks/useUser";
 import { formatRelative, initialsOf, shortId } from "../../../lib/format";
+import { accountPillFor } from "../../../lib/accountStatus";
 
 const LIMIT = 10;
 
@@ -17,29 +18,6 @@ const TAB_QUERY = {
   Active: { accountStatus: "active", verified: "true" },
   Suspended: { accountStatus: "suspended" },
   "Pending Review": { accountStatus: "active", verified: "false" },
-};
-
-const ACCOUNT_PILL = {
-  active: {
-    label: "Active",
-    className:
-      "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400",
-  },
-  suspended: {
-    label: "Suspended",
-    className: "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400",
-  },
-  pending: {
-    label: "Pending",
-    className:
-      "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
-  },
-};
-
-const accountPillFor = (user) => {
-  if (user.accountStatus === "suspended") return ACCOUNT_PILL.suspended;
-  if (!user.isVerified) return ACCOUNT_PILL.pending;
-  return ACCOUNT_PILL.active;
 };
 
 // The three admin actions, each rendered through the same confirm modal.

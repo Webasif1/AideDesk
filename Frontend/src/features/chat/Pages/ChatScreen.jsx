@@ -48,6 +48,7 @@ const ChatScreen = () => {
 
   const {
     getChats,
+    clearChatList,
     getChatCustomers,
     getChat,
     chats,
@@ -112,6 +113,12 @@ const ChatScreen = () => {
     // Staff only get an auto-selected conversation once they have picked a
     // customer — otherwise the page would open somebody's thread at random.
     if (!isCustomer && !selectedCustomerId) return;
+    // Guard against opening a stale chat left over from a previous customer
+    // while the newly selected customer's list is still loading.
+    if (!isCustomer && selectedCustomerId) {
+      const owner = chats[0]?.user?._id || chats[0]?.user;
+      if (owner && String(owner) !== String(selectedCustomerId)) return;
+    }
     if (!activeConversation && chats.length > 0) openConversation(chats[0]);
   }, [
     chatParam,
@@ -149,7 +156,11 @@ const ChatScreen = () => {
                   selectedId={selectedCustomerId}
                   onSelect={(customer) => {
                     setSelectedCustomerId(customer._id);
-                    // The previously open thread belongs to somebody else.
+                    // The previously open thread belongs to somebody else —
+                    // drop the stale chat list too, so the auto-select effect
+                    // can't open the previous customer's first chat while the
+                    // new customer's list is still loading.
+                    clearChatList();
                     setActiveConversation(null);
                     setShowInfo(true);
                   }}

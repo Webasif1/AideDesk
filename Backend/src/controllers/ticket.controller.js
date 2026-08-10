@@ -13,6 +13,7 @@ import {
 } from "../services/ai.service.js";
 import { answerTicket } from "../services/ticketCopilot.service.js";
 import { startTicketCopilot } from "../services/copilotFlow.service.js";
+import { saveUploadedFile } from "../utils/fileStorage.js";
 
 // Friendly labels for the ticket `source` enum (used by the CSAT breakdown).
 const SOURCE_LABELS = {
@@ -37,7 +38,7 @@ const assertTicketAccess = (ticket, req) => {
 const emitTicketEvent = (companyId, ticketId, event) => {
   ticketModel
     .findById(ticketId)
-    .populate("customerId", "name email profileImage")
+    .populate("customerId", "name email profileImage accountStatus")
     .populate("assignedAgent", "name email status profileImage")
     .lean()
     .then((populated) => {
@@ -77,19 +78,13 @@ export const createTicket = asyncHandler(async (req, res) => {
       status: "active",
     });
     ticket.chat = chat._id;
-    await ticket.save();
 
-    // Seed the customer's opening message (the ticket description) into the chat.
-    const firstMsg = await messageModel.create({
-      chat: chat._id,
-      content: description,
-      role: "user",
-      sender: req.userId,
-      senderModel: "user",
-    });
-    chat.latestMessage = firstMsg._id;
-    chat.messageCount = 1;
-    await chat.save();
+    // The description/attachments render as a summary card at the top of the
+    // chat (read from the ticket itself) — not seeded as a chat message.
+    if (req.file) {
+      ticket.attachments = [await saveUploadedFile(req.file)];
+    }
+    await ticket.save();
 
     emitTicketEvent(req.companyId, ticket._id, "ticketCreated");
 
@@ -136,6 +131,11 @@ export const createTicket = asyncHandler(async (req, res) => {
     createdBy: req.userId,
     createdByModel: req.role === "admin" ? "admin" : "agent",
   });
+
+  if (req.file) {
+    ticket.attachments = [await saveUploadedFile(req.file)];
+    await ticket.save();
+  }
 
   // Fire-and-forget AI classification — don"t block response
   Promise.all([
@@ -212,7 +212,7 @@ export const getTickets = asyncHandler(async (req, res) => {
   const [tickets, total] = await Promise.all([
     ticketModel
       .find(filter)
-      .populate("customerId", "name fullName email profileImage")
+      .populate("customerId", "name fullName email profileImage accountStatus")
       .populate("assignedAgent", "name email status profileImage")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -372,7 +372,7 @@ export const getTicketCsat = asyncHandler(async (req, res) => {
 export const getTicket = asyncHandler(async (req, res) => {
   const ticket = await ticketModel
     .findById(req.params.id)
-    .populate("customerId", "name fullName email profileImage")
+    .populate("customerId", "name fullName email profileImage accountStatus")
     .populate("assignedAgent", "name email status profileImage")
     .populate("chat");
 
@@ -426,7 +426,7 @@ export const updateTicket = asyncHandler(async (req, res) => {
 
   const updated = await ticketModel
     .findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
-    .populate("customerId", "name fullName email")
+    .populate("customerId", "name fullName email accountStatus")
     .populate("assignedAgent", "name email");
 
   if (!updated) { throw new AppError("Ticket not found", HTTP_STATUS.NOT_FOUND); }
@@ -481,7 +481,7 @@ export const assignAgent = asyncHandler(async (req, res) => {
 // ============================================
 export const updateTicketStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const validStatuses = ["open", "pending", "in_progress", "resolved", "closed"];
+  const validStatuses = ["open", "pending", "in_progress", "resolved", "closed", "forced_closed"];
 
   if (!validStatuses.includes(status)) {
     throw new AppError(`Status must be one of: ${validStatuses.join(", ")}`, HTTP_STATUS.BAD_REQUEST);
@@ -494,6 +494,15 @@ export const updateTicketStatus = asyncHandler(async (req, res) => {
 
   if (req.role === "agent" && ticket.assignedAgent?.toString() !== req.userId) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  // A ticket force-closed because its customer's account was deleted can only
+  // be moved to another status by an admin.
+  if (ticket.status === "forced_closed" && status !== "forced_closed" && req.role !== "admin") {
+    throw new AppError(
+      "Only an admin can reopen a ticket closed due to account deletion.",
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   ticket.status = status;
@@ -523,6 +532,13 @@ export const escalateTicket = asyncHandler(async (req, res) => {
 
   assertTicketAccess(ticket, req);
 
+  if (ticket.status === "forced_closed" && req.role !== "admin") {
+    throw new AppError(
+      "Only an admin can modify a ticket closed due to account deletion.",
+      HTTP_STATUS.FORBIDDEN
+    );
+  }
+
   if (ticket.escalatedAt) {
     return res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -535,13 +551,17 @@ export const escalateTicket = asyncHandler(async (req, res) => {
     });
   }
 
-  let thread = [];
+  // The original description was never persisted as a chat message (it shows
+  // as a summary card instead), so prepend it here — otherwise the briefing
+  // loses the customer's original problem statement.
+  let thread = [{ role: "user", content: ticket.description }];
   if (ticket.chat) {
-    thread = await messageModel
+    const chatThread = await messageModel
       .find({ chat: ticket.chat._id })
       .sort({ createdAt: 1 })
       .select("role content")
       .lean();
+    thread = thread.concat(chatThread);
   }
 
   let aiSummary;
@@ -599,6 +619,13 @@ export const deleteTicket = asyncHandler(async (req, res) => {
       success: true,
       message: "Ticket permanently deleted"
     });
+  }
+
+  if (ticket.status === "forced_closed" && req.role !== "admin") {
+    throw new AppError(
+      "Only an admin can modify a ticket closed due to account deletion.",
+      HTTP_STATUS.FORBIDDEN
+    );
   }
 
   // Soft-close for agent / customer

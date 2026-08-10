@@ -130,7 +130,7 @@ export const getChats = asyncHandler(async (req, res) => {
       .populate("latestMessage", "content role createdAt")
       // Each chat belongs to at most one ticket — the list labels rows by it,
       // since a customer's own chats would otherwise all read as their name.
-      .populate("ticket", "ticketNumber title status priority createdBy createdByModel")
+      .populate("ticket", "ticketNumber title description status priority attachments createdBy createdByModel")
       .sort({ lastActivity: -1 })
       .skip(skip)
       .limit(parseInt(limit)),
@@ -158,7 +158,7 @@ export const getChat = asyncHandler(async (req, res) => {
     .findById(req.params.id)
     .populate("user", "name email profileImage status accountStatus")
     .populate("assignedAgent", "name email status profileImage")
-    .populate("ticket", "ticketNumber title status priority createdBy createdByModel");
+    .populate("ticket", "ticketNumber title description status priority attachments createdBy createdByModel");
 
   if (!chat) {
     throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);

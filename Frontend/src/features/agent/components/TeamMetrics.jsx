@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useAgent } from "../hooks/useAgent";
 
 const TeamMetrics = () => {
-  const { getAgentStats } = useAgent();
+  const { getAgentStats, resetAgentStats } = useAgent();
   const stats = useSelector((s) => s.agent.stats);
   const role = useSelector((s) => s.auth.role);
   const activeWorkspaceId = useSelector((s) => s.company.activeWorkspaceId);
@@ -12,9 +12,12 @@ const TeamMetrics = () => {
 
   useEffect(() => {
     if ((role === "admin" || role === "agent") && workspaceId) {
+      // Clear stats left over from a previous workspace before refetching,
+      // so a stale nonzero count can't linger alongside a fresh empty list.
+      resetAgentStats();
       getAgentStats().catch(() => {});
     }
-  }, [getAgentStats, role, workspaceId]);
+  }, [getAgentStats, resetAgentStats, role, workspaceId]);
 
   const metrics = [
     {

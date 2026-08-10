@@ -32,10 +32,14 @@ apiClient.interceptors.response.use(
     if (code === "ACCOUNT_DELETED") {
       // The account was removed while the tab was open — drop the session and
       // send them back to sign-in rather than leaving a dead UI on screen.
+      // Read the role before clearing auth so customers land on their own
+      // login page instead of the staff one.
+      const role = store.getState()?.auth?.role;
+      const loginPath = role === "customer" ? "/customer/login" : "/login";
       store.dispatch(clearAuth());
       toast("This account is no longer active.", { type: "error" });
-      if (!window.location.pathname.endsWith("/login")) {
-        window.location.assign("/login");
+      if (!window.location.pathname.endsWith(loginPath)) {
+        window.location.assign(loginPath);
       }
     } else if (code === "ACCOUNT_SUSPENDED") {
       toast(

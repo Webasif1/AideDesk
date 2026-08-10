@@ -1,8 +1,11 @@
+import { accountFlagPill } from "../../../lib/accountStatus";
+
 const statusStyle = {
   "In Progress": "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400",
   New: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400",
   Resolved: "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400",
   Overdue: "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400",
+  "Forced Closed": "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
 };
 
 const priorityStyle = {
@@ -26,7 +29,10 @@ const TicketRow = ({
   aiHandled,
   onOpen,
   showRequester = true,
-}) => (
+  accountStatus,
+}) => {
+  const accountPill = accountFlagPill(accountStatus);
+  return (
   <tr
     onClick={onOpen}
     role={chatId ? "button" : undefined}
@@ -75,7 +81,16 @@ const TicketRow = ({
             </span>
           </div>
           <div className="flex flex-col">
-            <span className="font-medium text-sm text-black dark:text-white">{requester}</span>
+            <div className="flex items-center gap-[6px]">
+              <span className="font-medium text-sm text-black dark:text-white">{requester}</span>
+              {accountPill && (
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wide px-[6px] py-[1px] rounded-full shrink-0 ${accountPill.className}`}
+                >
+                  {accountPill.label}
+                </span>
+              )}
+            </div>
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{company}</span>
           </div>
         </div>
@@ -107,6 +122,7 @@ const TicketRow = ({
       </button>
     </td>
   </tr>
-);
+  );
+};
 
 export default TicketRow;

@@ -4,6 +4,7 @@ import ChatBubble from "./ChatBubble";
 import ChatInput from "./ChatInput";
 import ChatHeader from "./ChatHeader";
 import TicketConfirmModal from "./TicketConfirmModal";
+import TicketSummaryCard from "./TicketSummaryCard";
 import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
 import { clearMessages } from "../../message/state/message.slice";
@@ -168,6 +169,8 @@ const ChatWindow = ({ conversation, onClose }) => {
           </div>
         ) : (
           <>
+            {conversation.ticket && <TicketSummaryCard ticket={conversation.ticket} />}
+
             {messages.map((msg, idx) => {
               const prevMsg = messages[idx - 1];
               const sender = senderFromMessage(msg, customerLabel);

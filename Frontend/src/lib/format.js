@@ -37,6 +37,7 @@ export const formatMinutes = (m) => {
 // does not move a ticket off New; the backend flips it to in_progress on the
 // customer's first genuine reply (Backend/src/services/ticketStatus.service.js).
 export const ticketStatusLabel = (status, slaBreached) => {
+  if (status === "forced_closed") return "Forced Closed";
   if (slaBreached && !["resolved", "closed"].includes(status)) return "Overdue";
   switch (status) {
     case "open":
@@ -62,6 +63,8 @@ export const ticketStatusBadgeClass = (label) =>
     Resolved:
       "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400",
     Overdue: "bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400",
+    "Forced Closed":
+      "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
   })[label] ||
   "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300";
 

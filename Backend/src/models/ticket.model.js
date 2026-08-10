@@ -61,7 +61,9 @@ const ticketSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['open', 'pending', 'in_progress', 'resolved', 'closed'],
+      // `forced_closed` = the owning customer's account was deleted; only an
+      // admin can move a ticket out of this state.
+      enum: ['open', 'pending', 'in_progress', 'resolved', 'closed', 'forced_closed'],
       default: 'open'
     },
 
@@ -77,6 +79,16 @@ const ticketSchema = new mongoose.Schema(
       type: [String],
       default: []
     },
+
+    // Images/PDFs attached at ticket creation — shown in the ticket summary
+    // card at the top of the chat thread, not persisted as a chat message.
+    attachments: [
+      {
+        url: { type: String, required: true },
+        filename: { type: String, required: true },
+        mimetype: { type: String, required: true }
+      }
+    ],
 
     // Who raised the ticket. Staff-raised tickets are what the chat sidebar's
     // "Mine" filter keys off; customer-raised ones carry the customer's id.

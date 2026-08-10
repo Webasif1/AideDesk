@@ -24,6 +24,13 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+      // Ticket attachments are served straight from the backend's disk, not
+      // built into the frontend bundle.
+      "/uploads": {
+        target: "http://backend:3000",
+        secure: false,
+        changeOrigin: true,
+      },
     },
   },
 });

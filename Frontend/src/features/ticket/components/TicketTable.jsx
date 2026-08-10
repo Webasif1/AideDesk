@@ -76,6 +76,7 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
       category: cap(t.category),
       requester: customerName(t.customerId),
       company: t.customerId?.email || "—",
+      accountStatus: t.customerId?.accountStatus,
       priority: ticketPriorityLabel(t.priority),
       time: formatRelative(t.updatedAt || t.createdAt),
       created: formatClock(t.createdAt),

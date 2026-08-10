@@ -87,15 +87,9 @@ const postMessage = async ({ chat, role, content, sender = null, senderModel = n
 export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
   const chat = await ensureTicketChat({ ticket, companyId, workspaceId });
 
-  // Seed the thread with the customer's own words so the chat reads as a
-  // conversation rather than starting with an unprompted AI reply.
-  await postMessage({
-    chat,
-    role: "user",
-    content: ticket.description,
-    sender: ticket.customerId,
-    senderModel: "user",
-  });
+  // The ticket's title/description render as a summary card at the top of the
+  // chat (read straight from the ticket), not as a seeded chat message — see
+  // TicketSummaryCard on the frontend.
 
   // No provider configured — hand off rather than leaving the ticket silent.
   if (!isAiConfigured()) {
@@ -117,7 +111,8 @@ export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
 
     result = await runCopilot({
       message: ticket.description,
-      // Exclude the message we just seeded — it is passed as `message`.
+      // No messages exist yet at this point — the description is passed as
+      // `message` above rather than read back from the (still-empty) chat.
       conversationHistory: history.slice(0, -1).map((m) => ({
         role: m.role === "user" ? "user" : "assistant",
         content: m.content,

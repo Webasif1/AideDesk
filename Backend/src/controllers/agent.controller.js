@@ -49,7 +49,7 @@ export const createAgent = asyncHandler(async (req, res) => {
 
   const { name, email } = req.body;
 
-  const exists = await agentModel.findOne({ email });
+  const exists = await agentModel.findOne({ email, companyId: req.companyId });
   if (exists) {
     throw new AppError(ERROR_MESSAGES.USER_EXISTS, HTTP_STATUS.CONFLICT);
   }

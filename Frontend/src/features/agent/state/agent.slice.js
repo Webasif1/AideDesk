@@ -30,6 +30,9 @@ const agentSlice = createSlice({
     setStats: (state, action) => {
       state.stats = action.payload;
     },
+    resetStats: (state) => {
+      state.stats = null;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -67,6 +70,7 @@ export const {
   setAgents,
   setCurrentAgent,
   setStats,
+  resetStats,
   setLoading,
   setError,
   updateAgentInList,

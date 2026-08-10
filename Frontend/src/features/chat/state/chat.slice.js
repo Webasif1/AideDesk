@@ -28,6 +28,9 @@ const chatSlice = createSlice({
         state.pagination = action.payload.pagination;
       }
     },
+    clearChats: (state) => {
+      state.chats = [];
+    },
     setChatCustomers: (state, action) => {
       state.customers = action.payload || [];
     },
@@ -69,6 +72,7 @@ const chatSlice = createSlice({
 
 export const {
   setChats,
+  clearChats,
   setChatCustomers,
   setChatCustomersLoading,
   setCurrentChat,

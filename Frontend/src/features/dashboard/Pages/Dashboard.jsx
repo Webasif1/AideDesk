@@ -226,7 +226,7 @@ const Dashboard = () => {
   const user = useSelector((s) => s.auth.user);
 
   const { stats: ticketStats, getTicketStats } = useTicket();
-  const { stats: agentStats, getAgentStats } = useAgent();
+  const { stats: agentStats, getAgentStats, resetAgentStats } = useAgent();
   const ticketLoading = useSelector((s) => s.ticket.loading);
   const agentLoading = useSelector((s) => s.agent.loading);
   const activeWorkspaceId = useSelector((s) => s.company.activeWorkspaceId);
@@ -244,8 +244,11 @@ const Dashboard = () => {
   }, [getTicketStats, getAgentStats, isAgent, isCustomer]);
 
   useEffect(() => {
+    // Clear any stats left over from the previous workspace so a stale
+    // nonzero count can't sit alongside a freshly (and correctly) empty list.
+    if (!isAgent && !isCustomer) resetAgentStats();
     loadStats();
-  }, [loadStats, workspaceId]);
+  }, [loadStats, workspaceId, isAgent, isCustomer, resetAgentStats]);
 
   // ── Customer layout (mini dashboard) ─────────────────────────────────────────
   if (isCustomer) {

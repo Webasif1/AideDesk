@@ -65,6 +65,9 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+// User-uploaded ticket attachments — not part of the built frontend, so it
+// lives in its own directory rather than under public/.
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.status(200).json({

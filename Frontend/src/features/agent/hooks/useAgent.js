@@ -15,6 +15,7 @@ import {
   setAgents,
   setCurrentAgent,
   setStats,
+  resetStats,
   setLoading,
   setError,
   updateAgentInList,
@@ -87,6 +88,10 @@ export const useAgent = () => {
     });
   }, [dispatch]);
 
+  const resetAgentStats = useCallback(() => {
+    dispatch(resetStats());
+  }, [dispatch]);
+
   const getAgent = useCallback(
     async (id) => {
       return handleRequest(getAgentAPI, id, (res) => {
@@ -142,6 +147,7 @@ export const useAgent = () => {
     createAgent,
     getAgents,
     getAgentStats,
+    resetAgentStats,
     getAgent,
     updateAgent,
     deleteAgent,

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import userModel from '../models/user.model.js';
+import ticketModel from '../models/ticket.model.js';
 import companyModel from '../models/company.model.js';
 import workspaceModel from '../models/workSpace.model.js';
 import {
@@ -467,10 +468,11 @@ export const getUserById = asyncHandler(async (req, res) => {
 // ============================================
 // Shared by PATCH /:id/account-status and DELETE /remove/:id.
 //
-// Nothing is ever hard-deleted: the customer document, their tickets and their
-// chats all stay, so restoring an account puts them straight back into their
-// conversations. `reason` is optional — when the admin leaves it blank the
-// account changes silently and no email goes out.
+// Nothing is ever hard-deleted: the customer document and their chats stay,
+// so restoring an account puts them straight back into their conversations.
+// Deleting does force-close their tickets (see below) — only an admin can
+// move those back out of `forced_closed`. `reason` is optional — when the
+// admin leaves it blank the account changes silently and no email goes out.
 // ============================================
 const applyUserAccountStatus = async ({ req, accountStatus, reason }) => {
   const user = await userModel.findOne({
@@ -509,6 +511,12 @@ const applyUserAccountStatus = async ({ req, accountStatus, reason }) => {
   }
 
   if (accountStatus === ACCOUNT_STATUS.DELETED) {
+    // Force-close every open ticket this customer owns — only an admin can
+    // move a ticket back out of `forced_closed` (see updateTicketStatus).
+    await ticketModel.updateMany(
+      { customerId: user._id, companyId: req.companyId, status: { $ne: 'forced_closed' } },
+      { $set: { status: 'forced_closed', closedAt: new Date() } }
+    );
     emitDomain.customerDeleted(req.companyId, { _id: user._id });
   } else {
     emitDomain.customerCreated(req.companyId, user);

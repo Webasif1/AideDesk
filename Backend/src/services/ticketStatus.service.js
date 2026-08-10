@@ -8,9 +8,10 @@ const REOPENABLE = ["open", "pending"];
 // ============================================
 // A ticket reads as "New" until the customer replies of their own accord.
 //
-// Creating a ticket seeds the chat with the customer's description and the AI
-// answers straight away — neither of those counts. Only the two genuine reply
-// paths call this: copilotFlow.handleCustomerReply and message.sendMessage.
+// Ticket creation shows the description in a summary card, not a chat message,
+// and the AI answers straight away — neither of those counts. Only the two
+// genuine reply paths call this: copilotFlow.handleCustomerReply and
+// message.sendMessage.
 //
 // Safe to call on every customer message; it no-ops once the flag is set.
 // ============================================

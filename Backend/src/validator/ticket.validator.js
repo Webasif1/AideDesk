@@ -63,8 +63,8 @@ export const updateTicketValidator = [
 
   body('status')
     .optional()
-    .isIn(['open', 'pending', 'in_progress', 'resolved', 'closed'])
-    .withMessage('Status must be open, pending, in_progress, resolved, or closed'),
+    .isIn(['open', 'pending', 'in_progress', 'resolved', 'closed', 'forced_closed'])
+    .withMessage('Status must be open, pending, in_progress, resolved, closed, or forced_closed'),
 
   body('priority')
     .optional()

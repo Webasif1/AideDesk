@@ -125,8 +125,8 @@ router.patch(
   [
     body('status')
       .notEmpty()
-      .isIn(['open', 'pending', 'in_progress', 'resolved', 'closed'])
-      .withMessage('Status must be one of: open, pending, in_progress, resolved, closed')
+      .isIn(['open', 'pending', 'in_progress', 'resolved', 'closed', 'forced_closed'])
+      .withMessage('Status must be one of: open, pending, in_progress, resolved, closed, forced_closed')
   ],
   validate,
   updateTicketStatus
