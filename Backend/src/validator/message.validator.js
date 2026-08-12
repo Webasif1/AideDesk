@@ -14,11 +14,8 @@ export const sendMessageValidator = [
     .isLength({ max: 5000 })
     .withMessage('Message cannot exceed 5000 characters'),
 
-  body('role')
-    .notEmpty()
-    .withMessage('Role is required')
-    .isIn(['user', 'agent', 'ai'])
-    .withMessage('Role must be user, agent, or ai'),
+  // `role` is deliberately not accepted from the client. The controller derives it
+  // from the authenticated req.role, so a caller cannot post as 'ai' or as an agent.
 
   body('attachments')
     .optional()

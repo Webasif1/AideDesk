@@ -6,6 +6,7 @@ import ticketModel from "../models/ticket.model.js";
 import userModel from "../models/user.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { escapeRegex } from "../utils/regex.js";
 import { emitDomain } from "../sockets/emit.js";
 import { handleCustomerReply } from "../services/copilotFlow.service.js";
 
@@ -127,6 +128,7 @@ export const getChats = asyncHandler(async (req, res) => {
       // dot in the conversation list.
       .populate("user", "name email profileImage status accountStatus")
       .populate("assignedAgent", "name email status profileImage")
+      .populate("assignedAdmin", "name email profileImage")
       .populate("latestMessage", "content role createdAt")
       // Each chat belongs to at most one ticket — the list labels rows by it,
       // since a customer's own chats would otherwise all read as their name.
@@ -158,6 +160,7 @@ export const getChat = asyncHandler(async (req, res) => {
     .findById(req.params.id)
     .populate("user", "name email profileImage status accountStatus")
     .populate("assignedAgent", "name email status profileImage")
+    .populate("assignedAdmin", "name email profileImage")
     .populate("ticket", "ticketNumber title description status priority attachments createdBy createdByModel");
 
   if (!chat) {
@@ -234,6 +237,8 @@ export const assignAgent = asyncHandler(async (req, res) => {
   }
 
   chat.assignedAgent = agentId;
+  // Handing the chat to an agent releases any admin who had taken it over.
+  chat.assignedAdmin = null;
   chat.status = "active";
   await chat.save();
 
@@ -244,6 +249,47 @@ export const assignAgent = asyncHandler(async (req, res) => {
       chatId: chat._id,
       assignedAgent: { id: agent._id, name: agent.name }
     }
+  });
+});
+
+// ============================================
+// PATCH /api/chats/:id/take-over
+// Admin claims a conversation for themselves so they can reply to it. Staff are
+// otherwise read-only on chats that are not assigned to them.
+// ============================================
+export const takeOverChat = asyncHandler(async (req, res) => {
+  const chat = await chatModel.findById(req.params.id);
+  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
+
+  if (chat.company.toString() !== req.companyId.toString()) {
+    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  if (chat.status === "closed") {
+    throw new AppError(
+      "This conversation is closed. Reopen it before taking it over.",
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  chat.assignedAdmin = req.userId;
+  // Only one owner at a time — taking over supersedes the agent assignment.
+  chat.assignedAgent = null;
+  chat.status = "active";
+  await chat.save();
+
+  const populated = await chatModel
+    .findById(chat._id)
+    .populate("user", "name email profileImage status accountStatus")
+    .populate("assignedAgent", "name email status profileImage")
+    .populate("assignedAdmin", "name email profileImage")
+    .populate("ticket", "ticketNumber title description status priority attachments createdBy createdByModel")
+    .lean();
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: "You have taken over this conversation.",
+    data: populated
   });
 });
 
@@ -355,40 +401,25 @@ export const confirmTicket = asyncHandler(async (req, res) => {
 export const getChatCustomers = asyncHandler(async (req, res) => {
   const { search } = req.query;
 
-  const match = { companyId: new mongoose.Types.ObjectId(req.companyId) };
-
-  // Group the company's tickets by customer so we only ever return people who
-  // actually have support history.
-  const grouped = await ticketModel.aggregate([
-    { $match: match },
-    {
-      $group: {
-        _id: "$customerId",
-        ticketCount: { $sum: 1 },
-        openCount: {
-          $sum: {
-            $cond: [{ $in: ["$status", ["open", "pending", "in_progress"]] }, 1, 0],
-          },
-        },
-        lastActivity: { $max: "$lastMessageAt" },
-      },
-    },
-  ]);
-
-  if (!grouped.length) {
-    return res.status(HTTP_STATUS.OK).json({ success: true, data: [] });
-  }
-
+  // Resolve the visible customers FIRST, then count only their tickets.
+  //
+  // Tickets carry no workspaceId (see ticket.controller.js getTicketStats), so a
+  // company-wide ticket aggregate would fold in other workspaces' tickets while
+  // the customer list stayed workspace-scoped — that mismatch is what made the
+  // badges overcount. A customer belongs to exactly one workspace, so scoping the
+  // customers and then counting by customerId makes the totals correct by proxy.
   const customerFilter = {
-    _id: { $in: grouped.map((g) => g._id) },
-    // Soft-deleted customers keep their tickets but drop out of the list.
-    accountStatus: { $ne: ACCOUNT_STATUS.DELETED },
+    companyId: req.companyId,
+    // Only fully active customers appear here. Suspended accounts are read-only
+    // and soft-deleted ones keep their tickets but drop out of the list.
+    accountStatus: ACCOUNT_STATUS.ACTIVE,
   };
   if (req.workspaceId) customerFilter.workspaceId = req.workspaceId;
   if (search) {
+    const term = escapeRegex(search);
     customerFilter.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
+      { name: { $regex: term, $options: "i" } },
+      { email: { $regex: term, $options: "i" } },
     ];
   }
 
@@ -397,16 +428,44 @@ export const getChatCustomers = asyncHandler(async (req, res) => {
     .select("name email profileImage status accountStatus")
     .lean();
 
+  if (!customers.length) {
+    return res.status(HTTP_STATUS.OK).json({ success: true, data: [] });
+  }
+
+  const grouped = await ticketModel.aggregate([
+    {
+      $match: {
+        companyId: new mongoose.Types.ObjectId(req.companyId),
+        customerId: { $in: customers.map((c) => c._id) },
+      },
+    },
+    {
+      $group: {
+        _id: "$customerId",
+        // Lifetime total, every status.
+        ticketCount: { $sum: 1 },
+        // "Open" here means the same thing it means on the Tickets page and in
+        // getTicketStats — status === "open", nothing broader.
+        openCount: {
+          $sum: { $cond: [{ $eq: ["$status", "open"] }, 1, 0] },
+        },
+        lastActivity: { $max: "$lastMessageAt" },
+      },
+    },
+  ]);
+
   const statsById = new Map(grouped.map((g) => [g._id.toString(), g]));
 
   const data = customers
+    // Customers with no support history at all are not shown.
+    .filter((customer) => statsById.has(customer._id.toString()))
     .map((customer) => {
       const stats = statsById.get(customer._id.toString());
       return {
         ...customer,
-        ticketCount: stats?.ticketCount || 0,
-        openCount: stats?.openCount || 0,
-        lastActivity: stats?.lastActivity || null,
+        ticketCount: stats.ticketCount,
+        openCount: stats.openCount,
+        lastActivity: stats.lastActivity || null,
       };
     })
     .sort(

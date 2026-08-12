@@ -18,6 +18,11 @@ import {
 } from '../controllers/user.controller.js';
 
 import {
+  getCustomerNote,
+  upsertCustomerNote
+} from '../controllers/customerNote.controller.js';
+
+import {
   createUserValidator,
   loginUserValidator,
   forgotUserPasswordValidator,
@@ -145,6 +150,21 @@ router.get('/stats', requireRole('admin', 'agent'), getUserStats);
  * @access Private — Admin
  */
 router.get('/:id', requireRole('admin'), getUserById);
+
+/**
+ * @route  GET /api/users/:id/note
+ * @desc   Read the private admin note for a customer ('' when none exists)
+ * @access Private — Admin
+ */
+router.get('/:id/note', requireRole('admin'), getCustomerNote);
+
+/**
+ * @route  PUT /api/users/:id/note
+ * @desc   Create or overwrite the note. Body: { body: string }.
+ *         An empty body deletes the note.
+ * @access Private — Admin
+ */
+router.put('/:id/note', requireRole('admin'), upsertCustomerNote);
 
 /**
  * @route  PATCH /api/users/:id/account-status

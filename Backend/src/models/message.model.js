@@ -28,9 +28,11 @@ const messageSchema = new mongoose.Schema(
       default: null
     },
 
+    // Which collection `sender` points at. Admins post with role 'agent' (they are
+    // staff to the customer) but live in their own collection.
     senderModel: {
       type: String,
-      enum: ['user', 'agent'],
+      enum: ['user', 'agent', 'admin'],
       default: null
     },
 

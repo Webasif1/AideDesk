@@ -27,6 +27,15 @@ const chatSchema = new mongoose.Schema(
       default: null
     },
 
+    // Set when an admin takes a conversation over themselves. Kept separate from
+    // assignedAgent because that field refs the agent collection — an admin id
+    // stored there would populate as null. At most one of the two is ever set.
+    assignedAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "admin",
+      default: null
+    },
+
     // Populated when this chat is escalated to a formal ticket
     ticket: {
       type: mongoose.Schema.Types.ObjectId,

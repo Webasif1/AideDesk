@@ -6,6 +6,7 @@ import {
   getChats,
   getChat,
   assignAgent,
+  takeOverChat,
   updateChatStatus,
   getChatStats,
   getChatCustomers,
@@ -95,6 +96,13 @@ router.patch(
   validate,
   assignAgent
 );
+
+/**
+ * @route   PATCH /api/chats/:id/take-over
+ * @desc    Admin claims the conversation for themselves so they can reply to it
+ * @access  Private — Admin only
+ */
+router.patch('/:id/take-over', requireRole('admin'), takeOverChat);
 
 /**
  * @route   PATCH /api/chats/:id/status

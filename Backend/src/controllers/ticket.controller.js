@@ -5,6 +5,7 @@ import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { escapeRegex } from "../utils/regex.js";
 import { emitDomain } from "../sockets/emit.js";
 import {
   classifyIntent,
@@ -185,7 +186,7 @@ export const createTicket = asyncHandler(async (req, res) => {
 // ============================================
 export const getTickets = asyncHandler(async (req, res) => {
   const {
-    status, priority, category, assignedAgent,
+    status, priority, category, assignedAgent, search,
     page = 1, limit = 20, from, to
   } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -202,6 +203,17 @@ export const getTickets = asyncHandler(async (req, res) => {
   if (priority) filter.priority = priority;
   if (category) filter.category = category;
   if (assignedAgent && req.role === "admin") filter.assignedAgent = assignedAgent;
+
+  // Title/ticket-number search. The list is paginated server-side, so this has to
+  // run here — filtering the current page in the client would only ever search
+  // the rows already on screen. Input is escaped: it lands inside a $regex.
+  if (search && search.trim()) {
+    const term = escapeRegex(search.trim());
+    filter.$or = [
+      { title: { $regex: term, $options: "i" } },
+      { ticketNumber: { $regex: term, $options: "i" } },
+    ];
+  }
 
   if (from || to) {
     filter.createdAt = {};

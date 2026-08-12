@@ -37,12 +37,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
     throw new AppError("This chat session is closed. Please start a new one.", HTTP_STATUS.BAD_REQUEST);
   }
 
+  // Admins post as staff (role "agent") but their sender document lives in the
+  // admin collection, so senderModel has to record which one to populate from.
   const message = await messageModel.create({
     chat: chatId,
     content,
     role: req.role === "customer" ? "user" : "agent",
     sender: req.userId,
-    senderModel: req.role === "customer" ? "user" : "agent",
+    senderModel: req.role,
     attachments,
   });
 

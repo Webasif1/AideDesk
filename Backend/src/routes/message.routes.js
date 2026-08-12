@@ -25,11 +25,11 @@ router.use(protect);
  * @desc    Send a message in a chat session
  *          role 'user' (customer) → stored with role:'user', triggers AI pipeline
  *          role 'agent' → stored with role:'agent'
- * @access  Private — Customer or Agent
+ * @access  Private — Customer, Agent, or Admin (admin after taking a chat over)
  */
 router.post(
   '/',
-  requireRole('customer', 'agent'),
+  requireRole('customer', 'agent', 'admin'),
   sendMessageValidator,
   validate,
   sendMessage
