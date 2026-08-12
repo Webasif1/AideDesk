@@ -3,8 +3,15 @@ import { useState, useRef } from "react";
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf";
 
 // `lockedReason` replaces the whole composer — used when the account is
-// suspended, where the conversation stays readable but nothing can be sent.
-const ChatInput = ({ onSend, disabled = false, lockedReason = "" }) => {
+// suspended, or when staff are viewing a conversation that is not assigned to
+// them, where the thread stays readable but nothing can be sent.
+// `lockedAction` optionally puts one button in that lock panel, e.g. "Take over".
+const ChatInput = ({
+  onSend,
+  disabled = false,
+  lockedReason = "",
+  lockedAction = null,
+}) => {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [focused, setFocused] = useState(false);
@@ -54,13 +61,25 @@ const ChatInput = ({ onSend, disabled = false, lockedReason = "" }) => {
   if (lockedReason) {
     return (
       <div className="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#111] px-[16px] py-[18px]">
-        <div className="flex items-center justify-center gap-[10px] text-center">
-          <span className="material-symbols-outlined text-[18px] text-neutral-400">
-            lock
-          </span>
-          <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
-            {lockedReason}
-          </p>
+        <div className="flex flex-col items-center gap-[10px] text-center">
+          <div className="flex items-center gap-[10px]">
+            <span className="material-symbols-outlined text-[18px] text-neutral-400">
+              lock
+            </span>
+            <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
+              {lockedReason}
+            </p>
+          </div>
+          {lockedAction && (
+            <button
+              type="button"
+              onClick={lockedAction.onClick}
+              disabled={lockedAction.pending}
+              className="px-[16px] py-[7px] rounded-lg bg-black dark:bg-white text-white dark:text-black text-[12px] font-semibold transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {lockedAction.pending ? "Taking over…" : lockedAction.label}
+            </button>
+          )}
         </div>
       </div>
     );

@@ -81,3 +81,15 @@ export const updateUserAccountStatus = async ({ id, accountStatus, reason = "" }
   });
   return response.data;
 };
+
+// Private admin note about a customer — one per customer, admin-only.
+export const getCustomerNote = async (id) => {
+  const response = await apiClient.get(`${PREFIX}/${id}/note`);
+  return response.data;
+};
+
+// Sending an empty body deletes the note.
+export const saveCustomerNote = async ({ id, body }) => {
+  const response = await apiClient.put(`${PREFIX}/${id}/note`, { body });
+  return response.data;
+};

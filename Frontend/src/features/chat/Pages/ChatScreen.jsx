@@ -37,6 +37,46 @@ const CustomerEmpty = ({ onCreate }) => (
   </div>
 );
 
+// Header strip inside an expanded left panel, carrying its collapse control.
+const PanelCollapseBar = ({ label, onCollapse }) => (
+  <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[6px] shrink-0">
+    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+      {label}
+    </span>
+    <button
+      onClick={onCollapse}
+      title={`Collapse ${label}`}
+      className="p-[4px] rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+    >
+      <span className="material-symbols-outlined text-[16px] text-neutral-400">
+        chevron_left
+      </span>
+    </button>
+  </div>
+);
+
+// The 36px stub a collapsed panel leaves behind, mirroring the info panel's rail.
+const CollapsedRail = ({ label, icon, onExpand }) => (
+  <button
+    onClick={onExpand}
+    title={`Show ${label}`}
+    className="w-[36px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col items-center gap-[10px] pt-[14px] hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+  >
+    <span className="material-symbols-outlined text-[18px] text-neutral-400">
+      chevron_right
+    </span>
+    <span className="material-symbols-outlined text-[18px] text-neutral-400">
+      {icon}
+    </span>
+    <span
+      className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 whitespace-nowrap"
+      style={{ writingMode: "vertical-rl" }}
+    >
+      {label}
+    </span>
+  </button>
+);
+
 const ChatScreen = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -45,6 +85,8 @@ const ChatScreen = () => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [showInfo, setShowInfo] = useState(true);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [customersOpen, setCustomersOpen] = useState(true);
+  const [conversationsOpen, setConversationsOpen] = useState(true);
 
   const {
     getChats,
@@ -143,13 +185,24 @@ const ChatScreen = () => {
             style={{ height: "calc(100vh - 64px)" }}
           >
             {/* Customer column — staff pick a person before seeing threads */}
-            {!isCustomer && (
+            {!isCustomer && !customersOpen && (
+              <CollapsedRail
+                label="Customers"
+                icon="group"
+                onExpand={() => setCustomersOpen(true)}
+              />
+            )}
+            {!isCustomer && customersOpen && (
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
                 className="w-[240px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
               >
+                <PanelCollapseBar
+                  label="Customers"
+                  onCollapse={() => setCustomersOpen(false)}
+                />
                 <ChatCustomerList
                   customers={customers}
                   loading={customersLoading}
@@ -169,13 +222,24 @@ const ChatScreen = () => {
             )}
 
             {/* Conversation list — hidden for customers (single support thread) */}
-            {!isCustomer && (
+            {!isCustomer && !conversationsOpen && (
+              <CollapsedRail
+                label="Conversations"
+                icon="forum"
+                onExpand={() => setConversationsOpen(true)}
+              />
+            )}
+            {!isCustomer && conversationsOpen && (
               <motion.div
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
                 className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
               >
+                <PanelCollapseBar
+                  label="Conversations"
+                  onCollapse={() => setConversationsOpen(false)}
+                />
                 <ChatConversationList
                   // Empty until a customer is chosen, rather than every
                   // conversation in the company at once.

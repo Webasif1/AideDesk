@@ -34,6 +34,12 @@ export const assignAgent = async ({ id, agentId }) => {
   return response.data;
 };
 
+// Admin claims a conversation so they can reply to it. Returns the populated chat.
+export const takeOverChat = async ({ id }) => {
+  const response = await apiClient.patch(`${PREFIX}/${id}/take-over`);
+  return response.data;
+};
+
 export const updateChatStatus = async ({ id, status }) => {
   const response = await apiClient.patch(`${PREFIX}/${id}/status`, { status });
   return response.data;

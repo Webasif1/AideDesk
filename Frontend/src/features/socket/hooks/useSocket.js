@@ -17,7 +17,11 @@ import {
   resetSocket,
 } from "../state/socket.slice";
 import { addMessage } from "../../message/state/message.slice";
-import { updateChatInList } from "../../chat/state/chat.slice";
+import {
+  updateChatInList,
+  setChatCustomers,
+} from "../../chat/state/chat.slice";
+import { getChatCustomers } from "../../chat/services/chat.api";
 import {
   upsertTicket,
   removeTicketFromList,
@@ -77,6 +81,9 @@ export const useSocket = () => {
         getTicketCsat().then((r) => dispatch(setCsat(r.data))).catch(() => {});
         getUserStats().then((r) => dispatch(setUserStats(r.data))).catch(() => {});
         getAgentStats().then((r) => dispatch(setAgentStats(r.data))).catch(() => {});
+        // The chat page's customer column carries per-customer ticket counts, so
+        // it goes stale on any ticket mutation unless it is refetched here.
+        getChatCustomers({}).then((r) => dispatch(setChatCustomers(r.data))).catch(() => {});
       }, 500);
     };
 

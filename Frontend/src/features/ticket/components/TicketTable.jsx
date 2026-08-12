@@ -29,15 +29,35 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
 
   const isCustomer = role === "customer";
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Reset to first page when the workspace context changes.
   useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // Adjusted during render rather than in an effect so the fetch below never
+  // fires once against a stale page.
+  const scope = `${workspaceId}|${debouncedSearch}`;
+  const [prevScope, setPrevScope] = useState(scope);
+  if (scope !== prevScope) {
+    setPrevScope(scope);
     setPage(1);
-  }, [workspaceId]);
+  }
+
+  const query = useMemo(
+    () => ({
+      page,
+      limit: LIMIT,
+      ...(debouncedSearch && { search: debouncedSearch }),
+    }),
+    [page, debouncedSearch]
+  );
 
   useEffect(() => {
-    getTickets({ page, limit: LIMIT }).catch(() => {});
-  }, [getTickets, page, workspaceId]);
+    getTickets(query).catch(() => {});
+  }, [getTickets, query, workspaceId]);
 
   // Tab filters applied to the current page client-side.
   const filtered = useMemo(() => {
@@ -98,6 +118,33 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
 
   return (
     <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a]">
+      {/* Search runs server-side — the table only holds one page, so filtering
+          here in the client would never reach a ticket on another page. */}
+      <div className="px-[24px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
+        <div className="flex items-center bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
+          <span className="material-symbols-outlined text-[18px] text-neutral-400">
+            search
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tickets by title or number…"
+            className="bg-transparent text-[13px] text-black dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none w-full"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              title="Clear search"
+              className="shrink-0 p-[2px] rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px] text-neutral-400">
+                close
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
       <table className="w-full text-left">
         <thead>
           <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-200 dark:border-neutral-700">
@@ -130,9 +177,11 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
                   No tickets to show
                 </p>
                 <p className="text-[12px] text-neutral-400 mt-1">
-                  {activeTab === "All Tickets"
-                    ? "Create a ticket to get started."
-                    : `No tickets match "${activeTab}".`}
+                  {debouncedSearch
+                    ? `Nothing matches "${debouncedSearch}".`
+                    : activeTab === "All Tickets"
+                      ? "Create a ticket to get started."
+                      : `No tickets match "${activeTab}".`}
                 </p>
               </td>
             </tr>

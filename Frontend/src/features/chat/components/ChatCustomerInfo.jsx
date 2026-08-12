@@ -1,4 +1,7 @@
+import { useState } from "react";
+import { useSelector } from "react-redux";
 import ChatAvatar from "./ChatAvatar";
+import CustomerNoteSticky from "./CustomerNoteSticky";
 import {
   conversationCustomer,
   conversationPresence,
@@ -21,6 +24,21 @@ const InfoRow = ({ label, value, icon }) => (
 );
 
 const ChatCustomerInfo = ({ conversation }) => {
+  const role = useSelector((s) => s.auth.role);
+  const [noteOpen, setNoteOpen] = useState(false);
+
+  const customerId = conversationCustomer(conversation).id;
+
+  // Close the sticky when the panel switches to a different customer, so the
+  // note that unmounts is saved against the person it was written for. Done
+  // during render rather than in an effect so the sticky never paints one frame
+  // holding the previous customer's note.
+  const [prevCustomerId, setPrevCustomerId] = useState(customerId);
+  if (customerId !== prevCustomerId) {
+    setPrevCustomerId(customerId);
+    setNoteOpen(false);
+  }
+
   if (!conversation) return null;
 
   const customer = conversationCustomer(conversation);
@@ -118,36 +136,35 @@ const ChatCustomerInfo = ({ conversation }) => {
         )}
       </div>
 
-      {/* Quick actions */}
-      <div className="px-[20px] py-[12px]">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-[10px]">
-          Actions
-        </p>
-        <div className="flex flex-col gap-[6px]">
-          {[
-            { icon: "confirmation_number", label: "Create Ticket" },
-            { icon: "note_add", label: "Add Note" },
-            { icon: "block", label: "Block User", danger: true },
-          ].map((a) => (
+      {/* Actions — admin only. The note is private to admins, so agents get no
+          actions section at all. */}
+      {role === "admin" && customerId && (
+        <>
+          <div className="px-[20px] py-[12px]">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-[10px]">
+              Actions
+            </p>
             <button
-              key={a.label}
-              className={`w-full flex items-center gap-[8px] px-[10px] py-[8px] rounded-lg border text-[12px] font-medium transition-colors text-left
-                ${
-                  a.danger
-                    ? "border-red-100 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                    : "border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-600"
-                }`}
+              type="button"
+              onClick={() => setNoteOpen((open) => !open)}
+              className="w-full flex items-center gap-[8px] px-[10px] py-[8px] rounded-lg border border-neutral-100 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-[12px] font-medium text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-600"
             >
-              <span
-                className={`material-symbols-outlined text-[16px] ${a.danger ? "text-red-400" : "text-neutral-400"}`}
-              >
-                {a.icon}
+              <span className="material-symbols-outlined text-[16px] text-neutral-400">
+                note_add
               </span>
-              {a.label}
+              {noteOpen ? "Close Note" : "Add Note"}
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          {noteOpen && (
+            <CustomerNoteSticky
+              customerId={customerId}
+              customerName={customer.name}
+              onClose={() => setNoteOpen(false)}
+            />
+          )}
+        </>
+      )}
 
       <style>{`
         @keyframes slideLeft {

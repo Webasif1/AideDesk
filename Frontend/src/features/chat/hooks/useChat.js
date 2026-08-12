@@ -7,6 +7,7 @@ import {
   getChatCustomers as getChatCustomersAPI,
   getChat as getChatAPI,
   assignAgent as assignAgentAPI,
+  takeOverChat as takeOverChatAPI,
   updateChatStatus as updateChatStatusAPI,
   sendCopilotMessage as sendCopilotMessageAPI,
   confirmTicket as confirmTicketAPI,
@@ -118,6 +119,18 @@ export const useChat = () => {
     [dispatch]
   );
 
+  // Ownership changes, so refresh both the list row and the open conversation —
+  // the composer unlocks off `currentChat`.
+  const takeOverChat = useCallback(
+    async (data) => {
+      return handleRequest(takeOverChatAPI, data, (res) => {
+        dispatch(updateChatInList(res.data));
+        dispatch(setCurrentChat(res.data));
+      });
+    },
+    [dispatch]
+  );
+
   const updateChatStatus = useCallback(
     async (data) => {
       return handleRequest(updateChatStatusAPI, data, (res) => {
@@ -182,6 +195,7 @@ export const useChat = () => {
     getChatCustomers,
     getChat,
     assignAgent,
+    takeOverChat,
     updateChatStatus,
     sendCopilotMessage,
     confirmTicket,

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ChatBubble from "./ChatBubble";
 import ChatInput from "./ChatInput";
@@ -63,12 +63,17 @@ const ChatWindow = ({ conversation, onClose }) => {
     confirmTicket,
     cancelTicketDraft,
     getChat,
+    takeOverChat,
+    currentChat,
     ticketDraft,
     loading,
   } = useChat();
 
+  const [takingOver, setTakingOver] = useState(false);
+
   const messages = useSelector((s) => s.message.messages);
   const role = useSelector((s) => s.auth.role);
+  const myId = useSelector((s) => s.auth.user?.id || s.auth.user?._id);
   // Suspended accounts read the thread but cannot post into it.
   const isReadOnly = useSelector(selectIsReadOnly);
   const copilotTyping = useSelector(
@@ -104,14 +109,55 @@ const ChatWindow = ({ conversation, onClose }) => {
         attachment,
       }).catch(() => {});
     } else {
-      // Agent path: use plain message endpoint
+      // Staff path: plain message endpoint. The body key is `chat`, not `chatId` —
+      // that is what the controller destructures and the validator checks.
       const { sendMessage } = await import("../../message/services/message.api");
       await sendMessage({
-        chatId: conversation._id,
+        chat: conversation._id,
         content,
       }).catch(() => {});
     }
   };
+
+  // Ownership drives the composer lock for staff. Prefer the freshly-fetched
+  // `currentChat` over the list row, since taking over updates that first.
+  const chat =
+    currentChat && currentChat._id === conversation?._id
+      ? currentChat
+      : conversation;
+  const idOf = (v) => (v && typeof v === "object" ? v._id : v) || null;
+  const isStaff = role === "admin" || role === "agent";
+  const ownsChat =
+    !!myId &&
+    (String(idOf(chat?.assignedAgent)) === String(myId) ||
+      String(idOf(chat?.assignedAdmin)) === String(myId));
+
+  const handleTakeOver = async () => {
+    if (!conversation?._id) return;
+    setTakingOver(true);
+    try {
+      await takeOverChat({ id: conversation._id });
+    } catch {
+      // handleRequest already surfaced the error into chat.error
+    } finally {
+      setTakingOver(false);
+    }
+  };
+
+  // Suspension is the stricter rule and wins over the assignment lock.
+  const lockedReason = isReadOnly
+    ? "Your account is suspended. You can read this conversation, but you can't send messages."
+    : isStaff && !ownsChat
+      ? role === "admin"
+        ? "This conversation isn't assigned to you. Take it over to reply."
+        : "This conversation is assigned to someone else."
+      : "";
+
+  // Only an admin can claim a conversation; agents are assigned by an admin.
+  const lockedAction =
+    !isReadOnly && role === "admin" && !ownsChat
+      ? { label: "Take over", onClick: handleTakeOver, pending: takingOver }
+      : null;
 
   if (!conversation) {
     return (
@@ -242,11 +288,8 @@ const ChatWindow = ({ conversation, onClose }) => {
       <ChatInput
         onSend={handleSend}
         disabled={loading}
-        lockedReason={
-          isReadOnly
-            ? "Your account is suspended. You can read this conversation, but you can't send messages."
-            : ""
-        }
+        lockedReason={lockedReason}
+        lockedAction={lockedAction}
       />
 
       {/* A suspended customer can't confirm a ticket draft either — the write

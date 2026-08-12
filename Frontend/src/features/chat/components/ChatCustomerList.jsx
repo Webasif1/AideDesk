@@ -110,14 +110,11 @@ const ChatCustomerList = ({
                   <span className="text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
                     {customer.ticketCount} ticket{customer.ticketCount === 1 ? "" : "s"}
                   </span>
+                  {/* No suspended badge: the endpoint only returns active
+                      customers, so it could never render. */}
                   {customer.openCount > 0 && (
                     <span className="text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                       {customer.openCount} open
-                    </span>
-                  )}
-                  {customer.accountStatus === "suspended" && (
-                    <span className="text-[9px] font-bold px-[6px] py-[2px] rounded-full uppercase tracking-wide bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
-                      Suspended
                     </span>
                   )}
                 </div>
