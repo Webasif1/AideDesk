@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   connectSocket,
@@ -55,6 +55,14 @@ export const useSocket = () => {
   const userWorkspaceId = useSelector((s) => s.auth.user?.workspaceId);
   const workspaceId = activeWorkspaceId || userWorkspaceId;
 
+  // The thread currently on screen, read through a ref so the listeners below
+  // stay registered once instead of being torn down on every chat switch.
+  const openChatId = useSelector((s) => s.chat.currentChat?._id);
+  const openChatRef = useRef(openChatId);
+  useEffect(() => {
+    openChatRef.current = openChatId;
+  }, [openChatId]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       disconnectSocket();
@@ -96,8 +104,30 @@ export const useSocket = () => {
 
     // ── Chat realtime ──────────────────────────────────────────────────────
     socket.on("message:new", (payload) => {
-      if (payload?.message) dispatch(addMessage(payload.message));
-      if (payload?.chat) dispatch(updateChatInList(payload.chat));
+      const message = payload?.message;
+      const chatId = payload?.chat?._id || message?.chat;
+      if (!chatId) return;
+
+      // Only the thread on screen takes the message. A socket left in an old
+      // chat room — or in several at once after a reconnect — would otherwise
+      // drop other conversations' messages into the open one.
+      if (message && String(chatId) === String(openChatRef.current)) {
+        dispatch(addMessage(message));
+      }
+
+      // The list row still updates for any chat, so the preview line and
+      // ordering stay live while looking at a different conversation.
+      dispatch(
+        updateChatInList({
+          _id: chatId,
+          ...(message
+            ? {
+                latestMessage: message,
+                lastActivity: message.createdAt || new Date().toISOString(),
+              }
+            : {}),
+        })
+      );
     });
     socket.on("chat:typing", (payload) => dispatch(setTyping(payload)));
     socket.on("copilot:typing", (payload) => dispatch(setCopilotTyping(payload)));

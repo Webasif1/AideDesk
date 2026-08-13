@@ -412,7 +412,12 @@ export const getChatCustomers = asyncHandler(async (req, res) => {
     companyId: req.companyId,
     // Only fully active customers appear here. Suspended accounts are read-only
     // and soft-deleted ones keep their tickets but drop out of the list.
-    accountStatus: ACCOUNT_STATUS.ACTIVE,
+    // Written as an exclusion, not `=== ACTIVE`: accountStatus was added after
+    // customers already existed, so the field is simply absent on older
+    // documents and an equality match dropped every one of them — which emptied
+    // this column entirely. $nin matches a missing field, an equality match
+    // does not.
+    accountStatus: { $nin: [ACCOUNT_STATUS.DELETED, ACCOUNT_STATUS.SUSPENDED] },
   };
   if (req.workspaceId) customerFilter.workspaceId = req.workspaceId;
   if (search) {
