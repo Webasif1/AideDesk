@@ -96,6 +96,7 @@ const ChatScreen = () => {
     chats,
     customers,
     customersLoading,
+    customersError,
   } = useChat();
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
@@ -206,6 +207,7 @@ const ChatScreen = () => {
                 <ChatCustomerList
                   customers={customers}
                   loading={customersLoading}
+                  error={customersError}
                   selectedId={selectedCustomerId}
                   onSelect={(customer) => {
                     setSelectedCustomerId(customer._id);

@@ -70,6 +70,9 @@ const ChatWindow = ({ conversation, onClose }) => {
   } = useChat();
 
   const [takingOver, setTakingOver] = useState(false);
+  // Scoped to this send. `loading` from useChat is a shared flag that any chat
+  // request flips, so using it here greys the composer during unrelated fetches.
+  const [sending, setSending] = useState(false);
 
   const messages = useSelector((s) => s.message.messages);
   const role = useSelector((s) => s.auth.role);
@@ -102,20 +105,27 @@ const ChatWindow = ({ conversation, onClose }) => {
   const handleSend = async ({ content, attachment }) => {
     if (!conversation?._id) return;
 
-    if (role === "customer") {
-      await sendCopilotMessage({
-        chatId: conversation._id,
-        content,
-        attachment,
-      }).catch(() => {});
-    } else {
-      // Staff path: plain message endpoint. The body key is `chat`, not `chatId` —
-      // that is what the controller destructures and the validator checks.
-      const { sendMessage } = await import("../../message/services/message.api");
-      await sendMessage({
-        chat: conversation._id,
-        content,
-      }).catch(() => {});
+    setSending(true);
+    try {
+      if (role === "customer") {
+        await sendCopilotMessage({
+          chatId: conversation._id,
+          content,
+          attachment,
+        }).catch(() => {});
+      } else {
+        // Staff path: plain message endpoint. The body key is `chat`, not `chatId`
+        // — that is what the controller destructures and the validator checks.
+        const { sendMessage } = await import("../../message/services/message.api");
+        await sendMessage({
+          chat: conversation._id,
+          content,
+        }).catch(() => {});
+        // The staff path bypasses useChat, so nothing refreshes the thread for us.
+        getChat(conversation._id).catch(() => {});
+      }
+    } finally {
+      setSending(false);
     }
   };
 
@@ -127,10 +137,15 @@ const ChatWindow = ({ conversation, onClose }) => {
       : conversation;
   const idOf = (v) => (v && typeof v === "object" ? v._id : v) || null;
   const isStaff = role === "admin" || role === "agent";
+
+  const agentId = idOf(chat?.assignedAgent);
+  const adminId = idOf(chat?.assignedAdmin);
+  // Nobody has picked this conversation up yet. The backend deliberately serves
+  // agents their own chats *plus* every unassigned one, so an unassigned chat is
+  // work an agent is expected to take — not something to lock them out of.
+  const unassigned = !agentId && !adminId;
   const ownsChat =
-    !!myId &&
-    (String(idOf(chat?.assignedAgent)) === String(myId) ||
-      String(idOf(chat?.assignedAdmin)) === String(myId));
+    !!myId && (String(agentId) === String(myId) || String(adminId) === String(myId));
 
   const handleTakeOver = async () => {
     if (!conversation?._id) return;
@@ -144,18 +159,26 @@ const ChatWindow = ({ conversation, onClose }) => {
     }
   };
 
+  // An agent may reply to their own chats and to unassigned ones (replying is
+  // what claims it). An admin must take a chat over explicitly. Either way, only
+  // a conversation owned by *somebody else* is read-only.
+  const canReply =
+    !isStaff || ownsChat || (role === "agent" && unassigned);
+
   // Suspension is the stricter rule and wins over the assignment lock.
   const lockedReason = isReadOnly
     ? "Your account is suspended. You can read this conversation, but you can't send messages."
-    : isStaff && !ownsChat
-      ? role === "admin"
-        ? "This conversation isn't assigned to you. Take it over to reply."
-        : "This conversation is assigned to someone else."
-      : "";
+    : canReply
+      ? ""
+      : role === "admin"
+        ? unassigned
+          ? "No one has picked this up yet. Take it over to reply."
+          : "This conversation is assigned to someone else. Take it over to reply."
+        : "This conversation is assigned to someone else.";
 
-  // Only an admin can claim a conversation; agents are assigned by an admin.
+  // Only an admin can claim a conversation; agents claim by replying.
   const lockedAction =
-    !isReadOnly && role === "admin" && !ownsChat
+    !isReadOnly && role === "admin" && !canReply
       ? { label: "Take over", onClick: handleTakeOver, pending: takingOver }
       : null;
 
@@ -287,7 +310,7 @@ const ChatWindow = ({ conversation, onClose }) => {
 
       <ChatInput
         onSend={handleSend}
-        disabled={loading}
+        disabled={sending}
         lockedReason={lockedReason}
         lockedAction={lockedAction}
       />

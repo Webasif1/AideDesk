@@ -4,7 +4,11 @@ import messageModel from "../models/message.model.js";
 import agentModel from "../models/aget.model.js";
 import ticketModel from "../models/ticket.model.js";
 import userModel from "../models/user.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
+import {
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+  ACCOUNT_VISIBLE,
+} from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { escapeRegex } from "../utils/regex.js";
 import { emitDomain } from "../sockets/emit.js";
@@ -120,6 +124,26 @@ export const getChats = asyncHandler(async (req, res) => {
   // Staff pick a customer in the sidebar first; the conversation list is then
   // scoped to that person rather than showing every chat in the company.
   if (customerId && req.role !== "customer") filter.user = customerId;
+
+  if (req.role !== "customer") {
+    // Match the customer column: same workspace scope, and no conversations
+    // belonging to deleted or suspended customers. Without this a soft-deleted
+    // customer's threads keep showing here after they disappear everywhere else.
+    if (req.workspaceId) filter.workspaceId = req.workspaceId;
+
+    const visibleCustomers = await userModel
+      .find({ companyId: req.companyId, accountStatus: ACCOUNT_VISIBLE })
+      .select("_id")
+      .lean();
+
+    const visibleIds = visibleCustomers.map((c) => c._id);
+    filter.user = filter.user
+      ? // A customer was explicitly selected — honour it only if they are visible.
+        visibleIds.some((id) => id.toString() === filter.user.toString())
+        ? filter.user
+        : null
+      : { $in: visibleIds };
+  }
 
   const [chats, total] = await Promise.all([
     chatModel
@@ -265,6 +289,16 @@ export const takeOverChat = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
+  // Admins float between workspaces via the x-workspace-id header; hold them to
+  // the one they are actually operating in, as the customer list does.
+  if (
+    req.workspaceId &&
+    chat.workspaceId &&
+    chat.workspaceId.toString() !== req.workspaceId.toString()
+  ) {
+    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
   if (chat.status === "closed") {
     throw new AppError(
       "This conversation is closed. Reopen it before taking it over.",
@@ -272,9 +306,11 @@ export const takeOverChat = asyncHandler(async (req, res) => {
     );
   }
 
+  // Deliberately leaves assignedAgent alone. Clearing it would silently drop the
+  // agent who was working the chat off their own queue (getChats scopes an agent
+  // to assigned + unassigned), so the conversation would vanish from their list.
+  // assignedAdmin on its own is enough to convey who is replying now.
   chat.assignedAdmin = req.userId;
-  // Only one owner at a time — taking over supersedes the agent assignment.
-  chat.assignedAgent = null;
   chat.status = "active";
   await chat.save();
 
@@ -410,9 +446,10 @@ export const getChatCustomers = asyncHandler(async (req, res) => {
   // customers and then counting by customerId makes the totals correct by proxy.
   const customerFilter = {
     companyId: req.companyId,
-    // Only fully active customers appear here. Suspended accounts are read-only
-    // and soft-deleted ones keep their tickets but drop out of the list.
-    accountStatus: ACCOUNT_STATUS.ACTIVE,
+    // Suspended accounts are read-only and soft-deleted ones keep their tickets
+    // but drop out of the list. Matched as "not those" rather than "== active"
+    // so legacy customers without the field still appear — see ACCOUNT_VISIBLE.
+    accountStatus: ACCOUNT_VISIBLE,
   };
   if (req.workspaceId) customerFilter.workspaceId = req.workspaceId;
   if (search) {

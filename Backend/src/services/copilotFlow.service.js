@@ -14,6 +14,7 @@ import { uploadPDFAndExtract } from "./fileContext.service.js";
 import { generateAgentBriefing } from "./agentBriefing.service.js";
 import { markCustomerReplied } from "./ticketStatus.service.js";
 import { socketEmit, emitDomain } from "../sockets/emit.js";
+import { ACCOUNT_VISIBLE } from "../config/constants.js";
 import { config } from "../config/config.js";
 
 // triage intent → ticket.category enum (billing|technical|account|general)
@@ -75,7 +76,10 @@ const processAttachment = async (file, userMessage) => {
 // Suspended and removed agents are excluded — they cannot act on a ticket, so
 // handing them an escalation would silently park it.
 const pickAgent = async (workspaceId, companyId) => {
-  const active = { accountStatus: "active" };
+  // Matched as "not suspended/removed", not "== active" — agents predating the
+  // accountStatus field have no such key and an equality check finds nobody,
+  // which parks every escalation silently. See ACCOUNT_VISIBLE.
+  const active = { accountStatus: ACCOUNT_VISIBLE };
   return (
     (workspaceId &&
       (await agentModel.findOne({ ...active, workspaceId, status: "online" }))) ||

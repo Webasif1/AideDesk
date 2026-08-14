@@ -5,6 +5,8 @@ const initialState = {
   // Customers with at least one ticket — the chat page's first column.
   customers: [],
   customersLoading: false,
+  // Kept apart from `error`: this column loads independently of the chat list.
+  customersError: null,
   currentChat: null,
   stats: null,
   loading: false,
@@ -33,6 +35,9 @@ const chatSlice = createSlice({
     },
     setChatCustomers: (state, action) => {
       state.customers = action.payload || [];
+    },
+    setChatCustomersError: (state, action) => {
+      state.customersError = action.payload;
     },
     setChatCustomersLoading: (state, action) => {
       state.customersLoading = action.payload;
@@ -74,6 +79,7 @@ export const {
   setChats,
   clearChats,
   setChatCustomers,
+  setChatCustomersError,
   setChatCustomersLoading,
   setCurrentChat,
   setStats,

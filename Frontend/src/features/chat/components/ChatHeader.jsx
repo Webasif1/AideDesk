@@ -19,18 +19,21 @@ const ChatHeader = ({ conversation, onClose }) => {
   if (!conversation) return null;
 
   const isCustomerView = role === "customer";
-  const agent = conversation.assignedAgent; // populated when escalated
+  // Either can be the human on the other end: an agent by assignment, or an
+  // admin who took the conversation over. Without the admin case the customer
+  // would still see "AI Assistant" while a person is answering them.
+  const human = conversation.assignedAdmin || conversation.assignedAgent;
   const customer = conversation.user; // populated customer
 
   // Resolve the counterpart the current viewer is talking to.
   let counterpart;
   if (isCustomerView) {
-    counterpart = agent
+    counterpart = human
       ? {
-          name: agent.name || "Support Agent",
+          name: human.name || "Support Agent",
           avatarRole: "agent",
-          status: agent.status || "online",
-          subtitle: STATUS_TEXT[agent.status] || "Support Agent",
+          status: human.status || "online",
+          subtitle: STATUS_TEXT[human.status] || "Support Agent",
         }
       : {
           name: "AideDesk Support",

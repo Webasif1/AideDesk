@@ -37,21 +37,34 @@ export const sendMessage = asyncHandler(async (req, res) => {
     throw new AppError("This chat session is closed. Please start a new one.", HTTP_STATUS.BAD_REQUEST);
   }
 
-  // Admins post as staff (role "agent") but their sender document lives in the
-  // admin collection, so senderModel has to record which one to populate from.
+  // senderModel names the collection `sender` points at, and its enum is
+  // user|agent|admin — a customer's req.role is "customer", which is not a
+  // collection name, so it has to be mapped rather than passed through.
+  // Admins post as staff (role "agent") but their document is in `admin`.
+  const senderModel = req.role === "customer" ? "user" : req.role;
+
   const message = await messageModel.create({
     chat: chatId,
     content,
     role: req.role === "customer" ? "user" : "agent",
     sender: req.userId,
-    senderModel: req.role,
+    senderModel,
     attachments,
   });
 
-  // Keep chat metadata in sync
-  await chatModel.findByIdAndUpdate(chatId, {
+  // Keep chat metadata in sync. An agent answering a conversation nobody owns
+  // claims it by doing so — that is what the UI promises by leaving the composer
+  // live on unassigned chats.
+  const chatUpdates = {
     latestMessage: message._id,
     lastActivity: new Date(),
+  };
+  if (req.role === "agent" && !chat.assignedAgent && !chat.assignedAdmin) {
+    chatUpdates.assignedAgent = req.userId;
+  }
+
+  await chatModel.findByIdAndUpdate(chatId, {
+    ...chatUpdates,
     $inc: { messageCount: 1 },
   });
 

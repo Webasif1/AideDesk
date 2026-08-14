@@ -10,6 +10,7 @@ import { formatRelative } from "../../../lib/format";
 const ChatCustomerList = ({
   customers = [],
   loading = false,
+  error = null,
   selectedId,
   onSelect,
 }) => {
@@ -57,7 +58,18 @@ const ChatCustomerList = ({
           </div>
         )}
 
-        {!loading && visible.length === 0 && (
+        {/* A failed fetch must not read as an empty list — that ambiguity hid a
+            broken query behind "No customers with tickets yet." */}
+        {!loading && error && (
+          <div className="px-4 py-8 text-center">
+            <span className="material-symbols-outlined text-[24px] text-red-400 block mb-1">
+              error
+            </span>
+            <p className="text-[12px] text-red-500 dark:text-red-400">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && visible.length === 0 && (
           <div className="px-4 py-8 text-center text-[12px] text-neutral-400">
             {customers.length === 0
               ? "No customers with tickets yet."

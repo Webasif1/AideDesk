@@ -8,6 +8,8 @@ import {
   ERROR_MESSAGES,
   ERROR_CODES,
   ACCOUNT_STATUS,
+  ACCOUNT_VISIBLE,
+  ACCOUNT_NOT_DELETED,
 } from '../config/constants.js';
 import { AppError, asyncHandler } from '../utils/errorHandler.js';
 import { generateToken, generateResetToken } from '../utils/tokens.js';
@@ -137,8 +139,15 @@ export const getUserStats = asyncHandler(async (req, res) => {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   // Soft-deleted customers are excluded from every count — they are gone as far
-  // as the workspace is concerned, even though the documents survive.
-  const visible = { ...filter, accountStatus: { $ne: ACCOUNT_STATUS.DELETED } };
+  // as the workspace is concerned, even though the documents survive. Suspended
+  // ones still count towards `all`, which is why this is $ne and not $nin.
+  const visible = { ...filter, accountStatus: ACCOUNT_NOT_DELETED };
+
+  // The tab counts must partition `all`. Matching "== active" would drop every
+  // customer created before the accountStatus field existed (they have no such
+  // key), so `all` would exceed active + suspended + pendingReview. Match on
+  // "neither deleted nor suspended" instead — see ACCOUNT_VISIBLE.
+  const notSuspended = { ...filter, accountStatus: ACCOUNT_VISIBLE };
 
   const [total, active, newThisMonth, suspended, pendingReview, activeAccounts] =
     await Promise.all([
@@ -146,16 +155,8 @@ export const getUserStats = asyncHandler(async (req, res) => {
       userModel.countDocuments({ ...visible, lastLogin: { $gte: thirtyDaysAgo } }),
       userModel.countDocuments({ ...visible, createdAt: { $gte: monthStart } }),
       userModel.countDocuments({ ...filter, accountStatus: ACCOUNT_STATUS.SUSPENDED }),
-      userModel.countDocuments({
-        ...visible,
-        accountStatus: ACCOUNT_STATUS.ACTIVE,
-        isVerified: false,
-      }),
-      userModel.countDocuments({
-        ...visible,
-        accountStatus: ACCOUNT_STATUS.ACTIVE,
-        isVerified: true,
-      }),
+      userModel.countDocuments({ ...notSuspended, isVerified: false }),
+      userModel.countDocuments({ ...notSuspended, isVerified: true }),
     ]);
 
   res.status(HTTP_STATUS.OK).json({
@@ -407,10 +408,15 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   // Soft-deleted customers stay in the database but must never appear in a
   // list. An explicit ?accountStatus=deleted is the only way to see them.
-  if (accountStatus) {
+  if (accountStatus === ACCOUNT_STATUS.ACTIVE) {
+    // The Active / Pending Review tabs ask for "active". Serve that as "neither
+    // deleted nor suspended" so customers predating the accountStatus field —
+    // who have no such key — are not silently missing from those tabs.
+    filter.accountStatus = ACCOUNT_VISIBLE;
+  } else if (accountStatus) {
     filter.accountStatus = accountStatus;
   } else {
-    filter.accountStatus = { $ne: ACCOUNT_STATUS.DELETED };
+    filter.accountStatus = ACCOUNT_NOT_DELETED;
   }
 
   // "Pending Review" = signed up but never verified their email.

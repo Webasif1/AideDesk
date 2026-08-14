@@ -46,4 +46,24 @@ export const ACCOUNT_STATUS = {
   DELETED: "deleted",
 };
 
+// Query predicates for account visibility.
+//
+// Always match on what a document is NOT. `accountStatus` was added to the user
+// and agent schemas after those collections already had data, and a Mongoose
+// `default` only applies when a document is created — it never backfills. Every
+// pre-existing row therefore has no `accountStatus` key at all.
+//
+// MongoDB equality (`{ accountStatus: "active" }`) does not match a document
+// where the field is absent, so an equality check silently excludes every legacy
+// account. `$ne` / `$nin` do match absent fields, which is the behaviour we want:
+// "not deleted and not suspended" reads as active whether the field is set or not.
+//
+// Use ACCOUNT_VISIBLE for "can act / should appear", and ACCOUNT_NOT_DELETED
+// where suspended accounts should still be listed (they are read-only, not gone).
+export const ACCOUNT_VISIBLE = {
+  $nin: [ACCOUNT_STATUS.DELETED, ACCOUNT_STATUS.SUSPENDED],
+};
+
+export const ACCOUNT_NOT_DELETED = { $ne: ACCOUNT_STATUS.DELETED };
+
 export const API_VERSION = "/api/v1";

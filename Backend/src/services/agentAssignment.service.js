@@ -1,7 +1,7 @@
 import agentModel from "../models/aget.model.js";
 import chatModel from "../models/chat.model.js";
 import ticketModel from "../models/ticket.model.js";
-import { ACCOUNT_STATUS } from "../config/constants.js";
+import { ACCOUNT_VISIBLE } from "../config/constants.js";
 import { emitDomain, socketEmit } from "../sockets/emit.js";
 
 // Tickets that still need somebody working them. Resolved/closed tickets keep
@@ -23,7 +23,10 @@ const shuffle = (items) => {
 // whole company; never the agent being removed, never a suspended/removed one.
 export const findEligibleAgents = async ({ companyId, workspaceId, excludeAgentId }) => {
   const base = {
-    accountStatus: ACCOUNT_STATUS.ACTIVE,
+    // "not suspended/removed" rather than "== active": agents created before the
+    // accountStatus field existed have no such key, and an equality match would
+    // make every one of them ineligible. See ACCOUNT_VISIBLE.
+    accountStatus: ACCOUNT_VISIBLE,
     ...(excludeAgentId && { _id: { $ne: excludeAgentId } }),
   };
 

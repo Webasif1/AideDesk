@@ -17,6 +17,7 @@ import {
   clearChats,
   setChatCustomers,
   setChatCustomersLoading,
+  setChatCustomersError,
   setCurrentChat,
   setStats,
   setLoading,
@@ -33,6 +34,7 @@ export const useChat = () => {
     chats,
     customers,
     customersLoading,
+    customersError,
     currentChat,
     stats,
     loading,
@@ -88,10 +90,20 @@ export const useChat = () => {
   const getChatCustomers = useCallback(
     async (params) => {
       dispatch(setChatCustomersLoading(true));
+      dispatch(setChatCustomersError(null));
       try {
         const res = await getChatCustomersAPI(params);
         dispatch(setChatCustomers(res.data));
         return res;
+      } catch (err) {
+        // Every call site swallows the rejection, so without recording the error
+        // a 403 or 500 renders as "no customers" — identical to an empty list.
+        dispatch(
+          setChatCustomersError(
+            err.response?.data?.message || err.message || "Couldn't load customers"
+          )
+        );
+        throw err;
       } finally {
         dispatch(setChatCustomersLoading(false));
       }
@@ -182,6 +194,7 @@ export const useChat = () => {
     chats,
     customers,
     customersLoading,
+    customersError,
     currentChat,
     stats,
     loading,
