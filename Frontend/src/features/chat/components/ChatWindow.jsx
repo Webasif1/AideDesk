@@ -7,7 +7,7 @@ import TicketConfirmModal from "./TicketConfirmModal";
 import TicketSummaryCard from "./TicketSummaryCard";
 import { useChat } from "../hooks/useChat";
 import { joinChat, leaveChat } from "../../../lib/socket";
-import { clearMessages } from "../../message/state/message.slice";
+import { addMessage, clearMessages } from "../../message/state/message.slice";
 import { selectIsReadOnly } from "../../auth/state/auth.slice";
 
 // Backend message role is `user` | `agent` | `ai`. Map it to the display roles
@@ -70,8 +70,14 @@ const ChatWindow = ({ conversation, onClose }) => {
   } = useChat();
 
   const [takingOver, setTakingOver] = useState(false);
+<<<<<<< HEAD
   // Scoped to this send. `loading` from useChat is a shared flag that any chat
   // request flips, so using it here greys the composer during unrelated fetches.
+=======
+  // Local to the composer: the slice-wide `loading` flag is raised by every chat
+  // request (opening a thread, refreshing the list), which blanked the input
+  // mid-typing.
+>>>>>>> 200f9b27149f696facf08e362f9bb0148d2e4af4
   const [sending, setSending] = useState(false);
 
   const messages = useSelector((s) => s.message.messages);
@@ -86,12 +92,13 @@ const ChatWindow = ({ conversation, onClose }) => {
     (s) => conversation && s.socket.typingByChat[conversation._id]
   );
 
-  // Load chat + messages on conversation change
+  // Load chat + messages on conversation change. The clear has to happen on
+  // every switch, not just when the pane empties: otherwise the previous
+  // thread's messages stay on screen under the new conversation's header until
+  // its fetch lands.
   useEffect(() => {
-    if (!conversation?._id) {
-      dispatch(clearMessages());
-      return;
-    }
+    dispatch(clearMessages());
+    if (!conversation?._id) return;
     getChat(conversation._id).catch(() => {});
     joinChat(conversation._id);
     return () => leaveChat(conversation._id);
@@ -112,6 +119,7 @@ const ChatWindow = ({ conversation, onClose }) => {
           chatId: conversation._id,
           content,
           attachment,
+<<<<<<< HEAD
         }).catch(() => {});
       } else {
         // Staff path: plain message endpoint. The body key is `chat`, not `chatId`
@@ -124,6 +132,23 @@ const ChatWindow = ({ conversation, onClose }) => {
         // The staff path bypasses useChat, so nothing refreshes the thread for us.
         getChat(conversation._id).catch(() => {});
       }
+=======
+        });
+      } else {
+        // Staff path: plain message endpoint. The body key is `chat`, not `chatId` —
+        // that is what the controller destructures and the validator checks.
+        const { sendMessage } = await import(
+          "../../message/services/message.api"
+        );
+        const res = await sendMessage({ chat: conversation._id, content });
+        // Show it straight away instead of waiting for the socket echo, which
+        // only lands if this tab is actually in the chat room. addMessage
+        // dedupes by _id, so arriving twice is harmless.
+        if (res?.data) dispatch(addMessage(res.data));
+      }
+    } catch {
+      // The API layer has already surfaced the failure.
+>>>>>>> 200f9b27149f696facf08e362f9bb0148d2e4af4
     } finally {
       setSending(false);
     }

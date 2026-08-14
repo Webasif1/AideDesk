@@ -446,10 +446,21 @@ export const getChatCustomers = asyncHandler(async (req, res) => {
   // customers and then counting by customerId makes the totals correct by proxy.
   const customerFilter = {
     companyId: req.companyId,
+<<<<<<< HEAD
     // Suspended accounts are read-only and soft-deleted ones keep their tickets
     // but drop out of the list. Matched as "not those" rather than "== active"
     // so legacy customers without the field still appear — see ACCOUNT_VISIBLE.
     accountStatus: ACCOUNT_VISIBLE,
+=======
+    // Only fully active customers appear here. Suspended accounts are read-only
+    // and soft-deleted ones keep their tickets but drop out of the list.
+    // Written as an exclusion, not `=== ACTIVE`: accountStatus was added after
+    // customers already existed, so the field is simply absent on older
+    // documents and an equality match dropped every one of them — which emptied
+    // this column entirely. $nin matches a missing field, an equality match
+    // does not.
+    accountStatus: { $nin: [ACCOUNT_STATUS.DELETED, ACCOUNT_STATUS.SUSPENDED] },
+>>>>>>> 200f9b27149f696facf08e362f9bb0148d2e4af4
   };
   if (req.workspaceId) customerFilter.workspaceId = req.workspaceId;
   if (search) {

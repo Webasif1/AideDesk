@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -79,7 +79,7 @@ const CollapsedRail = ({ label, icon, onExpand }) => (
 
 const ChatScreen = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const chatParam = searchParams.get("chat");
 
   const [activeConversation, setActiveConversation] = useState(null);
@@ -102,25 +102,33 @@ const ChatScreen = () => {
   const isCustomer = role === "customer";
 
   // Staff browse by customer first; the conversation list is scoped to whoever
-  // is selected. Customers only ever have their own thread, so they skip both
-  // the customer column and the scoping.
+  // is selected — the company-wide list is never fetched here. Customers only
+  // ever have their own threads, so they skip both the column and the scoping.
   useEffect(() => {
     if (isCustomer) {
       getChats({}).catch(() => {});
       return;
     }
-    // A deep link (?chat=…) needs the full list to resolve the conversation, so
-    // don't scope until the operator has actually picked somebody.
-    if (selectedCustomerId) {
-      getChats({ customerId: selectedCustomerId }).catch(() => {});
-    } else if (chatParam) {
-      getChats({}).catch(() => {});
-    }
-  }, [getChats, isCustomer, selectedCustomerId, chatParam]);
+    if (!selectedCustomerId) return;
+    getChats({ customerId: selectedCustomerId }).catch(() => {});
+  }, [getChats, isCustomer, selectedCustomerId]);
 
   useEffect(() => {
     if (!isCustomer) getChatCustomers({}).catch(() => {});
   }, [getChatCustomers, isCustomer]);
+
+  // What the middle column is allowed to render. A scoped fetch can still be in
+  // flight (or have landed out of order after a fast customer switch), and
+  // anything belonging to somebody else would otherwise show up under the
+  // selected customer's name.
+  const visibleConversations = useMemo(() => {
+    if (isCustomer) return chats;
+    if (!selectedCustomerId) return [];
+    return chats.filter(
+      (conv) =>
+        String(conv.user?._id || conv.user || "") === String(selectedCustomerId)
+    );
+  }, [chats, isCustomer, selectedCustomerId]);
 
   // Single entry point for opening a thread. Staff arriving via a deep link
   // (?chat=… from a ticket row) also get that customer lit up in the column,
@@ -137,37 +145,38 @@ const ChatScreen = () => {
     [isCustomer]
   );
 
-  // Open the deep-linked chat (from a ticket row), else the most recent one.
+  // A ticket row deep-links straight to its conversation (?chat=…). Fetch that
+  // one chat rather than pulling the whole company list down to search it — the
+  // response also tells us who the customer is, which is what scopes the other
+  // panels. The param is dropped as soon as it is consumed: leaving it in the
+  // URL made every later customer click snap back to this same thread.
   useEffect(() => {
-    if (chatParam) {
-      if (activeConversation?._id === chatParam) return;
-      const found = chats.find((c) => c._id === chatParam);
-      if (found) {
-        openConversation(found);
-      } else {
-        getChat(chatParam)
-          .then((res) => {
-            if (res?.data?.chat) openConversation(res.data.chat);
-          })
-          .catch(() => {});
-      }
-      return;
-    }
-    // Staff only get an auto-selected conversation once they have picked a
-    // customer — otherwise the page would open somebody's thread at random.
+    if (!chatParam) return;
+    let cancelled = false;
+    getChat(chatParam)
+      .then((res) => {
+        if (!cancelled && res?.data?.chat) openConversation(res.data.chat);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setSearchParams({}, { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [chatParam, getChat, openConversation, setSearchParams]);
+
+  // Otherwise open the most recent conversation. Staff only get one once they
+  // have picked a customer — before that the page would open a thread at random.
+  useEffect(() => {
+    if (chatParam || activeConversation) return;
     if (!isCustomer && !selectedCustomerId) return;
-    // Guard against opening a stale chat left over from a previous customer
-    // while the newly selected customer's list is still loading.
-    if (!isCustomer && selectedCustomerId) {
-      const owner = chats[0]?.user?._id || chats[0]?.user;
-      if (owner && String(owner) !== String(selectedCustomerId)) return;
-    }
-    if (!activeConversation && chats.length > 0) openConversation(chats[0]);
+    if (visibleConversations.length > 0)
+      openConversation(visibleConversations[0]);
   }, [
     chatParam,
-    chats,
     activeConversation,
-    getChat,
+    visibleConversations,
     openConversation,
     isCustomer,
     selectedCustomerId,
@@ -245,7 +254,7 @@ const ChatScreen = () => {
                 <ChatConversationList
                   // Empty until a customer is chosen, rather than every
                   // conversation in the company at once.
-                  conversations={selectedCustomerId ? chats : []}
+                  conversations={visibleConversations}
                   activeId={activeConversation?._id}
                   emptyLabel={
                     selectedCustomerId
