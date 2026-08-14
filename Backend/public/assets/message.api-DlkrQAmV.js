@@ -1,1 +1,0 @@
-import{t as e}from"./index-iibVfAkc.js";var t=`/messages`,n=async n=>(await e.post(`${t}/`,n)).data;export{n as sendMessage};

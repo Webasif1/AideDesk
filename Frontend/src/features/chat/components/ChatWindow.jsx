@@ -70,14 +70,9 @@ const ChatWindow = ({ conversation, onClose }) => {
   } = useChat();
 
   const [takingOver, setTakingOver] = useState(false);
-<<<<<<< HEAD
-  // Scoped to this send. `loading` from useChat is a shared flag that any chat
-  // request flips, so using it here greys the composer during unrelated fetches.
-=======
-  // Local to the composer: the slice-wide `loading` flag is raised by every chat
-  // request (opening a thread, refreshing the list), which blanked the input
-  // mid-typing.
->>>>>>> 200f9b27149f696facf08e362f9bb0148d2e4af4
+  // Scoped to this send. The slice-wide `loading` flag is raised by every chat
+  // request (opening a thread, refreshing the list), so using it here greyed the
+  // composer during unrelated fetches and blanked the input mid-typing.
   const [sending, setSending] = useState(false);
 
   const messages = useSelector((s) => s.message.messages);
@@ -119,20 +114,6 @@ const ChatWindow = ({ conversation, onClose }) => {
           chatId: conversation._id,
           content,
           attachment,
-<<<<<<< HEAD
-        }).catch(() => {});
-      } else {
-        // Staff path: plain message endpoint. The body key is `chat`, not `chatId`
-        // — that is what the controller destructures and the validator checks.
-        const { sendMessage } = await import("../../message/services/message.api");
-        await sendMessage({
-          chat: conversation._id,
-          content,
-        }).catch(() => {});
-        // The staff path bypasses useChat, so nothing refreshes the thread for us.
-        getChat(conversation._id).catch(() => {});
-      }
-=======
         });
       } else {
         // Staff path: plain message endpoint. The body key is `chat`, not `chatId` —
@@ -148,7 +129,6 @@ const ChatWindow = ({ conversation, onClose }) => {
       }
     } catch {
       // The API layer has already surfaced the failure.
->>>>>>> 200f9b27149f696facf08e362f9bb0148d2e4af4
     } finally {
       setSending(false);
     }
