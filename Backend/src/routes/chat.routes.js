@@ -12,6 +12,7 @@ import {
   getChatCustomers,
   sendCopilotMessage,
   confirmTicket,
+  ensureCustomerChats,
 } from '../controllers/chat.controller.js';
 
 import { protect, requireRole } from '../middleware/auth.middleware.js';
@@ -41,6 +42,21 @@ router.get('/stats', requireRole('admin'), getChatStats);
  * @access  Private — Admin or Agent
  */
 router.get('/customers', requireRole('admin', 'agent'), getChatCustomers);
+
+/**
+ * @route   POST /api/chats/ensure
+ * @desc    Open the missing conversations for one customer — a ticket whose chat
+ *          was never created has no thread to show. Body: { customerId }.
+ *          Idempotent; staff call it when selecting a customer.
+ * @access  Private — Admin or Agent
+ */
+router.post(
+  '/ensure',
+  requireRole('admin', 'agent'),
+  [body('customerId').notEmpty().withMessage('customerId is required').isMongoId().withMessage('customerId must be a valid ObjectId')],
+  validate,
+  ensureCustomerChats
+);
 
 // ============================================
 // Shared routes

@@ -34,6 +34,13 @@ export const assignAgent = async ({ id, agentId }) => {
   return response.data;
 };
 
+// Open any conversations this customer's tickets are missing. Idempotent —
+// returns { created, failed }.
+export const ensureCustomerChats = async ({ customerId }) => {
+  const response = await apiClient.post(`${PREFIX}/ensure`, { customerId });
+  return response.data;
+};
+
 // Admin claims a conversation so they can reply to it. Returns the populated chat.
 export const takeOverChat = async ({ id }) => {
   const response = await apiClient.patch(`${PREFIX}/${id}/take-over`);

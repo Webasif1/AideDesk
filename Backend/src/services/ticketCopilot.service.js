@@ -2,9 +2,12 @@ import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import ticketModel from "../models/ticket.model.js";
 import companyModel from "../models/company.model.js";
+import userModel from "../models/user.model.js";
 import { runCopilot } from "./copilot.service.js";
 import { isAiConfigured } from "./aiProvider.service.js";
 import { socketEmit } from "../sockets/emit.js";
+import { HTTP_STATUS } from "../config/constants.js";
+import { AppError } from "../utils/errorHandler.js";
 
 // ============================================
 // The AI first responder.
@@ -44,9 +47,28 @@ export const ensureTicketChat = async ({ ticket, companyId, workspaceId }) => {
     return orphaned;
   }
 
+  // The workspace comes from the customer, not the caller. `workspaceId` is
+  // required on a chat, but for an admin the request only carries one when the
+  // x-workspace-id header happens to be set — and when it wasn't, this create
+  // threw and the ticket was left with no thread at all. The customer's own
+  // workspaceId is required on the user schema and is the authoritative answer,
+  // since a ticket has no workspace of its own.
+  const customer = await userModel
+    .findById(ticket.customerId)
+    .select("workspaceId")
+    .lean();
+
+  const resolvedWorkspaceId = customer?.workspaceId || workspaceId;
+  if (!resolvedWorkspaceId) {
+    throw new AppError(
+      "Cannot open a conversation: this customer is not assigned to a workspace.",
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
   const chat = await chatModel.create({
     company: companyId,
-    workspaceId,
+    workspaceId: resolvedWorkspaceId,
     user: ticket.customerId,
     ticket: ticket._id,
     status: "active",
@@ -85,7 +107,16 @@ const postMessage = async ({ chat, role, content, sender = null, senderModel = n
 // always gets a reply, even if it is only the human-handoff message.
 // ============================================
 export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
-  const chat = await ensureTicketChat({ ticket, companyId, workspaceId });
+  // Creating the thread is the one step that must not fail silently. Callers
+  // wrap this whole function in a catch, so a throw here used to leave the
+  // ticket with no conversation and still return HTTP 201 — report it instead.
+  let chat;
+  try {
+    chat = await ensureTicketChat({ ticket, companyId, workspaceId });
+  } catch (err) {
+    console.error("[ticketCopilot] could not open a chat for ticket", String(ticket._id), err.message);
+    return { outcome: "no_chat", chatId: null, reason: err.message };
+  }
 
   // The ticket's title/description render as a summary card at the top of the
   // chat (read straight from the ticket), not as a seeded chat message — see

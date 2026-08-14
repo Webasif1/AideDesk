@@ -81,10 +81,15 @@ const ChatScreen = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const chatParam = searchParams.get("chat");
+  // A ticket row whose chat was never created deep-links by customer instead.
+  const customerParam = searchParams.get("customer");
 
   const [activeConversation, setActiveConversation] = useState(null);
   const [showInfo, setShowInfo] = useState(true);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  // Seeded from ?customer= so a ticket with no thread lands on its customer.
+  const [selectedCustomerId, setSelectedCustomerId] = useState(
+    customerParam || null
+  );
   const [customersOpen, setCustomersOpen] = useState(true);
   const [conversationsOpen, setConversationsOpen] = useState(true);
 
@@ -92,6 +97,7 @@ const ChatScreen = () => {
     getChats,
     clearChatList,
     getChatCustomers,
+    ensureCustomerChats,
     getChat,
     chats,
     customers,
@@ -110,12 +116,33 @@ const ChatScreen = () => {
       return;
     }
     if (!selectedCustomerId) return;
-    getChats({ customerId: selectedCustomerId }).catch(() => {});
-  }, [getChats, isCustomer, selectedCustomerId]);
+
+    // Open any thread this customer's tickets are missing before listing, so a
+    // ticket that never got a chat still shows up as a conversation instead of
+    // counting in the badge and rendering nothing. Idempotent, and a failure
+    // here must not stop the existing threads from loading.
+    let cancelled = false;
+    ensureCustomerChats(selectedCustomerId)
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) getChats({ customerId: selectedCustomerId }).catch(() => {});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getChats, ensureCustomerChats, isCustomer, selectedCustomerId]);
 
   useEffect(() => {
     if (!isCustomer) getChatCustomers({}).catch(() => {});
   }, [getChatCustomers, isCustomer]);
+
+  // Arriving from a ticket that has no thread yet (?customer=…): the param seeds
+  // the selection above, which runs the ensure-then-list effect. Drop it from the
+  // URL once consumed, so a later customer click isn't snapped back to this one.
+  useEffect(() => {
+    if (customerParam) setSearchParams({}, { replace: true });
+  }, [customerParam, setSearchParams]);
 
   // What the middle column is allowed to render. A scoped fetch can still be in
   // flight (or have landed out of order after a fast customer switch), and

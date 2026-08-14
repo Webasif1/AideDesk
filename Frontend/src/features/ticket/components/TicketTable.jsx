@@ -16,6 +16,18 @@ import {
 const cap = (s = "") => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const LIMIT = 10;
 
+// Each tab is a server-side query, not a filter over the page already fetched.
+// Filtering client-side meant a tab only ever searched the current 10 rows, so
+// "Open" could show nothing while the metrics counted open tickets on page 2.
+const TAB_QUERY = {
+  "All Tickets": {},
+  Unassigned: { assignedAgent: "unassigned" },
+  "SLA Warnings": { slaBreached: "true" },
+  "Recently Updated": { sort: "updatedAt" },
+  Open: { status: "open" },
+  Resolved: { status: "resolved,closed" },
+};
+
 const TicketTable = ({ activeTab = "All Tickets" }) => {
   const navigate = useNavigate();
   const { getTickets } = useTicket();
@@ -38,8 +50,9 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
   }, [search]);
 
   // Adjusted during render rather than in an effect so the fetch below never
-  // fires once against a stale page.
-  const scope = `${workspaceId}|${debouncedSearch}`;
+  // fires once against a stale page. Switching tab changes the result set, so it
+  // belongs in the scope alongside the workspace and the search term.
+  const scope = `${workspaceId}|${activeTab}|${debouncedSearch}`;
   const [prevScope, setPrevScope] = useState(scope);
   if (scope !== prevScope) {
     setPrevScope(scope);
@@ -50,45 +63,36 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
     () => ({
       page,
       limit: LIMIT,
+      ...(TAB_QUERY[activeTab] || {}),
       ...(debouncedSearch && { search: debouncedSearch }),
     }),
-    [page, debouncedSearch]
+    [page, activeTab, debouncedSearch]
   );
 
   useEffect(() => {
     getTickets(query).catch(() => {});
   }, [getTickets, query, workspaceId]);
 
-  // Tab filters applied to the current page client-side.
-  const filtered = useMemo(() => {
-    let list = [...(tickets || [])];
-    if (activeTab === "Unassigned") list = list.filter((t) => !t.assignedAgent);
-    else if (activeTab === "SLA Warnings") list = list.filter((t) => t.slaBreached);
-    else if (activeTab === "Open") list = list.filter((t) => t.status === "open");
-    else if (activeTab === "Resolved")
-      list = list.filter((t) => ["resolved", "closed"].includes(t.status));
-    else if (activeTab === "Recently Updated")
-      list = list.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    return list;
-  }, [tickets, activeTab]);
-
   // Opening a ticket takes you to its conversation — that thread is where the
-  // AI's reply and any human follow-up live.
+  // AI's reply and any human follow-up live. A ticket whose chat was never
+  // created still opens the chat page, scoped to its customer; the chat page
+  // materialises the missing thread on arrival rather than leaving a dead row.
   const openTicket = useCallback(
-    (chatId) => {
-      if (!chatId) return;
-      navigate(`/dashboard/chat?chat=${chatId}`);
+    (chatId, customerId) => {
+      if (chatId) navigate(`/dashboard/chat?chat=${chatId}`);
+      else if (customerId) navigate(`/dashboard/chat?customer=${customerId}`);
     },
     [navigate]
   );
 
-  const rows = filtered.map((t) => {
+  const rows = (tickets || []).map((t) => {
     // `chat` is an id when lean, or a populated document on the detail route.
     const chatId = typeof t.chat === "object" ? t.chat?._id : t.chat;
+    const customerId = t.customerId?._id || t.customerId;
     return {
       key: t._id,
-      chatId,
-      onOpen: () => openTicket(chatId),
+      chatId: chatId || customerId,
+      onOpen: () => openTicket(chatId, customerId),
       aiHandled: !t.assignedAgent,
       status: ticketStatusLabel(t.status, t.slaBreached),
       subject: t.title,

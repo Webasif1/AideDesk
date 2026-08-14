@@ -186,7 +186,7 @@ export const createTicket = asyncHandler(async (req, res) => {
 // ============================================
 export const getTickets = asyncHandler(async (req, res) => {
   const {
-    status, priority, category, assignedAgent, search,
+    status, priority, category, assignedAgent, search, slaBreached, sort,
     page = 1, limit = 20, from, to
   } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -199,10 +199,24 @@ export const getTickets = asyncHandler(async (req, res) => {
     filter.assignedAgent = req.userId;
   }
 
-  if (status) filter.status = status;
+  // Accepts one status or a comma list ("resolved,closed"), so a tab covering
+  // several states resolves server-side instead of being filtered out of the
+  // single page the client happens to be holding.
+  if (status) {
+    const wanted = String(status).split(",").map((s) => s.trim()).filter(Boolean);
+    if (wanted.length === 1) filter.status = wanted[0];
+    else if (wanted.length > 1) filter.status = { $in: wanted };
+  }
+
   if (priority) filter.priority = priority;
   if (category) filter.category = category;
-  if (assignedAgent && req.role === "admin") filter.assignedAgent = assignedAgent;
+  if (slaBreached === "true") filter.slaBreached = true;
+
+  // "unassigned" is the Unassigned tab — an explicit token, since an empty value
+  // is indistinguishable from the param being absent.
+  if (assignedAgent && req.role === "admin") {
+    filter.assignedAgent = assignedAgent === "unassigned" ? null : assignedAgent;
+  }
 
   // Title/ticket-number search. The list is paginated server-side, so this has to
   // run here — filtering the current page in the client would only ever search
@@ -221,12 +235,16 @@ export const getTickets = asyncHandler(async (req, res) => {
     if (to) filter.createdAt.$lte = new Date(to);
   }
 
+  // Only `updatedAt` is offered as an alternative — it backs the "Recently
+  // Updated" tab, which previously re-sorted one page and so lied about order.
+  const sortBy = sort === "updatedAt" ? { updatedAt: -1 } : { createdAt: -1 };
+
   const [tickets, total] = await Promise.all([
     ticketModel
       .find(filter)
       .populate("customerId", "name fullName email profileImage accountStatus")
       .populate("assignedAgent", "name email status profileImage")
-      .sort({ createdAt: -1 })
+      .sort(sortBy)
       .skip(skip)
       .limit(parseInt(limit))
       .lean(),

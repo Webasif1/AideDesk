@@ -5,6 +5,7 @@ import {
   createChat as createChatAPI,
   getChats as getChatsAPI,
   getChatCustomers as getChatCustomersAPI,
+  ensureCustomerChats as ensureCustomerChatsAPI,
   getChat as getChatAPI,
   assignAgent as assignAgentAPI,
   takeOverChat as takeOverChatAPI,
@@ -111,6 +112,14 @@ export const useChat = () => {
     [dispatch]
   );
 
+  // Opens any conversation this customer's tickets are missing. Kept out of
+  // handleRequest for the same reason as getChatCustomers — it runs alongside the
+  // conversation fetch and must not flip the shared loading flag.
+  const ensureCustomerChats = useCallback(async (customerId) => {
+    if (!customerId) return null;
+    return ensureCustomerChatsAPI({ customerId });
+  }, []);
+
   const getChat = useCallback(
     async (id) => {
       return handleRequest(getChatAPI, id, (res) => {
@@ -206,6 +215,7 @@ export const useChat = () => {
     getChats,
     clearChatList,
     getChatCustomers,
+    ensureCustomerChats,
     getChat,
     assignAgent,
     takeOverChat,

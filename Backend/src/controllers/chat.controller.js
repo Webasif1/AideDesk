@@ -13,6 +13,7 @@ import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { escapeRegex } from "../utils/regex.js";
 import { emitDomain } from "../sockets/emit.js";
 import { handleCustomerReply } from "../services/copilotFlow.service.js";
+import { ensureTicketChat } from "../services/ticketCopilot.service.js";
 
 // ============================================
 // POST /api/chats
@@ -367,6 +368,65 @@ export const updateChatStatus = asyncHandler(async (req, res) => {
     success: true,
     message: `Chat marked as ${status}`,
     data: { chatId: chat._id, status: chat.status }
+  });
+});
+
+// ============================================
+// POST /api/chats/ensure
+// Body: { customerId }
+//
+// Materialise the missing conversations for one customer. A ticket can exist
+// without a chat — historically when chat creation failed during ticket
+// creation — and the customer column counts tickets while the conversation list
+// reads chats, so those tickets showed as a count with nothing behind it.
+// Staff call this when they select a customer; it is idempotent.
+// ============================================
+export const ensureCustomerChats = asyncHandler(async (req, res) => {
+  const { customerId } = req.body;
+
+  if (!customerId) {
+    throw new AppError("customerId is required", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  const customer = await userModel
+    .findOne({ _id: customerId, companyId: req.companyId })
+    .select("_id accountStatus")
+    .lean();
+
+  if (!customer) {
+    throw new AppError("Customer not found", HTTP_STATUS.NOT_FOUND);
+  }
+
+  // Full documents, not .lean() — ensureTicketChat calls ticket.save().
+  const orphans = await ticketModel.find({
+    customerId: customer._id,
+    companyId: req.companyId,
+    chat: null,
+  });
+
+  let created = 0;
+  const failed = [];
+
+  for (const ticket of orphans) {
+    try {
+      await ensureTicketChat({
+        ticket,
+        companyId: req.companyId,
+        workspaceId: req.workspaceId,
+      });
+      created += 1;
+    } catch (err) {
+      // One unopenable ticket must not block the rest of the customer's threads.
+      failed.push({ ticketId: ticket._id, reason: err.message });
+    }
+  }
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: created
+      ? `Opened ${created} conversation${created === 1 ? "" : "s"}.`
+      : "Nothing to open.",
+    data: { created, failed },
   });
 });
 
