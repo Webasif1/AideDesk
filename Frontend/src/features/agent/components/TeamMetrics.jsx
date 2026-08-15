@@ -10,8 +10,10 @@ const TeamMetrics = () => {
   const userWorkspaceId = useSelector((s) => s.auth.user?.workspaceId);
   const workspaceId = activeWorkspaceId || userWorkspaceId;
 
+  // Not gated on workspaceId — see the note in TeamTable. Gating meant a hard
+  // reload never fetched, so every metric rendered as an em dash.
   useEffect(() => {
-    if ((role === "admin" || role === "agent") && workspaceId) {
+    if (role === "admin" || role === "agent") {
       // Clear stats left over from a previous workspace before refetching,
       // so a stale nonzero count can't linger alongside a fresh empty list.
       resetAgentStats();

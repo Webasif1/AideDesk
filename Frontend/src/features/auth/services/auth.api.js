@@ -47,3 +47,10 @@ export const getMe = async () => {
   const response = await apiClient.get(`${PREFIX}/get-me`);
   return response.data;
 };
+
+// Own presence, for every role. 'online' clears the manual override so presence
+// follows the socket again; 'away'/'offline' stick until changed.
+export const updateMyStatus = async (status) => {
+  const response = await apiClient.patch(`${PREFIX}/me/status`, { status });
+  return response.data;
+};

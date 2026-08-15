@@ -56,8 +56,14 @@ const TeamTable = () => {
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
 
+  // Deliberately NOT gated on workspaceId. That value comes from
+  // company.activeWorkspaceId, which is only set by visiting the company portal
+  // and is not persisted — so on a hard reload of this page it stays null and the
+  // fetch never fired at all, leaving an empty table. The backend already falls
+  // back to company-wide when no workspace header is sent. It stays in the deps
+  // so switching workspace still refetches.
   useEffect(() => {
-    if (role === "admin" && workspaceId) {
+    if (role === "admin") {
       getAgents().catch(() => {});
     }
   }, [getAgents, role, workspaceId]);

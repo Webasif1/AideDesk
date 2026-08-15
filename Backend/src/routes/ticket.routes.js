@@ -71,11 +71,11 @@ router.post(
 /**
  * @route   GET /api/tickets
  * @desc    List tickets scoped by role.
- *          Admin → all company | Agent → assigned + unassigned | Customer → own
+ *          Admin → all company | Agent → assigned only | Customer → own
  *          Query: ?status=open&priority=high&category=billing&assignedAgent=id&page=1&limit=20&from=date&to=date
  * @access  Private — All roles
  */
-router.get('/', getTickets);
+router.get('/', requireRole('admin', 'agent', 'customer'), getTickets);
 
 // ============================================
 // Single ticket routes
@@ -86,7 +86,7 @@ router.get('/', getTickets);
  * @desc    Single ticket + linked chat messages
  * @access  Private — All roles (customer only sees own)
  */
-router.get('/:id', getTicket);
+router.get('/:id', requireRole('admin', 'agent', 'customer'), getTicket);
 
 /**
  * @route   PATCH /api/tickets/:id
@@ -94,7 +94,7 @@ router.get('/:id', getTicket);
  *          Customer: only own open/pending tickets
  * @access  Private — All roles
  */
-router.patch('/:id', updateTicketValidator, validate, updateTicket);
+router.patch('/:id', requireRole('admin', 'agent', 'customer'), updateTicketValidator, validate, updateTicket);
 
 /**
  * @route   PATCH /api/tickets/:id/assign
@@ -145,6 +145,6 @@ router.post('/:id/escalate', requireRole('agent', 'admin'), escalateTicket);
  * @desc    Admin: hard delete. Agent/Customer: soft close (status = 'closed').
  * @access  Private — All roles
  */
-router.delete('/:id', deleteTicket);
+router.delete('/:id', requireRole('admin', 'agent', 'customer'), deleteTicket);
 
 export default router;

@@ -13,6 +13,7 @@ import { analyzeImage } from "./imageVision.service.js";
 import { uploadPDFAndExtract } from "./fileContext.service.js";
 import { generateAgentBriefing } from "./agentBriefing.service.js";
 import { markCustomerReplied } from "./ticketStatus.service.js";
+import { postAgentHandoverNotice } from "./agentAssignment.service.js";
 import { socketEmit, emitDomain } from "../sockets/emit.js";
 import { ACCOUNT_VISIBLE } from "../config/constants.js";
 import { config } from "../config/config.js";
@@ -144,6 +145,9 @@ const escalateTicket = async ({ ticket, chat, conversationHistory, copilotAttemp
       title: ticket?.title,
     });
     socketEmit.agentJoined(chat._id, { id: agent._id, name: agent.name });
+    // Tell the customer in the thread itself. Without this the AI promises a
+    // human and nothing further ever appears, which is what it looked like.
+    await postAgentHandoverNotice({ chatId: chat._id, agent });
   }
 
   return handoff;
@@ -215,7 +219,7 @@ const broadcastTicket = async (companyId, ticketId) => {
 // ── Ticket creation: triage + first reply (or immediate escalation) ──────────
 // Runs fire-and-forget from the controller; delivers results over the socket.
 export const startTicketCopilot = async ({ ticket, chat, firstMessage, file, req }) => {
-  socketEmit.copilotTyping(chat._id, true);
+  socketEmit.copilotTyping(chat._id, true, chat.user);
   try {
     const { imageSummary, pdfSummary, attachmentTypes } = await processAttachment(file, firstMessage);
 
@@ -256,7 +260,7 @@ export const startTicketCopilot = async ({ ticket, chat, firstMessage, file, req
     console.error("[copilotFlow] startTicketCopilot failed:", err.message);
     return { aiMessage: null, escalated: false };
   } finally {
-    socketEmit.copilotTyping(chat._id, false);
+    socketEmit.copilotTyping(chat._id, false, chat.user);
   }
 };
 
@@ -286,7 +290,7 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
     return { userMessage, aiMessage: null, escalated: true };
   }
 
-  socketEmit.copilotTyping(chat._id, true);
+  socketEmit.copilotTyping(chat._id, true, chat.user);
 
   let aiMessage = null;
   let escalated = false;
@@ -345,7 +349,7 @@ export const handleCustomerReply = async ({ chat, content, file, req }) => {
   } catch (err) {
     console.error("[copilotFlow] handleCustomerReply failed:", err.message);
   } finally {
-    socketEmit.copilotTyping(chat._id, false);
+    socketEmit.copilotTyping(chat._id, false, chat.user);
   }
 
   chat.latestMessage = (aiMessage || userMessage)._id;

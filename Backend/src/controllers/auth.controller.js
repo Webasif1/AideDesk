@@ -9,6 +9,10 @@ import {
   sendPasswordResetEmail,
 } from "../utils/email.js";
 import { config } from "../config/config.js";
+import {
+  presenceOptionsFor,
+  setManualPresence,
+} from "../services/presence.service.js";
 import { getVerificationHTML } from "../utils/verificationTemplate.js";
 import jwt from "jsonwebtoken";
 
@@ -210,6 +214,9 @@ export const loginController = asyncHandler(async (req, res) => {
       companyId: user.companyId ?? null,
       workspaceId: user.workspaceId ?? null,
       isVerified: user.isVerified,
+      // Included so the header renders the real presence straight away. Without
+      // it the client fell back to "Online" and then flipped once getMe landed.
+      status: user.status,
       accountStatus: user.accountStatus ?? "active",
       statusReason: user.statusReason ?? ""
     },
@@ -385,6 +392,37 @@ export const getMeController = asyncHandler( (req, res) => {
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
     },
+  });
+});
+
+// ============================================
+// PATCH /api/auth/me/status  (protected)
+// Body: { status: "online" | "away" | "offline" }
+//
+// One endpoint for all three roles rather than a per-role path: `protect` has
+// already loaded the right document, so the presence service writes to whichever
+// collection applies. Customers have no "away" — their enum is online/offline.
+// ============================================
+export const updateMyPresenceController = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const allowed = presenceOptionsFor(req.role);
+
+  if (!allowed.includes(status)) {
+    throw new AppError(
+      `Status must be one of: ${allowed.join(", ")}`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  const updated = await setManualPresence(req.role, req.userId, status);
+  if (!updated) {
+    throw new AppError("Could not update your status", HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: `You are now ${status}`,
+    data: { status: updated.status },
   });
 });
 

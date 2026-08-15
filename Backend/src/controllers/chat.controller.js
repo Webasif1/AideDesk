@@ -101,7 +101,7 @@ export const sendCopilotMessage = asyncHandler(async (req, res) => {
 // ============================================
 // GET /api/chats
 // Admin: all chats for their company
-// Agent: chats assigned to them + unassigned chats for their company
+// Agent: only chats assigned to them
 // Customer: their own chats
 // Supports: ?status=active&page=1&limit=20
 // ============================================
@@ -114,8 +114,10 @@ export const getChats = asyncHandler(async (req, res) => {
   if (req.role === "admin") {
     filter.company = req.companyId;
   } else if (req.role === "agent") {
+    // Assigned only. Agents used to also receive the unassigned pool, which put
+    // conversations they have no ticket for in their list.
     filter.company = req.companyId;
-    filter.$or = [{ assignedAgent: req.userId }, { assignedAgent: null }];
+    filter.assignedAgent = req.userId;
   } else if (req.role === "customer") {
     filter.user = req.userId;
   }
@@ -192,12 +194,15 @@ export const getChat = asyncHandler(async (req, res) => {
     throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
   }
 
-  // Enforce access: admin/agent sees company chats, customer sees own chats
+  // Enforce access: admin sees any company chat, an agent only their own
+  // assignments (matching the list query — otherwise any chat in the company was
+  // readable by id, transcript included), customer sees own chats.
+  const sameCompany = chat.company.toString() === req.companyId.toString();
   const hasAccess =
-    (req.role === "admin" &&
-      chat.company.toString() === req.companyId.toString()) ||
+    (req.role === "admin" && sameCompany) ||
     (req.role === "agent" &&
-      chat.company.toString() === req.companyId.toString()) ||
+      sameCompany &&
+      chat.assignedAgent?._id?.toString() === req.userId.toString()) ||
     (req.role === "customer" && chat.user._id.toString() === req.userId);
 
   if (!hasAccess) {
@@ -309,7 +314,7 @@ export const takeOverChat = asyncHandler(async (req, res) => {
 
   // Deliberately leaves assignedAgent alone. Clearing it would silently drop the
   // agent who was working the chat off their own queue (getChats scopes an agent
-  // to assigned + unassigned), so the conversation would vanish from their list.
+  // to their own assignments), so the conversation would vanish from their list.
   // assignedAdmin on its own is enough to convey who is replying now.
   chat.assignedAdmin = req.userId;
   chat.status = "active";
@@ -532,13 +537,21 @@ export const getChatCustomers = asyncHandler(async (req, res) => {
     return res.status(HTTP_STATUS.OK).json({ success: true, data: [] });
   }
 
+  // An agent sees only the customers they are actually working, and counts that
+  // reflect their own workload — not every ticket in the company. Admins keep
+  // the full picture. Applied to the aggregate rather than the customer query,
+  // so a customer with no ticket assigned to this agent drops out via the
+  // "has support history" filter below.
+  const ticketMatch = {
+    companyId: new mongoose.Types.ObjectId(req.companyId),
+    customerId: { $in: customers.map((c) => c._id) },
+  };
+  if (req.role === "agent") {
+    ticketMatch.assignedAgent = new mongoose.Types.ObjectId(req.userId);
+  }
+
   const grouped = await ticketModel.aggregate([
-    {
-      $match: {
-        companyId: new mongoose.Types.ObjectId(req.companyId),
-        customerId: { $in: customers.map((c) => c._id) },
-      },
-    },
+    { $match: ticketMatch },
     {
       $group: {
         _id: "$customerId",

@@ -58,11 +58,20 @@ const agentSchema = new mongoose.Schema(
       default: null
     },
 
-    // Presence — whether they currently have a session open.
+    // Effective presence, driven by socket connect/disconnect. This is what the
+    // UI and the escalation picker read.
     status: {
       type: String,
       enum: ["online", "offline", "away"],
       default: "offline"
+    },
+
+    // A deliberate choice from the header menu, kept apart from `status` so
+    // reconnecting cannot silently undo it. null = follow the socket.
+    manualPresence: {
+      type: String,
+      enum: ["away", "offline", null],
+      default: null
     },
 
     // Account state — a different axis from presence. Suspended/removed agents

@@ -1,5 +1,6 @@
 import agentModel from "../models/aget.model.js";
 import chatModel from "../models/chat.model.js";
+import messageModel from "../models/message.model.js";
 import ticketModel from "../models/ticket.model.js";
 import { ACCOUNT_VISIBLE } from "../config/constants.js";
 import { emitDomain, socketEmit } from "../sockets/emit.js";
@@ -41,10 +42,51 @@ export const findEligibleAgents = async ({ companyId, workspaceId, excludeAgentI
 
 // Online agents first so live work lands with somebody actually at their desk,
 // then everyone else. Order within each group is randomised.
-const rankEligible = (agents) => {
+export const rankEligible = (agents) => {
   const online = shuffle(agents.filter((a) => a.status === "online"));
   const rest = shuffle(agents.filter((a) => a.status !== "online"));
   return [...online, ...rest];
+};
+
+// ============================================
+// Post the handover notice into a conversation, so the customer is told a human
+// is coming instead of watching an idle thread after the AI's "connecting you…".
+//
+// Persisted as a message rather than pushed as a transient socket event: the
+// previous `agent:joined` event was stored in redux and read by nothing, and a
+// notice that vanishes on reload is not much of a record. Wording depends on
+// presence — telling somebody an offline agent "has joined" would be a lie.
+//
+// Never throws: a missing notice must not roll back the assignment itself.
+// ============================================
+export const postAgentHandoverNotice = async ({ chatId, agent }) => {
+  if (!chatId || !agent) return null;
+
+  const name = agent.name || "A support specialist";
+  const content =
+    agent.status === "online"
+      ? `${name} has joined the chat.`
+      : `${name} will be available shortly.`;
+
+  try {
+    const message = await messageModel.create({
+      chat: chatId,
+      content,
+      role: "system",
+    });
+
+    await chatModel.findByIdAndUpdate(chatId, {
+      latestMessage: message._id,
+      lastActivity: new Date(),
+      $inc: { messageCount: 1 },
+    });
+
+    socketEmit.newMessage(String(chatId), message);
+    return message;
+  } catch (err) {
+    console.error("[agentAssignment] handover notice failed:", err.message);
+    return null;
+  }
 };
 
 // ============================================
@@ -92,6 +134,7 @@ export const reassignAgentTickets = async (agentId, { companyId, workspaceId } =
         chatId: ticket.chat,
         title: ticket.title,
       });
+      await postAgentHandoverNotice({ chatId: ticket.chat, agent: nextAgent });
     } else {
       unassigned++;
     }

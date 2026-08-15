@@ -72,18 +72,18 @@ router.post('/', requireRole('customer'), createChat);
 /**
  * @route   GET /api/chats
  * @desc    List chats — scoped by role:
- *          Admin → all company chats | Agent → assigned + unassigned | Customer → own chats
+ *          Admin → all company chats | Agent → assigned only | Customer → own chats
  *          Query: ?status=active&page=1&limit=20
  * @access  Private — All roles
  */
-router.get('/', getChats);
+router.get('/', requireRole('admin', 'agent', 'customer'), getChats);
 
 /**
  * @route   GET /api/chats/:id
  * @desc    Get a single chat + last 50 messages (use /messages for full history)
  * @access  Private — All roles (access-checked per role inside controller)
  */
-router.get('/:id', getChat);
+router.get('/:id', requireRole('admin', 'agent', 'customer'), getChat);
 
 /**
  * @route   POST /api/chats/:id/messages

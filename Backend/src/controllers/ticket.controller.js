@@ -6,7 +6,8 @@ import messageModel from "../models/message.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { escapeRegex } from "../utils/regex.js";
-import { emitDomain } from "../sockets/emit.js";
+import { emitDomain, socketEmit } from "../sockets/emit.js";
+import { postAgentHandoverNotice } from "../services/agentAssignment.service.js";
 import {
   classifyIntent,
   scoreSentiment,
@@ -26,10 +27,20 @@ const SOURCE_LABELS = {
 };
 
 // ============================================
-// Helper — assert ticket belongs to requester"s company
+// Helper — assert the requester may act on this ticket.
+// Company for everyone; agents additionally only reach their own assignments,
+// which is what the list query already enforces. Without the agent branch an
+// agent could read any ticket in the company by id, transcript included.
 // ============================================
 const assertTicketAccess = (ticket, req) => {
   if (ticket.companyId.toString() !== req.companyId.toString()) {
+    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
+  }
+
+  if (
+    req.role === "agent" &&
+    ticket.assignedAgent?.toString() !== req.userId.toString()
+  ) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 };
@@ -180,7 +191,7 @@ export const createTicket = asyncHandler(async (req, res) => {
 // ============================================
 // GET /api/tickets
 // Admin: all company tickets
-// Agent: assigned + unassigned company tickets
+// Agent: only tickets assigned to them
 // Customer: own tickets only
 // Query: ?status=open&priority=high&category=billing&assignedAgent=id&page=1&limit=20&from=date&to=date
 // ============================================
@@ -490,6 +501,19 @@ export const assignAgent = asyncHandler(async (req, res) => {
   ticket.assignedAgent = agentId;
   if (!ticket.firstResponseAt) ticket.firstResponseAt = new Date();
   await ticket.save();
+
+  // The conversation rides along with its ticket, otherwise the chat stays in
+  // whoever's queue it was in while the ticket has moved.
+  if (ticket.chat) {
+    await chatModel.findByIdAndUpdate(ticket.chat, { assignedAgent: agentId });
+    await postAgentHandoverNotice({ chatId: ticket.chat, agent });
+  }
+
+  socketEmit.ticketAssigned(agent._id, {
+    ticketId: ticket._id,
+    chatId: ticket.chat,
+    title: ticket.title,
+  });
 
   emitTicketEvent(req.companyId, ticket._id, "ticketUpdated");
 

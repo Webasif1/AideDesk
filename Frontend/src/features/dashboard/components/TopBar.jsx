@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { useUser } from "../../user/hooks/useUser";
+import { updateMyStatus } from "../../auth/services/auth.api";
 import { toast } from "../../../components/ui/toast";
 import ThemeToggleButton from "../../../components/ui/ThemeToggleButton";
 import {
   selectIsReadOnly,
   selectSuspensionReason,
+  setAuthStatus,
 } from "../../auth/state/auth.slice";
 
 const STATUS_META = {
@@ -44,8 +45,8 @@ function useClickOutside(ref, handler) {
 
 const TopBar = () => {
   const navigate = useNavigate();
-  const { handleLogout, getMe } = useAuth();
-  const { updateMe } = useUser();
+  const dispatch = useDispatch();
+  const { handleLogout } = useAuth();
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -124,13 +125,14 @@ const TopBar = () => {
     setStatus(val); // optimistic
     setProfileOpen(false);
 
-    // Only customers persist status here (backend PATCH /api/users/me).
-    if (!isCustomer) return;
-
+    // Persists for every role. This used to bail out for staff, so an agent's
+    // pick lived only in local state and reverted on the next reload.
     setSavingStatus(true);
     try {
-      await updateMe({ status: val });
-      await getMe({ silent: true }).catch(() => {});
+      await updateMyStatus(val);
+      // Keep redux in step so the header survives a re-render without waiting
+      // on a full getMe.
+      dispatch(setAuthStatus(val));
     } catch {
       setStatus(prev); // revert on failure
       toast("Couldn't update status.", { type: "error" });

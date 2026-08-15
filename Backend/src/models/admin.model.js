@@ -38,10 +38,20 @@ const adminSchema = mongoose.Schema(
       type: Date,
       default: Date.now
     },
+    // Effective presence, driven by socket connect/disconnect. Defaulted to
+    // offline like every other role — defaulting to "online" only made admins
+    // look correct while nothing was actually tracking presence.
     status: {
       type: String,
       enum: ["online", "offline", "away"],
-      default: "online"
+      default: "offline"
+    },
+
+    // A deliberate choice from the header menu; null = follow the socket.
+    manualPresence: {
+      type: String,
+      enum: ["away", "offline", null],
+      default: null
     },
 
     // Populated after the admin creates their company during onboarding

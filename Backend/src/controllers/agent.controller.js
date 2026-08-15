@@ -60,8 +60,19 @@ export const createAgent = asyncHandler(async (req, res) => {
     throw new AppError("Company not found. Please contact support.", HTTP_STATUS.NOT_FOUND);
   }
 
-  // Guard: company must have a workspace before agents can be added
-  const workspace = await workspaceModel.findOne({ companyId: req.companyId, status: "active" });
+  // Guard: company must have a workspace before agents can be added.
+  // Prefer the workspace the admin is actually operating in — falling back to
+  // "first active workspace" regardless of context filed agents into a workspace
+  // the admin was not viewing, and getAgents then returned an empty list.
+  const workspace =
+    (req.workspaceId &&
+      (await workspaceModel.findOne({
+        _id: req.workspaceId,
+        companyId: req.companyId,
+        status: "active",
+      }))) ||
+    (await workspaceModel.findOne({ companyId: req.companyId, status: "active" }));
+
   if (!workspace) {
     throw new AppError(
       "You must create a workspace before adding agents.",
@@ -276,6 +287,17 @@ export const updateAgent = asyncHandler(async (req, res) => {
   delete updates.password;
   delete updates.isVerified;
 
+  // Presence is not a plain profile field — it is paired with manualPresence, and
+  // writing `status` alone would leave a standing "Away" that the next socket
+  // connect silently undoes. Route it through the presence service instead.
+  const presence = updates.status;
+  delete updates.status;
+  delete updates.manualPresence;
+
+  if (presence) {
+    await setManualPresence("agent", req.params.id, presence);
+  }
+
   const updated = await agentModel
     .findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true })
     .select("-password");
@@ -436,26 +458,6 @@ export const deleteAgent = asyncHandler(async (req, res) => {
   });
 });
 
-// ============================================
-// PATCH /api/agents/status
-// Agent updates their own online/offline/away status
-// ============================================
-export const updateOwnStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-
-  if (!["online", "offline", "away"].includes(status)) {
-    throw new AppError("Status must be online, offline, or away", HTTP_STATUS.BAD_REQUEST);
-  }
-
-  const agent = await agentModel
-    .findByIdAndUpdate(req.userId, { status }, { new: true })
-    .select("-password");
-
-  emitDomain.agentUpdated(agent.companyId, agent.toObject ? agent.toObject() : agent);
-
-  res.status(HTTP_STATUS.OK).json({
-    success: true,
-    message: "Status updated",
-    data: { status: agent.status },
-  });
-});
+// Setting your own presence lives at PATCH /api/auth/me/status, which serves all
+// three roles through the presence service. The agent-only endpoint that used to
+// sit here had no caller and did not maintain `manualPresence`.

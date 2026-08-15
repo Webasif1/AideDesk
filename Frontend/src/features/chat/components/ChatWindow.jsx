@@ -54,6 +54,19 @@ const DateDivider = ({ label }) => (
   </div>
 );
 
+// An event in the thread ("X has joined the chat"), not something anybody said —
+// so it is centred and unattributed rather than a bubble on either side.
+const SystemNotice = ({ text, time }) => (
+  <div className="flex items-center justify-center my-[10px] px-[4px]">
+    <span className="text-[11px] text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 rounded-full px-[12px] py-[4px]">
+      {text}
+      {time && (
+        <span className="text-neutral-400 dark:text-neutral-600 ml-[6px]">{time}</span>
+      )}
+    </span>
+  </div>
+);
+
 const ChatWindow = ({ conversation, onClose }) => {
   const dispatch = useDispatch();
   const bottomRef = useRef(null);
@@ -145,9 +158,8 @@ const ChatWindow = ({ conversation, onClose }) => {
 
   const agentId = idOf(chat?.assignedAgent);
   const adminId = idOf(chat?.assignedAdmin);
-  // Nobody has picked this conversation up yet. The backend deliberately serves
-  // agents their own chats *plus* every unassigned one, so an unassigned chat is
-  // work an agent is expected to take — not something to lock them out of.
+  // Nobody has picked this conversation up yet. Only an admin can now reach such
+  // a chat — agents are served their assigned conversations only.
   const unassigned = !agentId && !adminId;
   const ownsChat =
     !!myId && (String(agentId) === String(myId) || String(adminId) === String(myId));
@@ -164,11 +176,9 @@ const ChatWindow = ({ conversation, onClose }) => {
     }
   };
 
-  // An agent may reply to their own chats and to unassigned ones (replying is
-  // what claims it). An admin must take a chat over explicitly. Either way, only
-  // a conversation owned by *somebody else* is read-only.
-  const canReply =
-    !isStaff || ownsChat || (role === "agent" && unassigned);
+  // Staff reply only to what is assigned to them. An admin can claim any chat
+  // explicitly via Take over; agents are assigned by escalation or by an admin.
+  const canReply = !isStaff || ownsChat;
 
   // Suspension is the stricter rule and wins over the assignment lock.
   const lockedReason = isReadOnly
@@ -223,7 +233,10 @@ const ChatWindow = ({ conversation, onClose }) => {
           scrollbarColor: "#e5e5e5 transparent",
         }}
       >
-        {loading && messages.length === 0 ? (
+        {/* The skeleton must not pre-empt the typing bubble. A just-created
+            ticket is exactly `loading && no messages`, which is also precisely
+            when the customer needs to see that a reply is being written. */}
+        {loading && messages.length === 0 && !someoneTyping ? (
           <div className="flex-1 flex flex-col gap-[16px] pt-[8px]">
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -247,14 +260,40 @@ const ChatWindow = ({ conversation, onClose }) => {
 
             {messages.map((msg, idx) => {
               const prevMsg = messages[idx - 1];
-              const sender = senderFromMessage(msg, customerLabel);
               // Insert a divider whenever the calendar day changes.
               const thisDay = dayLabel(msg.createdAt);
               const showDayDivider =
                 !prevMsg || dayLabel(prevMsg.createdAt) !== thisDay;
-              const prevSender = prevMsg
-                ? senderFromMessage(prevMsg, customerLabel)
-                : null;
+
+              // Events are not speech — render before the bubble path, which
+              // would otherwise fall through to "customer" and put a handover
+              // notice in the customer's own bubble on the right.
+              if (msg.role === "system") {
+                return (
+                  <div key={msg._id || msg.id}>
+                    {showDayDivider && thisDay && <DateDivider label={thisDay} />}
+                    <SystemNotice
+                      text={msg.content || msg.text}
+                      time={
+                        msg.createdAt
+                          ? new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : null
+                      }
+                    />
+                  </div>
+                );
+              }
+
+              const sender = senderFromMessage(msg, customerLabel);
+              // A system notice breaks the run, so the next real message shows
+              // its avatar again rather than being grouped across the divider.
+              const prevSender =
+                prevMsg && prevMsg.role !== "system"
+                  ? senderFromMessage(prevMsg, customerLabel)
+                  : null;
               const showAvatar =
                 !prevSender || prevSender.role !== sender.role;
               // Side is decided by who spoke, not by who is watching: the

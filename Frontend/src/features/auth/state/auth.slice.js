@@ -20,6 +20,11 @@ const authSlice = createSlice({
     setRole: (state, action) => {
       state.role = action.payload;
     },
+    // Merge, not a wholesale setUser — presence changes on its own and should not
+    // require a full getMe round trip before the header reflects the click.
+    setAuthStatus: (state, action) => {
+      if (state.user) state.user.status = action.payload;
+    },
     setLoading: (state, action) => {
       state.loading = action.payload;
     },
@@ -38,6 +43,7 @@ const authSlice = createSlice({
 export const {
   setUser,
   setRole,
+  setAuthStatus,
   setLoading,
   setError,
   clearAuth,

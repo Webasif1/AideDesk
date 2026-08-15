@@ -2,10 +2,8 @@ import apiClient from "../../../lib/axios";
 
 const PREFIX = "/agents";
 
-export const updateOwnStatus = async (statusData) => {
-  const response = await apiClient.patch(`${PREFIX}/status`, statusData);
-  return response.data;
-};
+// Own-presence lives in auth.api (PATCH /api/auth/me/status) — it serves every
+// role and maintains the manual-override field alongside the effective status.
 
 export const changePassword = async ({ id, ...passwordData }) => {
   const response = await apiClient.patch(

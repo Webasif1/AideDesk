@@ -6,6 +6,11 @@ import userModel from "../models/user.model.js";
 import { runCopilot } from "./copilot.service.js";
 import { isAiConfigured } from "./aiProvider.service.js";
 import { socketEmit } from "../sockets/emit.js";
+import {
+  findEligibleAgents,
+  rankEligible,
+  postAgentHandoverNotice,
+} from "./agentAssignment.service.js";
 import { HTTP_STATUS } from "../config/constants.js";
 import { AppError } from "../utils/errorHandler.js";
 
@@ -128,7 +133,7 @@ export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
     return { outcome: "escalated", chatId: chat._id, reason: "ai_not_configured" };
   }
 
-  socketEmit.copilotTyping(chat._id.toString(), true);
+  socketEmit.copilotTyping(chat._id.toString(), true, chat.user);
 
   let result;
   try {
@@ -156,7 +161,7 @@ export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
     console.error("[ticketCopilot] copilot failed:", err.message);
     result = { escalate: true, escalationReason: "copilot_error" };
   } finally {
-    socketEmit.copilotTyping(chat._id.toString(), false);
+    socketEmit.copilotTyping(chat._id.toString(), false, chat.user);
   }
 
   const updates = {};
@@ -176,13 +181,33 @@ export const answerTicket = async ({ ticket, companyId, workspaceId }) => {
       .filter(Boolean)
       .join(" ");
 
+    // Route it to a human, exactly as the customer-created path does. This used
+    // to leave the ticket escalated but unassigned, so the AI promised a
+    // specialist and nobody was ever put on it.
+    const [agent] = rankEligible(
+      await findEligibleAgents({ companyId, workspaceId: chat.workspaceId })
+    );
+
+    if (agent) {
+      updates.assignedAgent = agent._id;
+      await chatModel.findByIdAndUpdate(chat._id, { assignedAgent: agent._id });
+      socketEmit.ticketAssigned(agent._id, {
+        ticketId: ticket._id,
+        chatId: chat._id,
+        title: ticket.title,
+      });
+    }
+
     await ticketModel.findByIdAndUpdate(ticket._id, updates);
     socketEmit.escalating(chat._id.toString(), { ticketId: ticket._id });
+
+    if (agent) await postAgentHandoverNotice({ chatId: chat._id, agent });
 
     return {
       outcome: "escalated",
       chatId: chat._id,
       reason: result.escalationReason || "unknown",
+      assignedAgent: agent?._id || null,
     };
   }
 
@@ -210,7 +235,7 @@ export const answerChatMessage = async ({ chat, content, companyId, workspaceId 
     };
   }
 
-  socketEmit.copilotTyping(chat._id.toString(), true);
+  socketEmit.copilotTyping(chat._id.toString(), true, chat.user);
 
   try {
     const company = await companyModel.findById(companyId).select("name").lean();
@@ -256,6 +281,6 @@ export const answerChatMessage = async ({ chat, content, companyId, workspaceId 
       message: await postMessage({ chat, role: "ai", content: HANDOFF_TEXT }),
     };
   } finally {
-    socketEmit.copilotTyping(chat._id.toString(), false);
+    socketEmit.copilotTyping(chat._id.toString(), false, chat.user);
   }
 };

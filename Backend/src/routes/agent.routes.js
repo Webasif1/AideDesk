@@ -8,7 +8,6 @@ import {
   getAgent,
   updateAgent,
   deleteAgent,
-  updateOwnStatus,
   updateAgentAccountStatus,
   changePassword
 } from '../controllers/agent.controller.js';
@@ -28,12 +27,7 @@ router.use(protect);
 // Agent self-service (agent role)
 // ============================================
 
-/**
- * @route   PATCH /api/agents/status
- * @desc    Agent updates their own online/offline/away status
- * @access  Private — Agent only
- */
-router.patch('/status', requireRole('agent'), updateOwnStatus);
+// Own-presence updates live at PATCH /api/auth/me/status (all roles).
 
 /**
  * @route   PATCH /api/agents/:id/password

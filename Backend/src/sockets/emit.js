@@ -25,8 +25,15 @@ export const socketEmit = {
   newMessage(chatId, message) {
     safeEmit(`chat:${chatId}`, "message:new", { message, chat: { _id: chatId } });
   },
-  copilotTyping(chatId, isTyping) {
-    safeEmit(`chat:${chatId}`, "copilot:typing", { chatId, isTyping });
+  // `userId` is the chat owner. Copilot typing starts before the customer's
+  // browser has been told the chat id — it cannot have joined `chat:<id>` yet, so
+  // a room-only emit lands nowhere and the customer stares at an empty thread.
+  // Every socket is in `user:<id>` from connection, so that delivery is reliable.
+  // The payload carries chatId either way, and the reducer keys by it.
+  copilotTyping(chatId, isTyping, userId = null) {
+    const payload = { chatId: String(chatId), isTyping };
+    safeEmit(`chat:${chatId}`, "copilot:typing", payload);
+    if (userId) safeEmit(`user:${userId}`, "copilot:typing", payload);
   },
   escalating(chatId, ticketDraft) {
     safeEmit(`chat:${chatId}`, "copilot:escalating", { chatId, ticketDraft });

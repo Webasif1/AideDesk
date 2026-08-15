@@ -2,9 +2,18 @@ import { useSelector } from "react-redux";
 import Tooltip from "../../../components/ui/Tooltip";
 import { toast } from "../../../components/ui/toast";
 
-const staffTabs = [
+const adminTabs = [
   { label: "All Tickets", dot: false },
   { label: "Unassigned", dot: false },
+  { label: "Recently Updated", dot: false },
+  { label: "SLA Warnings", dot: true },
+];
+
+// An agent only ever receives their own assigned tickets, so "Unassigned" would
+// silently return that same set under a label that contradicts it.
+const agentTabs = [
+  { label: "All Tickets", dot: false },
+  { label: "Open", dot: false },
   { label: "Recently Updated", dot: false },
   { label: "SLA Warnings", dot: true },
 ];
@@ -19,7 +28,8 @@ const customerTabs = [
 const TicketTabs = ({ active, onChange }) => {
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
-  const tabs = isCustomer ? customerTabs : staffTabs;
+  const tabs =
+    isCustomer ? customerTabs : role === "agent" ? agentTabs : adminTabs;
 
   return (
   <div className="border-b border-neutral-200 dark:border-neutral-800 mb-6 flex items-center justify-between">

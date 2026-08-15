@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  updateOwnStatus as updateOwnStatusAPI,
   changePassword as changePasswordAPI,
   createAgent as createAgentAPI,
   getAgents as getAgentsAPI,
@@ -46,16 +45,6 @@ export const useAgent = () => {
       dispatch(setLoading(false));
     }
   };
-
-  const updateOwnStatus = useCallback(
-    async (statusData) => {
-      return handleRequest(updateOwnStatusAPI, statusData, (res) => {
-        // You might want to update the current auth user here if status is stored there
-        dispatch(updateAgentInList(res.data));
-      });
-    },
-    [dispatch]
-  );
 
   const changePassword = useCallback(
     async (data) => {
@@ -142,7 +131,6 @@ export const useAgent = () => {
     loading,
     error,
     pagination,
-    updateOwnStatus,
     changePassword,
     createAgent,
     getAgents,

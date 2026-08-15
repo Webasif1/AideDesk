@@ -9,7 +9,8 @@ import {
   forgotPasswordController,
   resetPasswordController,
   resendVerificationController,
-  getMeController
+  getMeController,
+  updateMyPresenceController
 } from '../controllers/auth.controller.js';
 
 import {
@@ -101,5 +102,14 @@ router.post('/logout', protect, logoutController);
  * @access  Private
  */
 router.get('/get-me', protect, getMeController);
+
+/**
+ * @route   PATCH /api/auth/me/status
+ * @desc    Set your own presence. Body: { status: 'online'|'away'|'offline' }.
+ *          'online' clears the manual override and resumes following the socket;
+ *          anything else is sticky until changed. Customers: online|offline only.
+ * @access  Private — all roles
+ */
+router.patch('/me/status', protect, updateMyPresenceController);
 
 export default router;

@@ -7,6 +7,7 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config.js";
+import { markOnline, markOffline } from "../services/presence.service.js";
 
 let io = null;
 
@@ -74,6 +75,10 @@ export const initSocket = (httpServer) => {
 
     console.log(`✅ socket ${socket.id} connected (${role})`);
 
+    // Presence follows the connection, so it stays truthful when somebody closes
+    // a tab or drops off the network — neither of which produces a logout.
+    markOnline(role, userId);
+
     // Admins float across workspaces — join the one they're actively viewing.
     socket.on("workspace:focus", ({ workspaceId: wsId } = {}) => {
       if (wsId) socket.join(`workspace:${wsId}`);
@@ -95,8 +100,18 @@ export const initSocket = (httpServer) => {
       }
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log(`❌ socket ${socket.id} disconnected (${role})`);
+
+      // Only go offline once every session for this person is gone. A reload
+      // briefly runs two connections and multiple tabs are normal, so writing
+      // offline on any disconnect would flap them offline while still present.
+      try {
+        const remaining = await io.in(`user:${userId}`).fetchSockets();
+        if (remaining.length === 0) await markOffline(role, userId);
+      } catch (err) {
+        console.error("[socket] presence cleanup failed:", err.message);
+      }
     });
   });
 

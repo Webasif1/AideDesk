@@ -52,19 +52,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
     attachments,
   });
 
-  // Keep chat metadata in sync. An agent answering a conversation nobody owns
-  // claims it by doing so — that is what the UI promises by leaving the composer
-  // live on unassigned chats.
-  const chatUpdates = {
+  // Agents are only served conversations already assigned to them, so the
+  // claim-by-replying path this used to carry is unreachable and has been
+  // removed rather than left as a rule the UI no longer offers.
+  await chatModel.findByIdAndUpdate(chatId, {
     latestMessage: message._id,
     lastActivity: new Date(),
-  };
-  if (req.role === "agent" && !chat.assignedAgent && !chat.assignedAdmin) {
-    chatUpdates.assignedAgent = req.userId;
-  }
-
-  await chatModel.findByIdAndUpdate(chatId, {
-    ...chatUpdates,
     $inc: { messageCount: 1 },
   });
 

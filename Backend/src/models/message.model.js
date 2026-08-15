@@ -15,10 +15,12 @@ const messageSchema = new mongoose.Schema(
       maxlength: [5000, 'Message cannot exceed 5000 characters']
     },
 
-    // 'user' = customer, 'agent' = human agent, 'ai' = AI-generated
+    // 'user' = customer, 'agent' = human agent, 'ai' = AI-generated,
+    // 'system' = an event notice (agent handover), rendered centred rather than
+    // as a bubble and never attributed to a sender.
     role: {
       type: String,
-      enum: ['user', 'agent', 'ai'],
+      enum: ['user', 'agent', 'ai', 'system'],
       required: [true, 'Role is required']
     },
 
