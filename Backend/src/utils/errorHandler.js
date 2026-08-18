@@ -1,8 +1,20 @@
 import { ERROR_MESSAGES, HTTP_STATUS } from "../config/constants.js";
 
+// Promise.resolve, not `fn(...).catch(...)`. A handler declared without `async`
+// returns undefined, and calling .catch on that threw
+// "Cannot read properties of undefined (reading 'catch')" — after the handler had
+// already sent its response, so the request logged a 500 it never actually
+// returned. Wrapping accepts sync and async handlers alike.
 export const asyncHandler = (fn) => {
   return (req, res, next) => {
-    fn(req, res, next).catch(next);
+    // The try/catch covers a sync handler that throws. Express would catch that
+    // itself, but routing every failure through next() keeps all three cases —
+    // sync return, async rejection, sync throw — behaving identically.
+    try {
+      Promise.resolve(fn(req, res, next)).catch(next);
+    } catch (err) {
+      next(err);
+    }
   };
 };
 
@@ -30,6 +42,13 @@ export const errorHandler = (err, req, res, next) => {
     method: req.method,
     timestamp: new Date(),
   });
+
+  // Writing to an already-sent response throws ERR_HTTP_HEADERS_SENT, which
+  // replaces the real error in the log with a misleading one. Express's default
+  // handler closes the connection instead.
+  if (res.headersSent) {
+    return next(err);
+  }
 
   res.status(statusCode).json({
     success: false,

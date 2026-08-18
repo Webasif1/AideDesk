@@ -227,7 +227,7 @@ export const loginController = asyncHandler(async (req, res) => {
 // ============================================
 // POST /api/auth/logout
 // ============================================
-export const logoutController = asyncHandler((req, res) => {
+export const logoutController = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: config.NODE_ENV === "production",
@@ -371,7 +371,7 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
 // ============================================
 // GET /api/auth/me  (protected)
 // ============================================
-export const getMeController = asyncHandler( (req, res) => {
+export const getMeController = asyncHandler(async (req, res) => {
   const user = req.user;
 
   res.status(HTTP_STATUS.OK).json({
