@@ -49,7 +49,7 @@ const ChatCustomerList = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {loading && customers.length === 0 && (
           <div className="p-[12px] space-y-[10px]">
             {[...Array(5)].map((_, i) => (

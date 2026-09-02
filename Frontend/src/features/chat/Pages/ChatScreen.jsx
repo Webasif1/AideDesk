@@ -107,6 +107,18 @@ const ChatScreen = () => {
   const role = useSelector((s) => s.auth.role);
   const isCustomer = role === "customer";
 
+  // This page fills the viewport and scrolls internally; the document behind it
+  // must not scroll at all. Cleanup matters — every other route still scrolls.
+  useEffect(() => {
+    const { documentElement: html, body } = document;
+    html.classList.add("app-scroll-lock");
+    body.classList.add("app-scroll-lock");
+    return () => {
+      html.classList.remove("app-scroll-lock");
+      body.classList.remove("app-scroll-lock");
+    };
+  }, []);
+
   // Staff browse by customer first; the conversation list is scoped to whoever
   // is selected — the company-wide list is never fetched here. Customers only
   // ever have their own threads, so they skip both the column and the scoping.
@@ -211,7 +223,7 @@ const ChatScreen = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-white dark:bg-[#111] text-on-surface h-screen overflow-hidden font-['Poppins'] flex">
+      <div className="bg-white dark:bg-[#111] text-on-surface h-dvh overflow-hidden font-['Poppins'] flex">
         <Sidebar />
 
         <div className="ml-64 flex-1 flex flex-col min-h-0 overflow-hidden">

@@ -124,7 +124,7 @@ const ChatConversationList = ({
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {visible.length === 0 && (
           <div className="px-4 py-8 text-center text-[12px] text-neutral-400">
             {emptyMessage}

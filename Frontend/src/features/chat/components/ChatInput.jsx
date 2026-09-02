@@ -152,7 +152,7 @@ const ChatInput = ({
           placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
           rows={1}
           disabled={disabled}
-          className="flex-1 resize-none bg-transparent outline-none text-[13px] text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 leading-relaxed min-h-[22px] max-h-[120px] overflow-y-auto"
+          className="flex-1 resize-none bg-transparent outline-none text-[13px] text-neutral-800 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 leading-relaxed min-h-[22px] max-h-[120px] overflow-y-auto overscroll-contain"
           style={{ scrollbarWidth: "none" }}
         />
 

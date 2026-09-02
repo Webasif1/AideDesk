@@ -54,7 +54,7 @@ const ChatCustomerInfo = ({ conversation }) => {
 
   return (
     <div
-      className="flex flex-col flex-1 min-h-0 overflow-y-auto"
+      className="flex flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain"
       style={{
         animation: "slideLeft 0.2s ease-out both",
         scrollbarWidth: "none",
