@@ -241,13 +241,9 @@ const ChatWindow = ({ conversation, onClose }) => {
       )}
 
       <div
-        className={`flex-1 min-h-0 overflow-y-auto px-[20px] pb-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#111] ${
+        className={`chat-scroll flex-1 min-h-0 overflow-y-auto px-[20px] pb-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#111] ${
           showTicketCard ? "pt-0" : "pt-[20px]"
         }`}
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#e5e5e5 transparent",
-        }}
       >
         {showSkeleton ? (
           <div className="flex-1 flex flex-col gap-[16px] pt-[8px]">
