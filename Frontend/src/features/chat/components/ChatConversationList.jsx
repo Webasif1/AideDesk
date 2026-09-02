@@ -81,9 +81,9 @@ const ChatConversationList = ({
         : `No conversations under "${filter}".`;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100 dark:border-neutral-800">
+      <div className="shrink-0 px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100 dark:border-neutral-800">
         <div className="flex items-center justify-between mb-[12px]">
           <h2 className="text-[15px] font-bold text-black dark:text-white">Conversations</h2>
           <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">

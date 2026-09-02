@@ -148,7 +148,7 @@ const TopBar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md flex justify-between items-center h-16 px-[32px]">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md flex justify-between items-center h-16 shrink-0 px-[32px]">
       {/* Left: read-only notice for suspended accounts, otherwise nothing.
           The global search that used to live here was decorative — it had no
           handler at all. Pages that need search now carry their own. */}

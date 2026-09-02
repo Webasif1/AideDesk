@@ -222,21 +222,34 @@ const ChatWindow = ({ conversation, onClose }) => {
     !!copilotTyping ||
     (typingUsers && Object.keys(typingUsers || {}).length > 0);
 
+  // The skeleton must not pre-empt the typing bubble. A just-created ticket is
+  // exactly `loading && no messages`, which is also precisely when the customer
+  // needs to see that a reply is being written.
+  const showSkeleton = loading && messages.length === 0 && !someoneTyping;
+  // Pinned above the thread rather than scrolled with it, so the subject stays
+  // in view for the whole conversation.
+  const showTicketCard = !showSkeleton && !!conversation.ticket;
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       <ChatHeader conversation={conversation} onClose={onClose} />
 
+      {showTicketCard && (
+        <div className="shrink-0 px-[20px] pt-[20px] bg-neutral-50 dark:bg-[#111]">
+          <TicketSummaryCard ticket={conversation.ticket} />
+        </div>
+      )}
+
       <div
-        className="flex-1 overflow-y-auto px-[20px] py-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#111]"
+        className={`flex-1 min-h-0 overflow-y-auto px-[20px] pb-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#111] ${
+          showTicketCard ? "pt-0" : "pt-[20px]"
+        }`}
         style={{
           scrollbarWidth: "thin",
           scrollbarColor: "#e5e5e5 transparent",
         }}
       >
-        {/* The skeleton must not pre-empt the typing bubble. A just-created
-            ticket is exactly `loading && no messages`, which is also precisely
-            when the customer needs to see that a reply is being written. */}
-        {loading && messages.length === 0 && !someoneTyping ? (
+        {showSkeleton ? (
           <div className="flex-1 flex flex-col gap-[16px] pt-[8px]">
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -256,8 +269,6 @@ const ChatWindow = ({ conversation, onClose }) => {
           </div>
         ) : (
           <>
-            {conversation.ticket && <TicketSummaryCard ticket={conversation.ticket} />}
-
             {messages.map((msg, idx) => {
               const prevMsg = messages[idx - 1];
               // Insert a divider whenever the calendar day changes.

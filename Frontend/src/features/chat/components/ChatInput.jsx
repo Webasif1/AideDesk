@@ -60,7 +60,7 @@ const ChatInput = ({
 
   if (lockedReason) {
     return (
-      <div className="border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#111] px-[16px] py-[18px]">
+      <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#111] px-[16px] py-[18px]">
         <div className="flex flex-col items-center gap-[10px] text-center">
           <div className="flex items-center gap-[10px]">
             <span className="material-symbols-outlined text-[18px] text-neutral-400">
@@ -87,7 +87,7 @@ const ChatInput = ({
 
   return (
     <div
-      className={`border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[16px] pt-[12px] pb-[16px] transition-all ${
+      className={`shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[16px] pt-[12px] pb-[16px] transition-all ${
         focused ? "bg-white dark:bg-[#1a1a1a]" : "bg-neutral-50 dark:bg-[#111]"
       }`}
     >

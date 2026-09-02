@@ -25,9 +25,9 @@ const ChatCustomerList = ({
   }, [customers, search]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100 dark:border-neutral-800">
+      <div className="shrink-0 px-[16px] pt-[20px] pb-[12px] border-b border-neutral-100 dark:border-neutral-800">
         <div className="flex items-center justify-between mb-[12px]">
           <h2 className="text-[15px] font-bold text-black dark:text-white">Customers</h2>
           {customers.length > 0 && (
