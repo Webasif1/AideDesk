@@ -98,17 +98,28 @@ const ChatBubble = ({
               )}
               {attachments.length > 0 && (
                 <div className="flex flex-col gap-[6px] mt-[8px]">
+                  {/* Fields are filename/mimetype per message.model.js. This
+                      read a.name and a.type, neither of which exists, so every
+                      chip rendered blank with a generic icon — and it was a
+                      div, so the file could not be opened at all.
+                      TicketSummaryCard is the reference implementation. */}
                   {attachments.map((a, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-[8px] rounded-lg px-[10px] py-[8px] text-[12px]
-                        ${isMine ? "bg-white/10 dark:bg-black/20" : "bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-700"}`}
+                    <a
+                      key={a.url || i}
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center gap-[8px] rounded-lg px-[10px] py-[8px] text-[12px] transition-colors
+                        ${isMine ? "bg-white/10 dark:bg-black/20 hover:bg-white/20 dark:hover:bg-black/30" : "bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"}`}
                     >
-                      <span className="material-symbols-outlined text-[16px]">
-                        {a.type === "image" ? "image" : "attach_file"}
+                      <span
+                        className="material-symbols-outlined text-[16px]"
+                        aria-hidden="true"
+                      >
+                        {a.mimetype?.startsWith("image/") ? "image" : "attach_file"}
                       </span>
-                      <span className="truncate">{a.name}</span>
-                    </div>
+                      <span className="truncate">{a.filename || "Attachment"}</span>
+                    </a>
                   ))}
                 </div>
               )}

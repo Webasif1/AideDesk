@@ -17,27 +17,9 @@ export const sendMessageValidator = [
   // `role` is deliberately not accepted from the client. The controller derives it
   // from the authenticated req.role, so a caller cannot post as 'ai' or as an agent.
 
-  body('attachments')
-    .optional()
-    .isArray()
-    .withMessage('Attachments must be an array'),
-
-  body('attachments.*.url')
-    .optional()
-    .isURL()
-    .withMessage('Attachment URL must be a valid URL'),
-
-  body('attachments.*.filename')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Attachment filename is required'),
-
-  body('attachments.*.mimetype')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Attachment mimetype is required')
+  // `attachments` is likewise not accepted from the client, for the same reason
+  // as `role`: these rules only ever checked that a URL was well-formed, never
+  // that it pointed at a file this user had uploaded. The controller ignores
+  // the field entirely and builds attachments from the verified upload
+  // pipeline, so validating it here would only imply it was honoured.
 ];

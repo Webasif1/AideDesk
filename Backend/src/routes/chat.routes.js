@@ -16,7 +16,7 @@ import {
 } from '../controllers/chat.controller.js';
 
 import { protect, requireRole } from '../middleware/auth.middleware.js';
-import { handleChatUpload } from '../middleware/upload.middleware.js';
+import { handleChatUpload, verifyFileContent } from '../middleware/upload.middleware.js';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validation.middleware.js';
 
@@ -91,7 +91,7 @@ router.get('/:id', requireRole('admin', 'agent', 'customer'), getChat);
  *          Optional image/PDF attachment (multipart form-data).
  * @access  Private — Customer (owns the chat)
  */
-router.post('/:id/messages', requireRole('customer'), handleChatUpload, sendCopilotMessage);
+router.post('/:id/messages', requireRole('customer'), handleChatUpload, verifyFileContent, sendCopilotMessage);
 
 /**
  * @route   POST /api/chats/:id/confirm-ticket

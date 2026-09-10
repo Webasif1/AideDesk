@@ -4,6 +4,10 @@
 // actually submitted and never counts toward unread/message totals.
 const isImage = (mimetype = "") => mimetype.startsWith("image/");
 
+// Attachments download by default; the server only sends an inline
+// Content-Disposition when asked, and only for images. A thumbnail has to ask.
+const inline = (url = "") => (url ? `${url}${url.includes("?") ? "&" : "?"}disposition=inline` : url);
+
 const TicketSummaryCard = ({ ticket }) => {
   if (!ticket?.description) return null;
 
@@ -39,14 +43,14 @@ const TicketSummaryCard = ({ ticket }) => {
                   isImage(a.mimetype) ? (
                     <a
                       key={i}
-                      href={a.url}
+                      href={inline(a.url)}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="block w-[64px] h-[64px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700"
                       title={a.filename}
                     >
                       <img
-                        src={a.url}
+                        src={inline(a.url)}
                         alt={a.filename}
                         className="w-full h-full object-cover"
                       />
@@ -56,11 +60,14 @@ const TicketSummaryCard = ({ ticket }) => {
                       key={i}
                       href={a.url}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-[6px] rounded-lg px-[10px] py-[8px] text-[11px] bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                       title={a.filename}
                     >
-                      <span className="material-symbols-outlined text-[16px]">
+                      <span
+                        className="material-symbols-outlined text-[16px]"
+                        aria-hidden="true"
+                      >
                         attach_file
                       </span>
                       <span className="max-w-[140px] truncate">{a.filename}</span>

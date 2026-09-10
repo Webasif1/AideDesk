@@ -18,7 +18,7 @@ import {
 import { createTicketValidator, updateTicketValidator } from '../validator/ticket.validator.js';
 import { validate } from '../middleware/validation.middleware.js';
 import { protect, requireRole } from '../middleware/auth.middleware.js';
-import { handleChatUpload } from '../middleware/upload.middleware.js';
+import { handleChatUpload, verifyFileContent } from '../middleware/upload.middleware.js';
 import { body } from 'express-validator';
 
 // All ticket routes require authentication
@@ -63,6 +63,7 @@ router.post(
   '/',
   requireRole('customer', 'agent', 'admin'),
   handleChatUpload, // parses optional multipart attachment (customer flow) into req.file
+  verifyFileContent, // magic-byte check; overwrites the client's declared mimetype
   createTicketValidator,
   validate,
   createTicket

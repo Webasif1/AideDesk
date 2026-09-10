@@ -17,6 +17,7 @@ import messageRoutes from "./routes/message.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import slaRoutes from "./routes/sla.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
+import attachmentRoutes from "./routes/attachment.routes.js";
 
 // ============================================
 // Import Middleware & Error Handlers
@@ -66,9 +67,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-// User-uploaded ticket attachments — not part of the built frontend, so it
-// lives in its own directory rather than under public/.
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -108,6 +106,11 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/sla-config", slaRoutes);
 app.use("/api/workspaces", workspaceRoutes);
+
+// User-uploaded attachments. Mounted at the same path express.static used, so
+// the URLs already stored on tickets and messages keep resolving — but every
+// request is now authenticated and ownership-checked. See attachment.routes.js.
+app.use("/uploads", attachmentRoutes);
 
 // ============================================
 // Frontend Catch-All (SPA Router)

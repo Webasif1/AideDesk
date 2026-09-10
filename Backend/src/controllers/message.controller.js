@@ -21,7 +21,12 @@ const assertChatAccess = (chatId, req) => loadChatForActor(chatId, actorFromReq(
 // Customer or Agent sends a message in an open chat
 // ============================================
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { chat: chatId, content, attachments = [] } = req.body;
+  // `attachments` is deliberately NOT read from the body. It used to be
+  // persisted verbatim, so a client could attach an arbitrary external URL with
+  // any filename and mimetype it liked and have the thread render it as ours.
+  // Attachments arrive only through the verified upload pipeline.
+  const { chat: chatId, content } = req.body;
+  const attachments = [];
 
   const chat = await assertChatAccess(chatId, req);
 
