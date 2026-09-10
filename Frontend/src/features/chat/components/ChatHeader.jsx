@@ -56,13 +56,18 @@ const ChatHeader = ({ conversation, onClose }) => {
   const tag = CHAT_STATUS_TAG[conversation.status];
 
   // Agents/admins get quick actions; the customer view stays minimal.
+  //
+  // All four of these rendered as live, hoverable buttons with no onClick — a
+  // control that looks available and does nothing is worse than one that is
+  // absent, because the user concludes the feature is broken rather than
+  // unbuilt. Marked disabled with the reason on hover until they are wired.
   const actions = isCustomerView
     ? []
     : [
-        { icon: "call", label: "Call" },
-        { icon: "videocam", label: "Video" },
-        { icon: "info", label: "Info" },
-        { icon: "more_vert", label: "More" },
+        { icon: "call", label: "Voice calling is coming soon" },
+        { icon: "videocam", label: "Video calling is coming soon" },
+        { icon: "info", label: "Conversation details are coming soon" },
+        { icon: "more_vert", label: "More actions are coming soon" },
       ];
 
   return (
@@ -127,10 +132,17 @@ const ChatHeader = ({ conversation, onClose }) => {
           {actions.map((a) => (
             <button
               key={a.icon}
+              type="button"
+              disabled
+              aria-disabled="true"
+              aria-label={a.label}
               title={a.label}
-              className="p-[8px] rounded-lg text-neutral-400 dark:text-neutral-600 hover:text-black dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-[8px] rounded-lg text-neutral-300 dark:text-neutral-700 opacity-60 cursor-not-allowed"
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span
+                className="material-symbols-outlined text-[20px]"
+                aria-hidden="true"
+              >
                 {a.icon}
               </span>
             </button>

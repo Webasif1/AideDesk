@@ -21,7 +21,7 @@ const SupportHero = () => (
       {["API Limits", "Reset Password", "Billing Cycle"].map((t, i, arr) => (
         <span key={t} className="flex items-center gap-[8px]">
           <a
-            href="#"
+            href="/docs"
             className="hover:text-primary transition-colors border-b border-transparent hover:border-primary"
           >
             {t}

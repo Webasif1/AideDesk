@@ -68,12 +68,22 @@ export const ticketStatusBadgeClass = (label) =>
   })[label] ||
   "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300";
 
-// Backend priority (low/medium/high/urgent) → TicketRow's High/Normal/Low buckets.
-export const ticketPriorityLabel = (priority) => {
-  if (priority === "high" || priority === "urgent") return "High";
-  if (priority === "low") return "Low";
-  return "Normal";
+// Backend priority → display label, 1:1.
+//
+// This used to collapse four values into three buckets: "urgent" and "high"
+// both rendered as "High", so the most severe tickets in the system were
+// indistinguishable from ordinary ones, and "medium" displayed as "Normal"
+// while the model, the API and the SLA config all say "medium". One
+// vocabulary, matching the data.
+const PRIORITY_LABELS = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+  urgent: "Urgent",
 };
+
+export const ticketPriorityLabel = (priority) =>
+  PRIORITY_LABELS[priority] || "Medium";
 
 // Two-letter initials from a name.
 export const initialsOf = (name = "") => {

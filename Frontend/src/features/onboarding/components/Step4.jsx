@@ -26,8 +26,6 @@ const Step4 = ({ onNext, onBack }) => {
     if (members.length === 1) return;
     setMembers((prev) => prev.filter((_, i) => i !== index));
   };
-
-  const filledCount = members.filter((m) => m.email.trim() !== "").length;
   const seatsFull = members.length >= MAX_SEATS;
 
   return (

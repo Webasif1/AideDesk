@@ -6,8 +6,9 @@ import { useTicket } from "../hooks/useTicket";
 import { useUser } from "../../user/hooks/useUser";
 import { toast } from "../../../components/ui/toast";
 
-const priorities = ["Low", "Normal", "High"];
-const PRIORITY_MAP = { Low: "low", Normal: "medium", High: "high" };
+// Matches the ticket model enum exactly: low | medium | high | urgent.
+const priorities = ["Low", "Medium", "High", "Urgent"];
+const PRIORITY_MAP = { Low: "low", Medium: "medium", High: "high", Urgent: "urgent" };
 
 const channels = ["Email", "Chat", "Phone", "Portal"];
 // Ticket `source` enum is chat | email | dashboard | api
@@ -35,7 +36,7 @@ const CreateTicketModal = ({ onClose }) => {
     subject: "",
     description: "",
   });
-  const [priority, setPriority] = useState("Normal");
+  const [priority, setPriority] = useState("Medium");
   const [attachment, setAttachment] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

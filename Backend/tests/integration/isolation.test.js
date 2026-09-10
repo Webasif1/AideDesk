@@ -10,7 +10,7 @@ import request from "supertest";
 import app from "../../src/app.js";
 import companyModel from "../../src/models/company.model.js";
 import slaConfigModel from "../../src/models/slaConfig.model.js";
-import { buildTenant } from "../helpers/tenant.js";
+import { buildTenant, cookieFor } from "../helpers/tenant.js";
 
 const DENIED = [400, 401, 403, 404];
 
@@ -246,5 +246,54 @@ describe("anonymous access", () => {
       if (res.status !== 401) failures.push(`GET ${path} -> ${res.status}`);
     }
     expect(failures, failures.join("\n")).toEqual([]);
+  });
+});
+
+// ── Billing tier is not the client's to set ────────────────────────────────
+describe("plan escalation", () => {
+  it("ignores a plan sent to the company update endpoint", async () => {
+    // The billing page used to validate a card, pause, then genuinely persist
+    // the new plan — a free upgrade to any tier for any admin.
+    await request(app)
+      .put(`/api/company/${A.company._id}`)
+      .set("Cookie", A.cookies.admin)
+      .send({ plan: "enterprise", description: "legitimate change" });
+
+    const after = await companyModel.findById(A.company._id);
+    expect(after.plan).not.toBe("enterprise");
+    // The legitimate field in the same request still applies.
+    expect(after.description).toBe("legitimate change");
+  });
+
+  it("ignores a plan sent at company registration", async () => {
+    const adminModel = (await import("../../src/models/admin.model.js")).default;
+    const fresh = await adminModel.create({
+      fullName: "Fresh Admin",
+      email: `fresh-${Date.now()}@test.dev`,
+      password: "x".repeat(20),
+      isVerified: true,
+    });
+
+    const slug = `upgraded-${Date.now()}`;
+    const res = await request(app)
+      .post("/api/company/register")
+      .set("Cookie", cookieFor(fresh))
+      .send({
+        name: "Upgraded Co",
+        slug,
+        email: `billing-${Date.now()}@test.dev`,
+        phone: "+1000000000",
+        website: "https://upgraded.test",
+        size: "11-50",
+        address: "1 Test Street",
+        country: "Testland",
+        plan: "enterprise",
+      });
+
+    expect(res.status).toBe(201);
+    // Looked up by slug so this does not depend on the response envelope shape.
+    const created = await companyModel.findOne({ slug });
+    expect(created).not.toBeNull();
+    expect(created.plan).not.toBe("enterprise");
   });
 });

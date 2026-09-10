@@ -1,53 +1,122 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import { useCompany } from "../hooks/useCompany";
 import { SkeletonCard } from "../../../components/ui/Skeleton";
 
-const StatCard = ({ icon, label, value, sub, delay = 0, onClick }) => (
+/**
+ * A tile that refuses to present a failure as a number.
+ *
+ * Every call site used to coerce with `?? 0`, so when the request 500'd the
+ * portal reported "0 Agents" and "0 Open tickets" — indistinguishable from a
+ * genuinely empty tenant, and the only screen an admin uses to judge whether
+ * anything is wrong.
+ */
+const StatCard = ({ icon, label, value, sub, delay = 0, onClick, error, onRetry }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.35 }}
-    onClick={onClick}
-    className={`bg-white dark:bg-[#1a1a1a] border border-neutral-100 dark:border-neutral-700 rounded-2xl p-5 ${
-      onClick ? "cursor-pointer hover:shadow-sm transition-shadow" : ""
-    }`}
+    onClick={error ? undefined : onClick}
+    className={`bg-white dark:bg-[#1a1a1a] border rounded-2xl p-5 ${
+      error
+        ? "border-red-200 dark:border-red-900/50"
+        : "border-neutral-100 dark:border-neutral-700"
+    } ${onClick && !error ? "cursor-pointer hover:shadow-sm transition-shadow" : ""}`}
   >
     <div className="flex items-center justify-between mb-3">
-      <span className="material-symbols-outlined text-[22px] text-neutral-400">{icon}</span>
+      <span
+        className={`material-symbols-outlined text-[22px] ${
+          error ? "text-red-400" : "text-neutral-400"
+        }`}
+        aria-hidden="true"
+      >
+        {error ? "error_outline" : icon}
+      </span>
     </div>
-    <p className="text-[28px] font-bold text-black dark:text-white leading-none">{value ?? "—"}</p>
-    <p className="text-[13px] font-semibold text-black dark:text-white mt-1">{label}</p>
-    {sub && <p className="text-[11px] text-neutral-400 mt-0.5">{sub}</p>}
+
+    {error ? (
+      <>
+        <p className="text-[28px] font-bold text-neutral-300 dark:text-neutral-600 leading-none">
+          —
+        </p>
+        <p className="text-[13px] font-semibold text-black dark:text-white mt-1">{label}</p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-[11px] text-red-600 dark:text-red-400 mt-0.5 hover:underline"
+        >
+          Couldn't load · Retry
+        </button>
+      </>
+    ) : (
+      <>
+        <p className="text-[28px] font-bold text-black dark:text-white leading-none">
+          {value ?? "—"}
+        </p>
+        <p className="text-[13px] font-semibold text-black dark:text-white mt-1">{label}</p>
+        {sub && <p className="text-[11px] text-neutral-400 mt-0.5">{sub}</p>}
+      </>
+    )}
   </motion.div>
 );
 
 const CompanyPortalHome = () => {
   const navigate = useNavigate();
+  // One useCompany, not two. The second instance mounted another full set of
+  // selectors and was the reason workspaces/getAll fired three times per load.
   const {
+    currentCompany,
     workspaces,
     companyAgents,
     companyTickets,
     loading,
+    getCompany,
     getWorkspaces,
     getCompanyAgents,
     getCompanyTickets,
   } = useCompany();
   const { user } = useSelector((s) => s.auth);
-  const { currentCompany } = useCompany();
+
+  // Which resources failed, tracked per-request: the slice carries a single
+  // shared `error`, which cannot say *what* failed when three calls run
+  // together.
+  const [failed, setFailed] = useState({});
+
+  // Marks the resource failed only when it actually does. Nothing is written
+  // synchronously, so this is safe to call straight from the effect below.
+  const load = useCallback(
+    (key, fn) => fn().catch(() => setFailed((f) => ({ ...f, [key]: true }))),
+    [],
+  );
+
+  // Retry clears the flag first — an event handler, so a synchronous write is
+  // fine here and the tile stops showing an error the moment you click it.
+  const retry = useCallback(
+    (key, fn) => {
+      setFailed((f) => ({ ...f, [key]: false }));
+      return load(key, fn);
+    },
+    [load],
+  );
 
   useEffect(() => {
-    getWorkspaces();
-    getCompanyAgents();
-    getCompanyTickets();
+    load("company", getCompany);
+    load("workspaces", getWorkspaces);
+    load("agents", getCompanyAgents);
+    load("tickets", getCompanyTickets);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openTickets = Array.isArray(companyTickets)
     ? companyTickets.filter((t) => t.status !== "closed" && t.status !== "resolved").length
-    : 0;
+    : null;
+
+  const workspaceCount = Array.isArray(workspaces) ? workspaces.length : null;
+  const activeWorkspaces = Array.isArray(workspaces)
+    ? workspaces.filter((w) => w.status === "active").length
+    : null;
 
   return (
     <div className="p-8 max-w-5xl">
@@ -58,7 +127,7 @@ const CompanyPortalHome = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-[24px] font-bold text-black dark:text-white"
         >
-          {currentCompany?.name || "Company Portal"}
+          {currentCompany?.name || (failed.company ? "Company Portal" : "—")}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -80,17 +149,21 @@ const CompanyPortalHome = () => {
           <StatCard
             icon="workspaces"
             label="Workspaces"
-            value={workspaces?.length ?? 0}
+            value={workspaceCount}
             sub="Active environments"
             delay={0}
             onClick={() => navigate("/company-portal/workspaces")}
+            error={failed.workspaces}
+            onRetry={() => retry("workspaces", getWorkspaces)}
           />
           <StatCard
             icon="group"
             label="Agents"
-            value={companyAgents?.length ?? 0}
+            value={Array.isArray(companyAgents) ? companyAgents.length : null}
             sub="Across workspaces"
             delay={0.05}
+            error={failed.agents}
+            onRetry={() => retry("agents", getCompanyAgents)}
           />
           <StatCard
             icon="confirmation_number"
@@ -98,13 +171,17 @@ const CompanyPortalHome = () => {
             value={openTickets}
             sub="Awaiting resolution"
             delay={0.1}
+            error={failed.tickets}
+            onRetry={() => retry("tickets", getCompanyTickets)}
           />
           <StatCard
             icon="chat"
             label="Workspaces active"
-            value={Array.isArray(workspaces) ? workspaces.filter((w) => w.status === "active").length : 0}
+            value={activeWorkspaces}
             sub="Running today"
             delay={0.15}
+            error={failed.workspaces}
+            onRetry={() => retry("workspaces", getWorkspaces)}
           />
         </div>
       )}
@@ -152,7 +229,7 @@ const CompanyPortalHome = () => {
       )}
 
       {/* Empty state */}
-      {!loading && (!Array.isArray(workspaces) || workspaces.length === 0) && (
+      {!loading && !failed.workspaces && (!Array.isArray(workspaces) || workspaces.length === 0) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

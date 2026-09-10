@@ -1,5 +1,5 @@
 import EmailProviderButton from "./EmailProviderButton";
-import { useLocation, useNavigate } from "react-router-dom"; // For dynamic email display and navigation
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useSelector } from "react-redux";
 import { useState } from "react";
@@ -19,7 +19,7 @@ const providers = [
   { icon: "apps", label: "Open Mail App", href: "mailto:" },
 ];
 
-const VerifyEmailCard = ({ email = "user@example.com" }) => {
+const VerifyEmailCard = ({ email = null }) => {
   const navigate = useNavigate();
   const { resendVerification } = useAuth();
   
@@ -54,9 +54,21 @@ const VerifyEmailCard = ({ email = "user@example.com" }) => {
 
       {/* Subtext */}
       <p className="text-center text-[14px] text-on-surface-variant leading-relaxed mb-[32px]">
-        We sent a verification link to your email address
-        <br />
-        <span className="font-semibold text-primary">{email}</span>
+        {email ? (
+          <>
+            We sent a verification link to your email address
+            <br />
+            <span className="font-semibold text-primary">{email}</span>
+          </>
+        ) : (
+          // Reached directly or after a reload, so we genuinely do not know
+          // which address it went to. Saying so beats naming the wrong one.
+          <>
+            We sent a verification link to the email address you signed up with.
+            <br />
+            Open it to finish setting up your account.
+          </>
+        )}
       </p>
 
       {/* Provider buttons */}

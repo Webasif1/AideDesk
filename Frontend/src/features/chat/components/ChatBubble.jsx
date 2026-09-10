@@ -30,8 +30,6 @@ const ChatBubble = ({
   const [hovered, setHovered] = useState(false);
 
   const { sender, text, time, status, attachments = [] } = message || {};
-
-  const isAgent = sender?.role === "agent";
   const isAI = sender?.role === "ai";
   const isMine = isOwn;
 

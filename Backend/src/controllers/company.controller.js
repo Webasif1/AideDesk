@@ -44,8 +44,10 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
     size,
     address,
     country,
-    branding,
-    plan
+    branding
+    // `plan` is deliberately not read from the body. Accepting it here let a
+    // new company be created directly on a paid tier; billing tier is set
+    // server-side only.
   } = req.body;
 
   // ── 1. Duplicate checks ───────────────────────────────────────────────────────
@@ -79,7 +81,6 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
     address,
     country,
     branding,
-    plan,
     adminId: req.userId, // set server-side from auth middleware
     workSpaceId: null // can be linked after workspace creation
   });

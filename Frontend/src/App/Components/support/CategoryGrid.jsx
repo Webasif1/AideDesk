@@ -30,7 +30,7 @@ const CategoryGrid = () => (
       {categories.map((cat) => (
         <a
           key={cat.title}
-          href="#"
+          href="/docs"
           className="flex flex-col gap-[16px] p-[24px] bg-surface border border-surface-container-highest rounded-lg hover:border-primary transition-colors group"
         >
           <div className="w-10 h-10 flex items-center justify-center bg-surface-container-low rounded">

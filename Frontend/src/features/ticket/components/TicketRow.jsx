@@ -8,10 +8,13 @@ const statusStyle = {
   "Forced Closed": "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
 };
 
+// Urgent is visually distinct from High — they used to render identically,
+// which defeated the point of having the level at all.
 const priorityStyle = {
+  Urgent: "bg-red-600 dark:bg-red-500 text-white",
   High: "bg-black dark:bg-white text-white dark:text-black",
-  Normal: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
-  Low: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
+  Medium: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
+  Low: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
 };
 
 const TicketRow = ({

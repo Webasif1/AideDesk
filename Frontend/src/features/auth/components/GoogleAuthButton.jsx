@@ -1,8 +1,18 @@
+// There is no Google OAuth route on the backend and no client credentials
+// configured, so this has never done anything. It sat on both the login and
+// signup pages as a fully live-looking button — the single most prominent
+// dead control in the product, on the first screen anyone sees.
+//
+// Disabled rather than deleted so the intent stays visible; wire it up and
+// remove the disabled state when the OAuth route exists.
 const GoogleAuthButton = () => {
   return (
     <button
       type="button"
-      className="w-full h-12 bg-surface border border-surface-variant text-primary rounded-xl text-[14px] font-medium hover:bg-surface-container-low transition-colors flex items-center justify-center gap-[8px]"
+      disabled
+      aria-disabled="true"
+      title="Google sign-in isn't available yet — use your email and password"
+      className="w-full h-12 bg-surface border border-surface-variant text-primary rounded-xl text-[14px] font-medium flex items-center justify-center gap-[8px] opacity-50 cursor-not-allowed"
     >
       <svg
         className="w-5 h-5"

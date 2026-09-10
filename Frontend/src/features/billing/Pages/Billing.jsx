@@ -6,7 +6,6 @@ import Sidebar from "../../dashboard/components/Sidebar";
 import TopBar from "../../dashboard/components/TopBar";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 import { useCompany } from "../../company/hooks/useCompany";
-import { toast } from "../../../components/ui/toast";
 
 // Plan values map 1:1 to the company model enum: free | pro | enterprise
 const PLANS = [
@@ -44,29 +43,26 @@ const PLANS = [
   },
 ];
 
-const onlyDigits = (s) => s.replace(/\D/g, "");
 
 const Billing = () => {
   const navigate = useNavigate();
-  const { currentCompany, getCompany, updateCompany } = useCompany();
+  const { currentCompany, getCompany } = useCompany();
   const companyId = useSelector((s) => s.auth.user?.companyId);
 
   const currentPlan = currentCompany?.plan || "free";
-  const [selected, setSelected] = useState("pro");
-  const [processing, setProcessing] = useState(false);
-  const [card, setCard] = useState({ name: "", number: "", expiry: "", cvc: "" });
+  // null = "follow the current plan", so the default tracks the company as soon
+  // as it loads without an effect writing state on every render pass.
+  const [picked, setPicked] = useState(null);
 
   // Hydrate company so we can show/compare the current plan.
   useEffect(() => {
     if (companyId && !currentCompany) getCompany(companyId).catch(() => {});
   }, [companyId, currentCompany, getCompany]);
 
-  // Default the selection to the first plan above the current one.
-  useEffect(() => {
-    if (currentPlan === "free") setSelected("pro");
-    else if (currentPlan === "pro") setSelected("enterprise");
-    else setSelected("enterprise");
-  }, [currentPlan]);
+  // The first plan above the current one, derived rather than synchronised by
+  // an effect — an effect here re-rendered on every company hydration.
+  const suggested = currentPlan === "free" ? "pro" : "enterprise";
+  const selected = picked ?? suggested;
 
   const selectedPlan = useMemo(
     () => PLANS.find((p) => p.id === selected) || PLANS[1],
@@ -74,46 +70,24 @@ const Billing = () => {
   );
   const isCurrent = selected === currentPlan;
 
-  const setField = (f) => (e) => {
-    let v = e.target.value;
-    if (f === "number") v = onlyDigits(v).slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-    if (f === "expiry") {
-      v = onlyDigits(v).slice(0, 4);
-      if (v.length > 2) v = `${v.slice(0, 2)}/${v.slice(2)}`;
-    }
-    if (f === "cvc") v = onlyDigits(v).slice(0, 4);
-    setCard((c) => ({ ...c, [f]: v }));
-  };
+  // Plan changes are deliberately NOT made from here.
+  //
+  // This used to validate a card, wait 1400ms to look like a processor
+  // round-trip, then genuinely persist the new plan via updateCompany — so any
+  // admin could put themselves on the top tier for free, and the failure toast
+  // read "Payment captured, but plan update failed", which was never true
+  // because nothing was ever captured. The plan field is now rejected by the
+  // company update endpoint; upgrades go through sales.
+  const handleContactSales = () => {
+    const subject = encodeURIComponent(`Upgrade to ${selectedPlan.name}`);
+    const body = encodeURIComponent(
+      `Hi,
 
-  const cardValid =
-    card.name.trim() &&
-    onlyDigits(card.number).length >= 15 &&
-    card.expiry.length === 5 &&
-    card.cvc.length >= 3;
+We'd like to upgrade ${currentCompany?.name || "our workspace"} to the ${selectedPlan.name} plan.
 
-  const handlePay = async () => {
-    if (isCurrent) {
-      toast("You're already on this plan.", { type: "info" });
-      return;
-    }
-    if (!cardValid) {
-      toast("Please complete the card details.", { type: "error" });
-      return;
-    }
-    setProcessing(true);
-    // Demo checkout — simulate a payment processor round-trip, then persist the plan.
-    await new Promise((r) => setTimeout(r, 1400));
-    try {
-      if (companyId) await updateCompany({ id: companyId, plan: selected });
-      toast(`Upgraded to ${selectedPlan.name}. Welcome aboard!`, { type: "success" });
-      setCard({ name: "", number: "", expiry: "", cvc: "" });
-    } catch {
-      toast("Payment captured, but plan update failed. Contact support.", {
-        type: "error",
-      });
-    } finally {
-      setProcessing(false);
-    }
+Thanks`,
+    );
+    window.location.href = `mailto:sales@aidedesk.app?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -167,7 +141,7 @@ const Billing = () => {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setSelected(p.id)}
+                      onClick={() => setPicked(p.id)}
                       className={`text-left p-[20px] rounded-xl border transition-all flex flex-col ${
                         active
                           ? "border-black dark:border-white bg-white dark:bg-[#1a1a1a] ring-2 ring-black dark:ring-white"
@@ -232,65 +206,12 @@ const Billing = () => {
                 </div>
 
                 <div className="p-[24px] space-y-[16px]">
-                  <div className="flex flex-col gap-[6px]">
-                    <label className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                      Name on Card
-                    </label>
-                    <input
-                      value={card.name}
-                      onChange={setField("name")}
-                      placeholder="Jane Doe"
-                      className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-[6px]">
-                    <label className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                      Card Number
-                    </label>
-                    <div className="relative">
-                      <input
-                        value={card.number}
-                        onChange={setField("number")}
-                        inputMode="numeric"
-                        placeholder="4242 4242 4242 4242"
-                        className="w-full h-11 pl-10 pr-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                      />
-                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[20px]">
-                        credit_card
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-[12px]">
-                    <div className="flex flex-col gap-[6px]">
-                      <label className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                        Expiry
-                      </label>
-                      <input
-                        value={card.expiry}
-                        onChange={setField("expiry")}
-                        inputMode="numeric"
-                        placeholder="MM/YY"
-                        className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-[6px]">
-                      <label className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
-                        CVC
-                      </label>
-                      <input
-                        value={card.cvc}
-                        onChange={setField("cvc")}
-                        inputMode="numeric"
-                        placeholder="123"
-                        className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="flex items-center justify-between pt-[16px] border-t border-neutral-100 dark:border-neutral-800">
+                  {/* The card fields that stood here collected a raw PAN and
+                      CVC into React state. Card data must never touch
+                      application state — when real billing ships it belongs in
+                      a processor-hosted field (Stripe Elements or equivalent),
+                      which keeps the number out of this origin entirely. */}
+                  <div className="flex items-center justify-between pb-[16px] border-b border-neutral-100 dark:border-neutral-800">
                     <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
                       {selectedPlan.name} plan
                     </span>
@@ -300,32 +221,28 @@ const Billing = () => {
                     </span>
                   </div>
 
+                  <p className="text-[12px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                    {isCurrent
+                      ? "This is your current plan."
+                      : "Self-serve checkout isn't available yet. Get in touch and we'll move your account over and set up billing."}
+                  </p>
+
                   <button
-                    onClick={handlePay}
-                    disabled={processing || isCurrent}
+                    onClick={handleContactSales}
+                    disabled={isCurrent}
                     className="w-full h-11 rounded-lg bg-black dark:bg-white text-white dark:text-black text-[13px] font-semibold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {processing ? (
-                      <>
-                        <span className="material-symbols-outlined text-[18px] animate-spin">
-                          progress_activity
-                        </span>
-                        Processing…
-                      </>
-                    ) : isCurrent ? (
+                    {isCurrent ? (
                       "Current Plan"
                     ) : (
                       <>
-                        Pay &amp; Upgrade
-                        <span className="material-symbols-outlined text-[18px]">lock</span>
+                        Contact Sales
+                        <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                          arrow_forward
+                        </span>
                       </>
                     )}
                   </button>
-
-                  <p className="text-[11px] text-neutral-400 dark:text-neutral-500 text-center flex items-center justify-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">info</span>
-                    Demo checkout — no real card is charged.
-                  </p>
                 </div>
               </motion.div>
             </div>

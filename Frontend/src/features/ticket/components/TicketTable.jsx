@@ -22,7 +22,6 @@ const LIMIT = 10;
 const TAB_QUERY = {
   "All Tickets": {},
   Unassigned: { assignedAgent: "unassigned" },
-  "SLA Warnings": { slaBreached: "true" },
   "Recently Updated": { sort: "updatedAt" },
   Open: { status: "open" },
   Resolved: { status: "resolved,closed" },

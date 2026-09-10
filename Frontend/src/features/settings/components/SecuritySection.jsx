@@ -1,20 +1,6 @@
 import Tooltip from "../../../components/ui/Tooltip";
-import { toast } from "../../../components/ui/toast";
-
-const sessions = [
-  {
-    icon: "laptop_mac",
-    device: 'MacBook Pro 16" • San Francisco, USA',
-    detail: "Chrome • Current Session",
-    current: true,
-  },
-  {
-    icon: "phone_iphone",
-    device: "iPhone 15 Pro • London, UK",
-    detail: "AideDesk App • 2 hours ago",
-    current: false,
-  },
-];
+import ComingSoonOverlay from "../../../components/ui/ComingSoonOverlay";
+import EmptyState from "../../../components/ui/EmptyState";
 
 const SecuritySection = () => {
   return (
@@ -52,42 +38,29 @@ const SecuritySection = () => {
           </Tooltip>
         </div>
 
-        {/* Sessions */}
+        {/* Sessions — no session tracking exists yet.
+
+            This block used to render two hardcoded devices, "MacBook Pro 16"
+            • San Francisco, USA" and "iPhone 15 Pro • London, UK", complete
+            with a Revoke button. Nothing about it came from the API, and
+            nothing on screen said so: an admin auditing their account was
+            reading invented data about invented logins. */}
         <div className="border-t border-neutral-100 dark:border-neutral-800 pt-[24px]">
           <h4 className="text-sm font-semibold text-black dark:text-white mb-[16px]">
             Active Sessions
           </h4>
-          <div className="space-y-[12px]">
-            {sessions.map((s) => (
-              <div
-                key={s.device}
-                className={`flex items-center justify-between p-[16px] border border-neutral-100 dark:border-neutral-800 rounded-xl ${s.current ? "bg-neutral-50 dark:bg-neutral-800" : ""}`}
-              >
-                <div className="flex items-center gap-[16px]">
-                  <span className="material-symbols-outlined text-neutral-400 dark:text-neutral-600">
-                    {s.icon}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-black dark:text-white">{s.device}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{s.detail}</p>
-                  </div>
-                </div>
-                {s.current ? (
-                  <span className="text-xs font-medium text-neutral-400 dark:text-neutral-500">
-                    Current
-                  </span>
-                ) : (
-                  <Tooltip text="Coming soon">
-                    <button
-                      onClick={() => toast.comingSoon("Session management")}
-                      className="text-xs font-semibold text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950 px-[8px] py-1 rounded transition-colors"
-                    >
-                      Revoke
-                    </button>
-                  </Tooltip>
-                )}
-              </div>
-            ))}
+          <div className="relative rounded-xl border border-neutral-100 dark:border-neutral-800 overflow-hidden">
+            <div className="pointer-events-none select-none">
+              <EmptyState
+                icon="devices"
+                title="Session tracking isn't available yet"
+                body="When it ships you'll see every device signed in to this account, and be able to sign them out from here."
+              />
+            </div>
+            <ComingSoonOverlay
+              label="Coming Soon"
+              sub="Sessions aren't tracked yet, so we can't show you a list we'd have to invent."
+            />
           </div>
         </div>
       </div>

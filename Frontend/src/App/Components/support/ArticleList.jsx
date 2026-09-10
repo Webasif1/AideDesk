@@ -1,3 +1,6 @@
+// Marketing-page article list. These previously used href="#", which merely
+// scrolls to the top — a link that looks live and does nothing. Until a real
+// knowledge base exists they route to /docs, which is a genuine page.
 const articles = [
   {
     title: "How to securely store API keys in production",
@@ -26,7 +29,7 @@ const ArticleList = () => (
       {articles.map((a) => (
         <a
           key={a.title}
-          href="#"
+          href="/docs"
           className="py-[16px] border-b border-surface-container-highest flex justify-between items-center group"
         >
           <div className="flex flex-col gap-[4px]">
@@ -45,7 +48,7 @@ const ArticleList = () => (
     </div>
     <div className="mt-[24px]">
       <a
-        href="#"
+        href="/docs"
         className="inline-flex items-center gap-[4px] text-[14px] text-primary hover:opacity-80 transition-opacity"
       >
         View all articles

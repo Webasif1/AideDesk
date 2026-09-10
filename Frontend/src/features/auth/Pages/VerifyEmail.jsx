@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 
 const VerifyEmail = () => {
   const location = useLocation();
-  const email = location.state?.email || "user@example.com";
+  // No fallback address. This defaulted to "user@example.com", so anyone who
+  // reloaded this page or reached it directly was told a verification link had
+  // been sent to an address that does not exist.
+  const email = location.state?.email || null;
 
   return (
     <PageWrapper>

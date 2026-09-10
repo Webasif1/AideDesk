@@ -1,7 +1,7 @@
 import { useState } from "react";
 import StepBadge from "./StepBadge";
 import OnboardingFooter from "./OnboardingFooter";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const suggestions = [
   "How do I reset my password?",

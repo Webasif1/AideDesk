@@ -18,7 +18,7 @@ const SupportSidebar = () => (
         {links.map((l, i) => (
           <a
             key={l.label}
-            href="#"
+            href="/docs"
             className={`flex items-center gap-[8px] text-[14px] text-on-surface hover:text-primary transition-colors ${i < links.length - 1 ? "border-b border-surface-container-highest pb-[16px]" : ""}`}
           >
             <span className="material-symbols-outlined text-on-surface-variant">

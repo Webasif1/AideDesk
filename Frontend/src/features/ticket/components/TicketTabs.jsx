@@ -2,11 +2,15 @@ import { useSelector } from "react-redux";
 import Tooltip from "../../../components/ui/Tooltip";
 import { toast } from "../../../components/ui/toast";
 
+// SLA is not implemented: no deadline is ever computed or stored, and
+// slaBreached is never written. This tab therefore filtered on a field that is
+// false for every ticket ever created — a permanently empty list wearing a red
+// alert dot, which reads as "nothing is breaching" rather than "we do not
+// measure this". Removed until SLA actually ships.
 const adminTabs = [
   { label: "All Tickets", dot: false },
   { label: "Unassigned", dot: false },
   { label: "Recently Updated", dot: false },
-  { label: "SLA Warnings", dot: true },
 ];
 
 // An agent only ever receives their own assigned tickets, so "Unassigned" would
@@ -15,7 +19,6 @@ const agentTabs = [
   { label: "All Tickets", dot: false },
   { label: "Open", dot: false },
   { label: "Recently Updated", dot: false },
-  { label: "SLA Warnings", dot: true },
 ];
 
 // Customers get a focused, self-service set (no unassigned/SLA/staff tooling).
