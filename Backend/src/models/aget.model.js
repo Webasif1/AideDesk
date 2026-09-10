@@ -53,6 +53,14 @@ const agentSchema = new mongoose.Schema(
       default: false
     },
 
+    // sha256 of the outstanding email-verification token. Set when a link is
+    // issued and cleared when it is used, so a link cannot be replayed.
+    verifyTokenHash: {
+      type: String,
+      default: null,
+      select: false
+    },
+
     lastLogin: {
       type: Date,
       default: null

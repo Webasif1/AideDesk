@@ -4,7 +4,12 @@ import userModel from "../models/user.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES, ERROR_CODES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { disconnectUser } from "../sockets/server.socket.js";
-import { generateToken, generateResetToken } from "../utils/tokens.js";
+import {
+  generateToken,
+  generateResetToken,
+  generateVerificationToken,
+  hashToken,
+} from "../utils/tokens.js";
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
@@ -36,13 +41,12 @@ export const registerController = asyncHandler(async (req, res) => {
     role: "admin",
   });
 
-  const token = generateToken(
-    res,
-    admin._id,
-    admin.email,
-    admin.role,
-    admin.companyId,
-  );
+  // Registration does NOT authenticate. It used to call generateToken, which
+  // set a session cookie and returned the JWT in the body, so an unverified
+  // account was immediately usable and the email step was decorative.
+  const verifyToken = generateVerificationToken(admin._id, admin.email, "admin");
+  admin.verifyTokenHash = hashToken(verifyToken);
+  await admin.save();
 
   res.status(HTTP_STATUS.CREATED).json({
     success: true,
@@ -54,14 +58,13 @@ export const registerController = asyncHandler(async (req, res) => {
       fullName: admin.fullName,
       role: admin.role,
     },
-    token,
   });
 
   // Fire-and-forget — email errors don"t affect the response
   await sendVerificationEmail({
     email: admin.email,
     name: admin.fullName,
-    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`,
+    verificationLink: `${config.API_URL}/api/auth/verify/${verifyToken}`,
   }).then(sent => {
     console.log(
       sent ? "📧 Verification email sent" : "❎ Verification email failed",
@@ -77,25 +80,37 @@ export const registerController = asyncHandler(async (req, res) => {
 export const verifyEmailToken = async (req, res) => {
   const { token } = req.params;
 
-  let decoded;
-  try {
-    decoded = jwt.verify(token, config.JWT_SECRET);
-  } catch {
-    return res.status(HTTP_STATUS.UNAUTHORIZED).send(
+  const invalidLink = () =>
+    res.status(HTTP_STATUS.UNAUTHORIZED).send(
       getVerificationHTML(
         "Invalid or Expired Link",
         "This verification link is invalid or has expired. Please request a new one.",
         false,
       ),
     );
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, config.JWT_SECRET);
+  } catch {
+    return invalidLink();
+  }
+
+  // Without this, ANY token signed with JWT_SECRET verified here — including a
+  // user's own session cookie, which is exactly what registration used to hand
+  // out. resetPassword already checked its own purpose; this did not.
+  if (decoded.purpose !== "email-verify") {
+    return invalidLink();
   }
 
   const isAgentToken = decoded.role === "agent";
 
-  // Resolve the right model based on the role encoded in the token
+  // Resolve the right model based on the role encoded in the token. Selected by
+  // id, not by the token's email claim: looking an admin up by decoded.email
+  // honoured whatever address the token carried.
   const user = isAgentToken
-    ? await agentModel.findById(decoded.userId)
-    : await adminModel.findOne({ email: decoded.email });
+    ? await agentModel.findById(decoded.userId).select("+verifyTokenHash")
+    : await adminModel.findById(decoded.userId).select("+verifyTokenHash");
 
   if (!user) {
     return res.status(HTTP_STATUS.NOT_FOUND).send(
@@ -123,7 +138,14 @@ export const verifyEmailToken = async (req, res) => {
     );
   }
 
+  // Single use: the stored hash must match, and is cleared on success so a
+  // replayed link fails even inside the token's 24h window.
+  if (!user.verifyTokenHash || user.verifyTokenHash !== hashToken(token)) {
+    return invalidLink();
+  }
+
   user.isVerified = true;
+  user.verifyTokenHash = null;
   await user.save();
 
   if (isAgentToken) {
@@ -264,7 +286,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
   // Always return the same response — don"t reveal whether the email exists
   if (user) {
     const resetToken = generateResetToken(user._id);
-    const resetLink = `http://localhost:${config.PORT}/api/auth/reset-password/${resetToken}`;
+    const resetLink = `${config.FRONTEND_URL}/reset-password/${resetToken}`;
 
     sendPasswordResetEmail({
       email: email,
@@ -350,18 +372,14 @@ export const resendVerificationController = asyncHandler(async (req, res) => {
     );
   }
 
-  const token = jwt.sign(
-    { userId: user._id, email: user.email },
-    config.JWT_SECRET,
-    {
-      expiresIn: config.JWT_EXPIRE || "5d",
-    }
-  );
+  const token = generateVerificationToken(user._id, user.email, user.role);
+  user.verifyTokenHash = hashToken(token);
+  await user.save({ validateBeforeSave: false });
 
   sendVerificationEmail({
     email: email,
     name,
-    verificationLink: `http://localhost:${config.PORT}/api/auth/verify/${token}`,
+    verificationLink: `${config.API_URL}/api/auth/verify/${token}`,
   }).then(sent => {
     console.log(
       sent ? "📧 Verification email resent" : "❎ Verification email failed",

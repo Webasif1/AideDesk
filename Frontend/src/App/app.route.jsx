@@ -21,6 +21,7 @@ import Login from "../features/auth/Pages/Login";
 import CustomerLogin from "../features/auth/Pages/CustomerLogin";
 import Signup from "../features/auth/Pages/Signup";
 import ForgotPassword from "../features/auth/Pages/ForgotPassword";
+import ResetPassword from "../features/auth/Pages/ResetPassword";
 import VerifyEmail from "../features/auth/Pages/VerifyEmail";
 import WelcomePage from "../features/auth/Pages/WelcomePage";
 import PublicRoute from "../features/auth/components/PublicRoute";
@@ -100,6 +101,7 @@ const AppRoutes = createBrowserRouter([
       { path: "/customer/login", element: <CustomerLogin /> },
       { path: "/signup", element: <Signup /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password/:token", element: <ResetPassword /> },
       { path: "/verify-email", element: <VerifyEmail /> },
 
       // Welcome / company setup (admin, post-verification — no companyId yet)

@@ -54,10 +54,12 @@ const Signup = () => {
         email: form.email,
         password: form.password,
       });
-      // Navigate on success
-      if (!apiError) {
-        navigate("/verify-email", { state: { email: form.email } });
-      }
+      // handleRegister rethrows on failure, so reaching this line means it
+      // succeeded. The previous `if (!apiError)` guard read a value captured
+      // when this closure was created, so it was always the *previous* render's
+      // error — and signup navigated on to the verify screen even when it had
+      // failed.
+      navigate("/verify-email", { state: { email: form.email } });
     } catch (err) {
       console.error("Signup failed", err);
     }

@@ -24,13 +24,21 @@ export const useAuth = () => {
   async function handleRegister(userData) {
     try {
       dispatch(setLoading(true));
+      dispatch(setError(null));
       const res = await registerAPI(userData);
-      dispatch(setUser(res.data));
-      dispatch(setRole(res.data.role));
+      // Deliberately NOT setUser/setRole: registration no longer returns a
+      // session, because it used to log people in before they had verified
+      // their email. Marking the store authenticated here would leave the UI
+      // believing it is signed in while every request 401s.
+      return res;
     } catch (error) {
       dispatch(
         setError(error.response?.data?.message || "Registration failed"),
       );
+      // Rethrown so the caller can branch on failure. Swallowing it meant
+      // Signup read a stale `apiError` from its closure and navigated on to the
+      // verify screen even when registration had failed.
+      throw error;
     } finally {
       dispatch(setLoading(false));
     }
@@ -97,11 +105,13 @@ export const useAuth = () => {
   async function resetPassword(token, passwordData) {
     try {
       dispatch(setLoading(true));
-      await resetPasswordAPI({ token, ...passwordData });
+      dispatch(setError(null));
+      return await resetPasswordAPI({ token, ...passwordData });
     } catch (error) {
       dispatch(
         setError(error.response?.data?.message || "Failed to reset password"),
       );
+      throw error;
     } finally {
       dispatch(setLoading(false));
     }

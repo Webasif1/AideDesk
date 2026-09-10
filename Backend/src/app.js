@@ -3,7 +3,9 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
+import helmet from "helmet";
 import { config } from "./config/config.js";
+import { apiLimiter, authLimiter } from "./middleware/rateLimit.middleware.js";
 
 // ============================================
 // Import Routes
@@ -33,6 +35,40 @@ const __dirname = path.resolve();
 // ============================================
 // Middleware Configuration
 // ============================================
+
+/**
+ * Security headers.
+ *
+ * Mounted before everything else so even an error response carries them. The
+ * CSP is the defence-in-depth half of the stored-XSS fix: script-src 'self'
+ * means an injected inline script does not run even if something is served
+ * that should not have been.
+ *
+ * styleSrc allows 'unsafe-inline' because the app ships inline style
+ * attributes; scriptSrc deliberately does not.
+ */
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'", config.FRONTEND_URL, "ws:", "wss:"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: "same-site" },
+    // The SPA and API share an origin in production; COEP breaks the Google
+    // Fonts stylesheet the app loads.
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 /**
  * CORS Configuration
@@ -97,7 +133,10 @@ app.get("/api/health", (req, res) => {
 // API Routes
 // ============================================
 
-app.use("/api/auth", authRoutes);
+// Auth is rate-limited harder than the rest: it is the only surface where
+// guessing is the attack.
+app.use("/api", apiLimiter);
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/agents", agentRoutes);
 app.use("/api/users", userRoutes);

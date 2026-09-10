@@ -7,6 +7,7 @@ import workspaceModel from "../models/workSpace.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { disconnectUser } from "../sockets/server.socket.js";
+import { generateVerificationToken, hashToken } from "../utils/tokens.js";
 import { sendAgentInviteEmail } from "../utils/email.js";
 import { sendAccountStatusEmail } from "../utils/accountEmails.js";
 import { reassignAgentTickets } from "../services/agentAssignment.service.js";
@@ -92,14 +93,13 @@ export const createAgent = asyncHandler(async (req, res) => {
     workspaceId: workspace._id,
   });
 
-  // Invite token — short-lived (7d), contains role so verifyEmailToken picks the right model
-  const inviteToken = jwt.sign(
-    { userId: agent._id, email: agent.email, role: "agent" },
-    config.JWT_SECRET,
-    { expiresIn: "7d" },
-  );
+  // Invite token — purpose-scoped and single-use, same as admin verification.
+  // It carries role so verifyEmailToken picks the right model.
+  const inviteToken = generateVerificationToken(agent._id, agent.email, "agent");
+  agent.verifyTokenHash = hashToken(inviteToken);
+  await agent.save({ validateBeforeSave: false });
 
-  const verifyLink = `${config.BACKEND_URL || `http://localhost:${config.PORT}`}/api/auth/verify/${inviteToken}`;
+  const verifyLink = `${config.API_URL}/api/auth/verify/${inviteToken}`;
 
   // Send invite — fire-and-forget, email failure should not block the response
   sendAgentInviteEmail({

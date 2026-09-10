@@ -56,6 +56,12 @@ MODELS.vision = process.env.MODEL_VISION || MODELS.medium;
 
 export const config = {
   PORT: process.env.PORT || 3000,
+
+  // Public base URL of this API. Verification and invite links are emailed, so
+  // they must be reachable from outside the container — hardcoding
+  // http://localhost:PORT made every link in production point at the
+  // recipient's own machine.
+  API_URL: process.env.API_URL || `http://localhost:${process.env.PORT || 3000}`,
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRE: process.env.JWT_EXPIRE || "5d",
@@ -82,3 +88,34 @@ export const config = {
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null,
 };
+
+// ── Production preflight ────────────────────────────────────────────────────
+// Defaults that are fine locally are dangerous once deployed: a fallback
+// FRONTEND_URL of localhost silently breaks CORS and every emailed link, and a
+// short or committed JWT_SECRET makes every session forgeable. Fail at boot
+// rather than discovering it from behaviour.
+if (config.NODE_ENV === "production") {
+  const problems = [];
+
+  if (!process.env.FRONTEND_URL) {
+    problems.push("FRONTEND_URL must be set (it defaults to localhost).");
+  }
+  if (!process.env.API_URL) {
+    problems.push("API_URL must be set — verification and invite links use it.");
+  }
+  if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
+    problems.push("JWT_SECRET must be at least 32 characters.");
+  }
+  if (/localhost|127\.0\.0\.1/.test(config.MONGO_URI || "")) {
+    problems.push("MONGO_URI points at localhost.");
+  }
+
+  if (problems.length) {
+    console.error(
+      "\n❌ Refusing to start in production:\n" +
+        problems.map((p) => `   • ${p}`).join("\n") +
+        "\n",
+    );
+    process.exit(1);
+  }
+}
