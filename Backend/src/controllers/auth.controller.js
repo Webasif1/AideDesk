@@ -3,6 +3,7 @@ import agentModel from "../models/aget.model.js";
 import userModel from "../models/user.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES, ERROR_CODES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { disconnectUser } from "../sockets/server.socket.js";
 import { generateToken, generateResetToken } from "../utils/tokens.js";
 import {
   sendVerificationEmail,
@@ -233,6 +234,11 @@ export const logoutController = asyncHandler(async (req, res) => {
     secure: config.NODE_ENV === "production",
     sameSite: "strict",
   });
+
+  // Clearing the cookie ends the HTTP session but not an already-open socket,
+  // which authenticated once at handshake time and would otherwise keep
+  // streaming events to a logged-out tab.
+  if (req.userId) disconnectUser(req.userId.toString(), "logout");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,

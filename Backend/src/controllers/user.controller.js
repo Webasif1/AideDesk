@@ -14,6 +14,7 @@ import {
 import { AppError, asyncHandler } from '../utils/errorHandler.js';
 import { generateToken, generateResetToken } from '../utils/tokens.js';
 import { sendPasswordResetEmail, sendCustomerInviteEmail } from '../utils/email.js';
+import { disconnectUser } from '../sockets/server.socket.js';
 import { sendAccountStatusEmail } from '../utils/accountEmails.js';
 import { emitDomain } from '../sockets/emit.js';
 import { config } from '../config/config.js';
@@ -519,13 +520,26 @@ const applyUserAccountStatus = async ({ req, accountStatus, reason }) => {
   if (accountStatus === ACCOUNT_STATUS.DELETED) {
     // Force-close every open ticket this customer owns — only an admin can
     // move a ticket back out of `forced_closed` (see updateTicketStatus).
+    // closedAt is only stamped where it is not already set, so a ticket closed
+    // earlier keeps its real closing time rather than being restamped now.
     await ticketModel.updateMany(
       { customerId: user._id, companyId: req.companyId, status: { $ne: 'forced_closed' } },
-      { $set: { status: 'forced_closed', closedAt: new Date() } }
+      { $set: { status: 'forced_closed' } }
+    );
+    await ticketModel.updateMany(
+      { customerId: user._id, companyId: req.companyId, closedAt: null },
+      { $set: { closedAt: new Date() } }
     );
     emitDomain.customerDeleted(req.companyId, { _id: user._id });
   } else {
     emitDomain.customerCreated(req.companyId, user);
+  }
+
+  // Revoking access has to reach live sockets: the handshake is the only point
+  // one is authorized, so a suspended or removed customer would otherwise keep
+  // a working feed until their token expired.
+  if (accountStatus !== ACCOUNT_STATUS.ACTIVE) {
+    disconnectUser(user._id.toString(), `account_${accountStatus}`);
   }
 
   return { user, emailed: Boolean(trimmedReason) };

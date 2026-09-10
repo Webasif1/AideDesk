@@ -102,6 +102,14 @@ export const useSocket = () => {
       dispatch(setError(err?.message || "socket error"))
     );
 
+    // The server drops every socket for a user whose access was revoked
+    // (logout elsewhere, suspension, deletion). Reflect it instead of leaving
+    // the tab looking connected but silently receiving nothing.
+    socket.on("session:revoked", ({ reason } = {}) => {
+      dispatch(setConnected(false));
+      dispatch(setError(reason || "session_revoked"));
+    });
+
     // ── Chat realtime ──────────────────────────────────────────────────────
     socket.on("message:new", (payload) => {
       const message = payload?.message;

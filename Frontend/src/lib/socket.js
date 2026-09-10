@@ -9,8 +9,29 @@ let socket = null;
 // joins whenever the connection comes up.
 const joinedChats = new Set();
 
+// Callers that want to know a join was refused (so they can show "you no longer
+// have access to this conversation" rather than an empty thread).
+const joinListeners = new Set();
+
+export const onChatJoinDenied = (fn) => {
+  joinListeners.add(fn);
+  return () => joinListeners.delete(fn);
+};
+
+// The server authorizes chat:join and acks the result. A refusal must drop the
+// room from the set: it is replayed on every reconnect, so a chat the user
+// cannot access would otherwise be retried forever.
+const emitJoin = (chatId) => {
+  socket?.emit("chat:join", { chatId }, (ack) => {
+    if (ack && ack.ok === false) {
+      joinedChats.delete(chatId);
+      joinListeners.forEach((fn) => fn(chatId, ack.error));
+    }
+  });
+};
+
 const rejoinChats = () => {
-  joinedChats.forEach((chatId) => socket?.emit("chat:join", { chatId }));
+  joinedChats.forEach(emitJoin);
 };
 
 export const getSocket = () => socket;
@@ -46,12 +67,13 @@ export const disconnectSocket = () => {
     socket = null;
   }
   joinedChats.clear();
+  joinListeners.clear();
 };
 
 export const joinChat = (chatId) => {
   if (!chatId) return;
   joinedChats.add(chatId);
-  if (socket?.connected) socket.emit("chat:join", { chatId });
+  if (socket?.connected) emitJoin(chatId);
 };
 
 export const leaveChat = (chatId) => {

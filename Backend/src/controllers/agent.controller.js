@@ -6,6 +6,7 @@ import companyModel from "../models/company.model.js";
 import workspaceModel from "../models/workSpace.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { disconnectUser } from "../sockets/server.socket.js";
 import { sendAgentInviteEmail } from "../utils/email.js";
 import { sendAccountStatusEmail } from "../utils/accountEmails.js";
 import { reassignAgentTickets } from "../services/agentAssignment.service.js";
@@ -399,6 +400,13 @@ const applyAgentAccountStatus = async ({ req, accountStatus, reason }) => {
     emitDomain.agentDeleted(agent.companyId, { _id: agent._id });
   } else {
     emitDomain.agentUpdated(agent.companyId, agent.toObject());
+  }
+
+  // Revoking access has to reach live sockets too. The handshake is the only
+  // point a socket is authorized, so without this a suspended or removed agent
+  // keeps a working event feed until their token expires.
+  if (accountStatus !== ACCOUNT_STATUS.ACTIVE) {
+    disconnectUser(agent._id.toString(), `account_${accountStatus}`);
   }
 
   return { agent, reassignment, emailed: Boolean(trimmedReason) };

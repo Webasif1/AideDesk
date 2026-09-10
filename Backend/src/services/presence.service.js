@@ -2,6 +2,7 @@ import adminModel from "../models/admin.model.js";
 import agentModel from "../models/aget.model.js";
 import userModel from "../models/user.model.js";
 import { emitDomain } from "../sockets/emit.js";
+import { ACCOUNT_STATUS } from "../config/constants.js";
 
 // ============================================
 // Presence — who currently has the app open.
@@ -73,7 +74,18 @@ export const markOnline = async (role, userId) => {
   if (!Model || !userId) return null;
 
   try {
-    const current = await Model.findById(userId).select("manualPresence").lean();
+    const current = await Model.findById(userId)
+      .select("manualPresence accountStatus")
+      .lean();
+
+    // A suspended or deleted account must never read as available: it would
+    // show green on the Team page and stay eligible for assignment while its
+    // access is revoked. Guarded here rather than at each call site because
+    // login and the socket handshake both land on this function.
+    if (current?.accountStatus && current.accountStatus !== ACCOUNT_STATUS.ACTIVE) {
+      return applyPresence(role, userId, { status: "offline" });
+    }
+
     const status = current?.manualPresence || "online";
     return applyPresence(role, userId, { status });
   } catch (err) {
