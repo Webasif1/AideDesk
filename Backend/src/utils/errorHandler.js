@@ -31,9 +31,45 @@ export class AppError extends Error {
   }
 }
 
+// Mongoose surfaces three failure kinds that are the caller's fault, not ours.
+// Left alone they all fall through as 500s carrying raw driver text — which
+// leaks schema internals and tells the client to retry something that will
+// never succeed. Normalising here catches every path, including casts that
+// happen inside a query object where a param validator can't see them.
+const normalizeKnownErrors = (err) => {
+  if (err.name === "CastError") {
+    return { statusCode: HTTP_STATUS.BAD_REQUEST, message: `Invalid ${err.path}`, code: "INVALID_ID" };
+  }
+  if (err.name === "ValidationError") {
+    return {
+      statusCode: HTTP_STATUS.BAD_REQUEST,
+      message: Object.values(err.errors || {})
+        .map((e) => e.message)
+        .join(", "),
+      code: "VALIDATION_ERROR",
+      // Field-keyed so the client can attach messages to inputs rather than
+      // dumping one concatenated string above the form.
+      errors: Object.fromEntries(
+        Object.entries(err.errors || {}).map(([k, v]) => [k, v.message]),
+      ),
+    };
+  }
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || err.keyValue || {})[0];
+    return {
+      statusCode: HTTP_STATUS.CONFLICT,
+      message: field ? `That ${field} is already in use` : "That value is already in use",
+      code: "DUPLICATE_KEY",
+    };
+  }
+  return null;
+};
+
 export const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
-  const message = err.message || ERROR_MESSAGES.INTERNAL_ERROR;
+  const known = normalizeKnownErrors(err);
+  const statusCode = known?.statusCode || err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+  const message = known?.message || err.message || ERROR_MESSAGES.INTERNAL_ERROR;
+  const code = known?.code || err.code;
 
   console.error("Error : ", {
     statusCode,
@@ -54,7 +90,8 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     statusCode,
     message,
-    ...(err.code && { code: err.code }),
+    ...(code && { code }),
+    ...(known?.errors && { errors: known.errors }),
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };

@@ -5,24 +5,16 @@ import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { classifyIntent, scoreSentiment, generateReplySuggestions } from "../services/ai.service.js";
 import { markCustomerReplied } from "../services/ticketStatus.service.js";
 import { socketEmit } from "../sockets/emit.js";
+import { actorFromReq, loadChatForActor } from "../services/chatAccess.js";
 
 // ============================================
-// Helper — verify the requesting user has access to the given chat
+// Access is delegated to services/chatAccess.js so this file and
+// chat.controller cannot drift apart again. The local check this replaces gave
+// agents company-wide reach — its isAdmin and isAgent branches were identical,
+// so any agent could read, post into and mark read every conversation in the
+// tenant, while chat.controller correctly held them to their own assignments.
 // ============================================
-const assertChatAccess = async (chatId, req) => {
-  const chat = await chatModel.findById(chatId);
-  if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
-
-  const isAdmin = req.role === "admin" && chat.company.toString() === req.companyId.toString();
-  const isAgent = req.role === "agent" && chat.company.toString() === req.companyId.toString();
-  const isOwner = req.role === "customer" && chat.user.toString() === req.userId;
-
-  if (!isAdmin && !isAgent && !isOwner) {
-    throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
-  }
-
-  return chat;
-};
+const assertChatAccess = (chatId, req) => loadChatForActor(chatId, actorFromReq(req));
 
 // ============================================
 // POST /api/messages

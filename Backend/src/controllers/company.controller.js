@@ -133,8 +133,9 @@ export const registerCompanyController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const getCompanyController = asyncHandler(async (req, res) => {
+  // Session, not URL: the route param is advisory only.
   const company = await companyModel
-    .findById(req.params.id)
+    .findById(req.companyId)
     .populate("adminId", "fullName email role profileImage status");
 
   if (!company) {
@@ -158,11 +159,13 @@ export const getCompanyController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const updateCompanyController = asyncHandler(async (req, res) => {
-  // Strip fields that should never be updated via this route
-  const { adminId, workSpaceId, status, ...updateData } = req.body;
+  // Strip fields that should never be updated via this route. `plan` is
+  // included because billing tier is not the client's to set — a self-serve
+  // upgrade to any paid tier was otherwise a single PUT away.
+  const { adminId, workSpaceId, status, plan, _id, ...updateData } = req.body;
 
-  const company = await companyModel.findByIdAndUpdate(
-    req.params.id,
+  const company = await companyModel.findOneAndUpdate(
+    { _id: req.companyId, adminId: req.userId },
     { $set: updateData },
     { new: true, runValidators: true }
   );
@@ -188,10 +191,23 @@ export const updateCompanyController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const deleteCompanyController = asyncHandler(async (req, res) => {
-  const company = await companyModel.findById(req.params.id);
+  const company = await companyModel.findOne({
+    _id: req.companyId,
+    adminId: req.userId
+  });
 
   if (!company) {
     throw new AppError("Company not found", HTTP_STATUS.NOT_FOUND);
+  }
+
+  // A tenant is destroyed by this call. Require the caller to type the slug so
+  // it cannot happen from a stray request or a mis-aimed client.
+  if (req.body?.confirmSlug !== company.slug) {
+    throw new AppError(
+      `To delete this company, send confirmSlug set to "${company.slug}"`,
+      HTTP_STATUS.BAD_REQUEST,
+      "CONFIRMATION_REQUIRED"
+    );
   }
 
   // Unlink company from admin
@@ -217,8 +233,7 @@ export const deleteCompanyController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const getCompanyUsersController = asyncHandler(async (req, res) => {
-  const companyId = req.params.companyId;
-  const users = await userModel.find({ companyId: companyId }).select("-__v");
+  const users = await userModel.find({ companyId: req.companyId }).select("-__v");
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -237,9 +252,8 @@ export const getCompanyUsersController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const getCompanyAgentsController = asyncHandler(async (req, res) => {
-  const companyId = req.params.companyId;
   const agents = await agentModel
-    .find({ companyId: companyId })
+    .find({ companyId: req.companyId })
     .select("-password -__v");
 
   res.status(HTTP_STATUS.OK).json({
@@ -259,11 +273,12 @@ export const getCompanyAgentsController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const getCompanyTicketsController = asyncHandler(async (req, res) => {
-  const companyId = req.params.companyId;
   const tickets = await ticketModel
-    .find({ companyId: companyId })
+    .find({ companyId: req.companyId })
     .populate("createdBy", "name email")
-    .populate("assignedTo", "name email")
+    // The ticket schema has no "assignedTo" — populating it threw on every
+    // call, so this endpoint had never once returned a 200.
+    .populate("assignedAgent", "name email")
     .select("-__v");
 
   res.status(HTTP_STATUS.OK).json({
@@ -287,9 +302,7 @@ export const getCompanyTicketsController = asyncHandler(async (req, res) => {
  * @access Private — admin
  */
 export const getCompanyMessagesController = asyncHandler(async (req, res) => {
-  const companyId = req.params.companyId;
-
-  const chats = await chatModel.find({ company: companyId }).select("_id");
+  const chats = await chatModel.find({ company: req.companyId }).select("_id");
 
   const chatIds = chats.map(c => c._id);
 

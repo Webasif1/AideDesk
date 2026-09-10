@@ -270,22 +270,23 @@ export const updateAgent = asyncHandler(async (req, res) => {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
-  const updates = isAdminOfCompany ? { ...req.body } : {};
+  // Allow-list, not deny-list. Spreading req.body and deleting four known-bad
+  // fields left email, workspaceId, accountStatus, statusReason and
+  // statusChangedBy writable: an admin could change an agent's login address
+  // and take the account over by password reset, or flip accountStatus here and
+  // bypass the audited endpoint that records who did it and notifies the agent.
+  //
+  // Fields deliberately absent: `email` (needs re-verification — its own
+  // endpoint), `workspaceId` (re-homing has its own flow), `accountStatus`
+  // (PATCH /:id/account-status), `password` (PATCH /:id/password).
+  const ADMIN_ALLOWED = ["name", "profileImage", "status"];
+  const AGENT_ALLOWED = ["name", "profileImage", "status"];
 
-  if (isOwnProfile) {
-    const agentAllowed = ["name", "profileImage", "status"];
-    agentAllowed.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
-      }
-    });
+  const allowed = isAdminOfCompany ? ADMIN_ALLOWED : AGENT_ALLOWED;
+  const updates = {};
+  for (const field of allowed) {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
   }
-
-  // Never allow these to be changed via this endpoint
-  delete updates.role;
-  delete updates.companyId;
-  delete updates.password;
-  delete updates.isVerified;
 
   // Presence is not a plain profile field — it is paired with manualPresence, and
   // writing `status` alone would leave a standing "Away" that the next socket

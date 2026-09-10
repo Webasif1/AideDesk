@@ -10,6 +10,7 @@ import {
   ACCOUNT_VISIBLE,
 } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
+import { actorFromReq, canAccessChat } from "../services/chatAccess.js";
 import { escapeRegex } from "../utils/regex.js";
 import { emitDomain } from "../sockets/emit.js";
 import { handleCustomerReply } from "../services/copilotFlow.service.js";
@@ -194,18 +195,10 @@ export const getChat = asyncHandler(async (req, res) => {
     throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
   }
 
-  // Enforce access: admin sees any company chat, an agent only their own
-  // assignments (matching the list query — otherwise any chat in the company was
-  // readable by id, transcript included), customer sees own chats.
-  const sameCompany = chat.company.toString() === req.companyId.toString();
-  const hasAccess =
-    (req.role === "admin" && sameCompany) ||
-    (req.role === "agent" &&
-      sameCompany &&
-      chat.assignedAgent?._id?.toString() === req.userId.toString()) ||
-    (req.role === "customer" && chat.user._id.toString() === req.userId);
-
-  if (!hasAccess) {
+  // Shared predicate — see services/chatAccess.js. It normalises populated and
+  // raw refs alike, which matters here because this query populates
+  // assignedAgent/user while message.controller does not.
+  if (!canAccessChat(chat, actorFromReq(req))) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
@@ -352,16 +345,7 @@ export const updateChatStatus = asyncHandler(async (req, res) => {
   const chat = await chatModel.findById(req.params.id);
   if (!chat) throw new AppError("Chat not found", HTTP_STATUS.NOT_FOUND);
 
-  // Agents can only update chats assigned to them or unassigned
-  if (req.role === "agent") {
-    const isAssigned =
-      chat.assignedAgent && chat.assignedAgent.toString() === req.userId;
-    if (!isAssigned) {
-      throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
-    }
-  }
-
-  if (chat.company.toString() !== req.companyId.toString()) {
+  if (!canAccessChat(chat, actorFromReq(req))) {
     throw new AppError(ERROR_MESSAGES.FORBIDDEN, HTTP_STATUS.FORBIDDEN);
   }
 
