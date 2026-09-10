@@ -28,6 +28,11 @@ export const findEligibleAgents = async ({ companyId, workspaceId, excludeAgentI
     // accountStatus field existed have no such key, and an equality match would
     // make every one of them ineligible. See ACCOUNT_VISIBLE.
     accountStatus: ACCOUNT_VISIBLE,
+    // Same reasoning as accountStatus above: "not explicitly unverified" rather
+    // than "== true". $ne matches a missing field, so agents predating this
+    // flag stay eligible while one who never accepted their invite does not.
+    // An unverified agent cannot sign in, so assigning them parks the work.
+    isVerified: { $ne: false },
     ...(excludeAgentId && { _id: { $ne: excludeAgentId } }),
   };
 
@@ -46,6 +51,15 @@ export const rankEligible = (agents) => {
   const online = shuffle(agents.filter((a) => a.status === "online"));
   const rest = shuffle(agents.filter((a) => a.status !== "online"));
   return [...online, ...rest];
+};
+
+// The single agent to hand a new escalation to, or null when nobody is
+// eligible. copilotFlow had its own pickAgent that filtered on accountStatus
+// only, omitted companyId on two of its three branches, and used findOne with
+// no sort — so the same agent absorbed every escalation in the workspace.
+export const pickAgentFor = async ({ companyId, workspaceId, excludeAgentId } = {}) => {
+  const eligible = await findEligibleAgents({ companyId, workspaceId, excludeAgentId });
+  return rankEligible(eligible)[0] || null;
 };
 
 // ============================================

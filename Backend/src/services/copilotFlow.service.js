@@ -13,7 +13,7 @@ import { analyzeImage } from "./imageVision.service.js";
 import { uploadPDFAndExtract } from "./fileContext.service.js";
 import { generateAgentBriefing } from "./agentBriefing.service.js";
 import { markCustomerReplied } from "./ticketStatus.service.js";
-import { postAgentHandoverNotice } from "./agentAssignment.service.js";
+import { pickAgentFor, postAgentHandoverNotice } from "./agentAssignment.service.js";
 import { socketEmit, emitDomain } from "../sockets/emit.js";
 import { ACCOUNT_VISIBLE } from "../config/constants.js";
 import { config } from "../config/config.js";
@@ -46,8 +46,15 @@ const INTENT_TO_TICKET_LABEL = {
   other: "simple_faq",
 };
 
-const HANDOFF_MESSAGE =
+// Two messages, because there are two outcomes. Posting the first
+// unconditionally — as this used to, before the agent was even looked up — told
+// customers of a tenant with no available agents that a specialist was joining
+// shortly, when nobody had been assigned and nobody was coming.
+const HANDOFF_ASSIGNED =
   "Thanks for the details — I'm connecting you with a human specialist who can help further. They'll join this conversation shortly.";
+
+const HANDOFF_QUEUED =
+  "Thanks for the details — I've escalated this to our support team. They'll reply here as soon as someone is available.";
 
 // Posted when the AI is stuck but hasn't hit the escalation threshold yet — it
 // keeps trying and asks the customer for more to work with.
@@ -73,22 +80,6 @@ const processAttachment = async (file, userMessage) => {
   return out;
 };
 
-// First online agent in the workspace, else any agent in the workspace/company.
-// Suspended and removed agents are excluded — they cannot act on a ticket, so
-// handing them an escalation would silently park it.
-const pickAgent = async (workspaceId, companyId) => {
-  // Matched as "not suspended/removed", not "== active" — agents predating the
-  // accountStatus field have no such key and an equality check finds nobody,
-  // which parks every escalation silently. See ACCOUNT_VISIBLE.
-  const active = { accountStatus: ACCOUNT_VISIBLE };
-  return (
-    (workspaceId &&
-      (await agentModel.findOne({ ...active, workspaceId, status: "online" }))) ||
-    (workspaceId && (await agentModel.findOne({ ...active, workspaceId }))) ||
-    (await agentModel.findOne({ ...active, companyId }))
-  );
-};
-
 // Backend message role → OpenRouter chat role.
 const toChatRole = (role) => (role === "user" ? "user" : "assistant");
 
@@ -104,11 +95,21 @@ const deriveTicketMeta = (result) => {
 
 // Shared escalation branch: assign an agent, brief them, and post a hand-off note.
 const escalateTicket = async ({ ticket, chat, conversationHistory, copilotAttempt, escalationReason, req }) => {
-  const agent = await pickAgent(req.workspaceId, req.companyId);
+  // Delegated to agentAssignment, which already ranks online agents first and
+  // randomises within each group. The local version used findOne with no sort,
+  // so one agent absorbed every escalation, and two of its three branches
+  // omitted companyId entirely.
+  const agent = await pickAgentFor({
+    companyId: req.companyId,
+    workspaceId: req.workspaceId,
+  });
 
   if (ticket) {
     if (agent && !ticket.assignedAgent) ticket.assignedAgent = agent._id;
     ticket.status = "in_progress";
+    // An escalation nobody was assigned to would otherwise move to in_progress
+    // and drop out of the unassigned queue — a silent hole to fall into.
+    ticket.escalationState = agent || ticket.assignedAgent ? null : "unassigned";
     if (!ticket.escalatedAt) ticket.escalatedAt = new Date();
     const briefing = await generateAgentBriefing({
       conversationHistory,
@@ -132,9 +133,10 @@ const escalateTicket = async ({ ticket, chat, conversationHistory, copilotAttemp
     chat.assignedAgent = agent._id;
   }
 
+  // Posted AFTER the outcome is known, and worded to match it.
   const handoff = await messageModel.create({
     chat: chat._id,
-    content: HANDOFF_MESSAGE,
+    content: agent ? HANDOFF_ASSIGNED : HANDOFF_QUEUED,
     role: "ai",
   });
 
@@ -258,7 +260,34 @@ export const startTicketCopilot = async ({ ticket, chat, firstMessage, file, req
     return { aiMessage, escalated };
   } catch (err) {
     console.error("[copilotFlow] startTicketCopilot failed:", err.message);
-    return { aiMessage: null, escalated: false };
+
+    // The customer raised a ticket and is watching the thread. Returning here
+    // without posting anything left it permanently empty — the AI never spoke
+    // and no human was ever summoned. Escalate instead, which posts a message
+    // in both the assigned and queued cases.
+    try {
+      const aiMessage = await escalateTicket({
+        ticket,
+        chat,
+        conversationHistory: [{ role: "user", content: firstMessage }],
+        escalationReason: "copilot_error",
+        req,
+      });
+
+      chat.latestMessage = aiMessage._id;
+      chat.lastActivity = new Date();
+      await chat.save();
+
+      socketEmit.newMessage(chat._id, aiMessage);
+      await broadcastTicket(req.companyId, ticket._id).catch(() => {});
+      return { aiMessage, escalated: true };
+    } catch (fallbackErr) {
+      console.error(
+        "[copilotFlow] escalation fallback failed:",
+        fallbackErr.message,
+      );
+      return { aiMessage: null, escalated: false };
+    }
   } finally {
     socketEmit.copilotTyping(chat._id, false, chat.user);
   }

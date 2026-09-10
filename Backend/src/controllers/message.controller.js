@@ -1,5 +1,7 @@
 import messageModel from "../models/message.model.js";
+import { pageMeta, parsePaging } from "../utils/pagination.js";
 import chatModel from "../models/chat.model.js";
+import ticketModel from "../models/ticket.model.js";
 import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { classifyIntent, scoreSentiment, generateReplySuggestions } from "../services/ai.service.js";
@@ -66,6 +68,15 @@ export const sendMessage = asyncHandler(async (req, res) => {
   // the conversation, and not an agent being assigned.
   if (req.role === "customer") {
     await markCustomerReplied(chat);
+  } else if (chat.ticket) {
+    // The single place firstResponseAt is set. assignAgent used to stamp it,
+    // which measured how fast an admin triaged rather than how fast the
+    // customer actually heard back. The `firstResponseAt: null` filter makes
+    // this first-write-wins, so a second reply never moves it.
+    await ticketModel.updateOne(
+      { _id: chat.ticket, firstResponseAt: null },
+      { $set: { firstResponseAt: new Date() } }
+    );
   }
 
   // Fire-and-forget AI classification for customer messages only
@@ -92,8 +103,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
 // ============================================
 export const getMessages = asyncHandler(async (req, res) => {
   const { chatId } = req.params;
-  const { page = 1, limit = 30 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const { page, limit, skip } = parsePaging(req.query, { defaultLimit: 30 });
 
   await assertChatAccess(chatId, req);
 
@@ -102,7 +113,7 @@ export const getMessages = asyncHandler(async (req, res) => {
       .find({ chat: chatId })
       .sort({ createdAt: 1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(limit)
       .lean(),
     messageModel.countDocuments({ chat: chatId }),
   ]);
@@ -110,12 +121,7 @@ export const getMessages = asyncHandler(async (req, res) => {
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: messages,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      pages: Math.ceil(total / parseInt(limit)),
-    },
+    pagination: pageMeta(total, { page, limit }),
   });
 });
 

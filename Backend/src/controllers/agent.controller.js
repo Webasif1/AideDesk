@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { pageMeta, parsePaging } from "../utils/pagination.js";
 import mongoose from "mongoose";
 import agentModel from "../models/aget.model.js";
 import ticketModel from "../models/ticket.model.js";
@@ -193,8 +194,8 @@ export const getAgentStats = asyncHandler(async (req, res) => {
 // Admin: all agents in their company
 // ============================================
 export const getAgents = asyncHandler(async (req, res) => {
-  const { status, accountStatus, page = 1, limit = 20 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const { status, accountStatus } = req.query;
+  const { page, limit, skip } = parsePaging(req.query);
 
   const filter = { companyId: req.companyId };
   if (req.workspaceId) {filter.workspaceId = req.workspaceId;}
@@ -214,19 +215,14 @@ export const getAgents = asyncHandler(async (req, res) => {
       .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit)),
+      .limit(limit),
     agentModel.countDocuments(filter),
   ]);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: agents,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      pages: Math.ceil(total / parseInt(limit)),
-    },
+    pagination: pageMeta(total, { page, limit }),
   });
 });
 

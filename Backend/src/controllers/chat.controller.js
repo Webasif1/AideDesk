@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { pageMeta, parsePaging } from "../utils/pagination.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
 import agentModel from "../models/aget.model.js";
@@ -107,8 +108,8 @@ export const sendCopilotMessage = asyncHandler(async (req, res) => {
 // Supports: ?status=active&page=1&limit=20
 // ============================================
 export const getChats = asyncHandler(async (req, res) => {
-  const { status, customerId, page = 1, limit = 20 } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const { status, customerId } = req.query;
+  const { page, limit, skip } = parsePaging(req.query);
 
   let filter = {};
 
@@ -163,19 +164,14 @@ export const getChats = asyncHandler(async (req, res) => {
       .populate("ticket", "ticketNumber title description status priority attachments createdBy createdByModel")
       .sort({ lastActivity: -1 })
       .skip(skip)
-      .limit(parseInt(limit)),
+      .limit(limit),
     chatModel.countDocuments(filter)
   ]);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: chats,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      pages: Math.ceil(total / parseInt(limit))
-    }
+    pagination: pageMeta(total, { page, limit })
   });
 });
 

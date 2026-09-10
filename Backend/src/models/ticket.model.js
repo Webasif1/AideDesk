@@ -161,17 +161,50 @@ const ticketSchema = new mongoose.Schema(
     customerRepliedAt: {
       type: Date,
       default: null
-    }
+    },
+
+    // Set to "unassigned" when a ticket escalates but no agent was eligible, so
+    // the queue is visible instead of the ticket quietly sitting in
+    // in_progress with nobody on it. Cleared on assignment.
+    escalationState: {
+      type: String,
+      enum: ["unassigned", null],
+      default: null
+    },
+
+    // Makes reopen/resolve cycles auditable. Without it there is no way to
+    // tell a ticket resolved once from one resolved, reopened and resolved
+    // again — exactly the case the resolvedAt guard used to get wrong.
+    statusHistory: [
+      {
+        _id: false,
+        from: { type: String },
+        to: { type: String },
+        by: { type: mongoose.Schema.Types.ObjectId },
+        role: { type: String },
+        at: { type: Date, default: Date.now }
+      }
+    ]
   },
   { timestamps: true }
 );
 
+// Date.now().slice(-6) collided outright for two tickets created in the same
+// millisecond — and ticketNumber carries a unique index, so the second create
+// threw. Millisecond timestamp in base36 (monotonic, so numbers still sort by
+// age) plus random entropy to break ties within a tick.
 ticketSchema.pre('save', function () {
   if (!this.ticketNumber) {
-    this.ticketNumber = 'TKT-' + Date.now().toString().slice(-6);
+    const stamp = Date.now().toString(36).toUpperCase().slice(-6);
+    const salt = Math.random().toString(36).toUpperCase().slice(2, 6);
+    this.ticketNumber = `TKT-${stamp}${salt}`;
   }
-  ;
 });
+
+// Every list view filters by company and then by status or assignee, so these
+// two cover the hot paths and keep those queries off a collection scan.
+ticketSchema.index({ companyId: 1, status: 1, createdAt: -1 });
+ticketSchema.index({ companyId: 1, assignedAgent: 1 });
 
 const ticketModel = mongoose.model('ticket', ticketSchema);
 export default ticketModel;

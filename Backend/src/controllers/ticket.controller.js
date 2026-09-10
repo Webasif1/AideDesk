@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import { pageMeta, parsePaging } from "../utils/pagination.js";
 import ticketModel from "../models/ticket.model.js";
 import agentModel from "../models/aget.model.js";
 import chatModel from "../models/chat.model.js";
 import messageModel from "../models/message.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { HTTP_STATUS, ERROR_MESSAGES, ACCOUNT_VISIBLE } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import { escapeRegex } from "../utils/regex.js";
 import { emitDomain, socketEmit } from "../sockets/emit.js";
@@ -195,12 +196,26 @@ export const createTicket = asyncHandler(async (req, res) => {
 // Customer: own tickets only
 // Query: ?status=open&priority=high&category=billing&assignedAgent=id&page=1&limit=20&from=date&to=date
 // ============================================
+// Legal status moves. A ticket previously accepted any enum value from any
+// state, so "closed -> resolved" and "open -> forced_closed" both went through.
+//
+// forced_closed is reachable only when a customer's account is deleted (see
+// user.controller), never through this endpoint — hence no entry leading to it.
+const TICKET_TRANSITIONS = {
+  open: ["pending", "in_progress", "resolved", "closed"],
+  pending: ["open", "in_progress", "resolved", "closed"],
+  in_progress: ["open", "pending", "resolved", "closed"],
+  resolved: ["open", "in_progress", "closed"],
+  closed: ["open"],
+  forced_closed: ["open"]
+};
+
 export const getTickets = asyncHandler(async (req, res) => {
   const {
     status, priority, category, assignedAgent, search, slaBreached, sort,
-    page = 1, limit = 20, from, to
+    from, to
   } = req.query;
-  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const { page, limit, skip } = parsePaging(req.query);
 
   let filter = { companyId: req.companyId };
 
@@ -257,7 +272,7 @@ export const getTickets = asyncHandler(async (req, res) => {
       .populate("assignedAgent", "name email status profileImage")
       .sort(sortBy)
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(limit)
       .lean(),
     ticketModel.countDocuments(filter)
   ]);
@@ -265,12 +280,7 @@ export const getTickets = asyncHandler(async (req, res) => {
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: tickets,
-    pagination: {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      pages: Math.ceil(total / parseInt(limit))
-    }
+    pagination: pageMeta(total, { page, limit })
   });
 });
 
@@ -495,11 +505,34 @@ export const assignAgent = asyncHandler(async (req, res) => {
 
   assertTicketAccess(ticket, req);
 
-  const agent = await agentModel.findOne({ _id: agentId, companyId: req.companyId });
-  if (!agent) throw new AppError("Agent not found in your company", HTTP_STATUS.NOT_FOUND);
+  if (!mongoose.isValidObjectId(agentId)) {
+    throw new AppError("Invalid agentId", HTTP_STATUS.BAD_REQUEST, "INVALID_ID");
+  }
+
+  // Eligibility, not just existence: an unverified agent has never accepted
+  // their invite and a suspended one has no access, so assigning to either
+  // parks the ticket with somebody who cannot act on it.
+  const agent = await agentModel.findOne({
+    _id: agentId,
+    companyId: req.companyId,
+    accountStatus: ACCOUNT_VISIBLE,
+    isVerified: true
+  });
+  if (!agent) {
+    throw new AppError(
+      "Agent not found, or not eligible to receive work",
+      HTTP_STATUS.NOT_FOUND
+    );
+  }
 
   ticket.assignedAgent = agentId;
-  if (!ticket.firstResponseAt) ticket.firstResponseAt = new Date();
+  // The ticket now has an owner, so it is no longer waiting in the unassigned
+  // escalation queue.
+  ticket.escalationState = null;
+  // firstResponseAt is deliberately NOT set here. Assignment is not a response;
+  // stamping it meant the dashboard's average-first-response metric measured
+  // how fast an admin triaged, not how fast the customer heard back. It is set
+  // in message.controller when staff actually post.
   await ticket.save();
 
   // The conversation rides along with its ticket, otherwise the chat stays in
@@ -535,10 +568,12 @@ export const assignAgent = asyncHandler(async (req, res) => {
 // ============================================
 export const updateTicketStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const validStatuses = ["open", "pending", "in_progress", "resolved", "closed", "forced_closed"];
 
-  if (!validStatuses.includes(status)) {
-    throw new AppError(`Status must be one of: ${validStatuses.join(", ")}`, HTTP_STATUS.BAD_REQUEST);
+  if (!Object.prototype.hasOwnProperty.call(TICKET_TRANSITIONS, status)) {
+    throw new AppError(
+      `Status must be one of: ${Object.keys(TICKET_TRANSITIONS).join(", ")}`,
+      HTTP_STATUS.BAD_REQUEST
+    );
   }
 
   const ticket = await ticketModel.findById(req.params.id);
@@ -559,9 +594,33 @@ export const updateTicketStatus = asyncHandler(async (req, res) => {
     );
   }
 
+  const from = ticket.status;
+  if (!TICKET_TRANSITIONS[from]?.includes(status)) {
+    throw new AppError(
+      `Cannot move a ticket from ${from} to ${status}`,
+      HTTP_STATUS.BAD_REQUEST,
+      "INVALID_TRANSITION"
+    );
+  }
+
   ticket.status = status;
-  if (status === "resolved" && !ticket.resolvedAt) ticket.resolvedAt = new Date();
-  if (status === "closed" && !ticket.closedAt) ticket.closedAt = new Date();
+
+  // Timestamps describe the CURRENT state, not the first time it was ever
+  // reached. The old `if (!ticket.resolvedAt)` guard meant a ticket that was
+  // resolved, reopened and worked again still carried its original resolvedAt
+  // while sitting in `open` — so every metric derived from it was wrong.
+  ticket.resolvedAt = status === "resolved" ? new Date() : null;
+  ticket.closedAt =
+    status === "closed" || status === "forced_closed" ? new Date() : null;
+
+  ticket.statusHistory.push({
+    from,
+    to: status,
+    by: req.userId,
+    role: req.role,
+    at: new Date()
+  });
+
   await ticket.save();
 
   emitTicketEvent(req.companyId, ticket._id, "ticketUpdated");

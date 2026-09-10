@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { pageMeta, parsePaging } from "../utils/pagination.js";
 import userModel from '../models/user.model.js';
 import ticketModel from '../models/ticket.model.js';
 import companyModel from '../models/company.model.js';
@@ -15,6 +16,7 @@ import { AppError, asyncHandler } from '../utils/errorHandler.js';
 import { generateToken, generateResetToken } from '../utils/tokens.js';
 import { sendPasswordResetEmail, sendCustomerInviteEmail } from '../utils/email.js';
 import { disconnectUser } from '../sockets/server.socket.js';
+import { escapeRegex } from '../utils/regex.js';
 import { sendAccountStatusEmail } from '../utils/accountEmails.js';
 import { emitDomain } from '../sockets/emit.js';
 import { config } from '../config/config.js';
@@ -402,7 +404,7 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 // Query: ?status=online&search=&page=1&limit=20
 // ============================================
 export const getUsers = asyncHandler(async (req, res) => {
-  const { status, accountStatus, verified, search, page = 1, limit = 20 } = req.query;
+  const { status, accountStatus, verified, search } = req.query;
 
   const filter = { companyId: req.companyId };
   if (req.workspaceId) filter.workspaceId = req.workspaceId;
@@ -426,14 +428,18 @@ export const getUsers = asyncHandler(async (req, res) => {
 
   // Presence, a separate axis from account state.
   if (status) filter.status = status;
-  if (search) {
+  if (search && search.trim()) {
+    // Escaped, or the search box is a regex console: "((((" is a syntax error
+    // (a 500 to the user) and "(a+)+$" is catastrophic backtracking.
+    // ticket.controller already did this; this path was missed.
+    const term = escapeRegex(search.trim());
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
+      { name: { $regex: term, $options: 'i' } },
+      { email: { $regex: term, $options: 'i' } },
     ];
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const { page, limit, skip } = parsePaging(req.query);
 
   const [users, total] = await Promise.all([
     userModel
@@ -441,19 +447,14 @@ export const getUsers = asyncHandler(async (req, res) => {
       .select('-__v')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit)),
+      .limit(limit),
     userModel.countDocuments(filter),
   ]);
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
     data: users,
-    pagination: {
-      total,
-      page: Number(page),
-      limit: Number(limit),
-      pages: Math.ceil(total / Number(limit)),
-    },
+    pagination: pageMeta(total, { page, limit }),
   });
 });
 
