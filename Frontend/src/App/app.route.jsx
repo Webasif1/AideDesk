@@ -26,19 +26,17 @@ import WelcomePage from "../features/auth/Pages/WelcomePage";
 import PublicRoute from "../features/auth/components/PublicRoute";
 
 // Company portal (admin)
-import CompanyPortal from "../features/company/pages/CompanyPortal";
-import CompanyPortalHome from "../features/company/pages/CompanyPortalHome";
-import WorkspaceList from "../features/company/pages/WorkspaceList";
+import CompanyPortal from "../features/company/Pages/CompanyPortal";
+import CompanyPortalHome from "../features/company/Pages/CompanyPortalHome";
+import WorkspaceList from "../features/company/Pages/WorkspaceList";
 
 // Dashboard / app
 import Dashboard from "../features/dashboard/Pages/Dashboard";
 import Settings from "../features/settings/Pages/Settings";
-// NOTE: these three live in lowercase `pages/` on disk. Windows resolves either
-// spelling, Linux and Docker do not — keep the casing exact.
-import Customers from "../features/user/pages/Customers";
+import Customers from "../features/user/Pages/Customers";
 import Tickets from "../features/ticket/Pages/Tickets";
-import Team from "../features/agent/pages/Team";
-import ChatScreen from "../features/chat/pages/ChatScreen";
+import Team from "../features/agent/Pages/Team";
+import ChatScreen from "../features/chat/Pages/ChatScreen";
 import Billing from "../features/billing/Pages/Billing";
 
 // Onboarding

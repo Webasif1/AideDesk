@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:serve": "vite build --outDir ../Backend/public --emptyOutDir",
+    "build": "node scripts/check-import-case.mjs && vite build",
+    "build:serve": "node scripts/check-import-case.mjs && vite build --outDir ../Backend/public --emptyOutDir",
     "lint": "eslint .",
+    "check:imports": "node scripts/check-import-case.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

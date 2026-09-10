@@ -1,7 +1,7 @@
 import Navbar from "../Components/landing/Navbar";
 import Footer from "../Components/landing/Footer";
-import PageWrapper from "../../Components/ui/FadeUp";
-import FadeUp from "../../Components/ui/FadeUp";
+import PageWrapper from "../Components/ui/PageWrapper";
+import FadeUp from "../../components/ui/FadeUp";
 import PrivacySidebar from "../Components/privacy/PrivacySidebar";
 import PrivacySection from "../Components/privacy/PrivacySection";
 

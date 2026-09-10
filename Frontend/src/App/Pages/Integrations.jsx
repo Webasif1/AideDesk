@@ -1,7 +1,7 @@
 import Navbar from "../Components/landing/Navbar";
 import Footer from "../Components/landing/Footer";
 import PageWrapper from "../Components/ui/PageWrapper";
-import FadeUp from "../../Components/ui/FadeUp";
+import FadeUp from "../../components/ui/FadeUp";
 import IntegrationsHero from "../Components/integrations/IntegrationsHero";
 import IntegrationsGrid from "../Components/integrations/IntegrationsGrid";
 

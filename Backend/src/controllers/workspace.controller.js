@@ -4,7 +4,7 @@ import agentModel from "../models/aget.model.js";
 import userModel from "../models/user.model.js";
 import chatModel from "../models/chat.model.js";
 import ticketModel from "../models/ticket.model.js";
-import { HTTP_STATUS, ERROR_MESSAGES } from "../config/constants.js";
+import { HTTP_STATUS } from "../config/constants.js";
 import { AppError, asyncHandler } from "../utils/errorHandler.js";
 import companyModel from "../models/company.model.js";
 import slaConfigModel from "../models/slaConfig.model.js";

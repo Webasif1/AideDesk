@@ -16,7 +16,7 @@ services:
   backend:
     build:
       context: ./Backend
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     # Public DNS so the container can resolve MongoDB Atlas (SRV), OpenRouter,

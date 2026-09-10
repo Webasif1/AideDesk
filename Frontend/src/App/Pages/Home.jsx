@@ -6,7 +6,7 @@ import IntegrationFlowSection from "../Components/landing/IntegrationFlowSection
 import CTASection from "../Components/landing/CTASection";
 import Footer from "../Components/landing/Footer";
 import PageWrapper from "../Components/ui/PageWrapper";
-import FadeUp from "../../Components/ui/FadeUp";
+import FadeUp from "../../components/ui/FadeUp";
 
 const Home = () => {
   return (

@@ -3,6 +3,7 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import morgan from "morgan";
+import { config } from "./config/config.js";
 
 // ============================================
 // Import Routes
@@ -39,9 +40,9 @@ const __dirname = path.resolve();
  */
 app.use(
   cors({
-    origin:
-      process.env.FRONTEND_URL ||
-      `http://localhost:${process.env.FRONTEND_PORT}`,
+    // Read through config so Express and Socket.IO (server.socket.js) agree on
+    // the allowed origin — reading process.env directly here meant they didn't.
+    origin: config.FRONTEND_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-workspace-id"],
