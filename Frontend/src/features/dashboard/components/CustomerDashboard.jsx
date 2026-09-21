@@ -4,101 +4,73 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-import KpiCard from "./KpiCard";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
-import { SkeletonCard } from "../../../components/ui/Skeleton";
+import Badge from "../../../components/ui/Badge";
 import { useTicket } from "../../ticket/hooks/useTicket";
-import {
-  ticketStatusLabel,
-  ticketStatusBadgeClass,
-  ticketPriorityLabel,
-  formatRelative,
-  shortId,
-} from "../../../lib/format";
+import { formatRelative, shortId } from "../../../lib/format";
 
-// Ordered status buckets for the "By Status" breakdown. Raw backend keys are
-// grouped into the same three labels the rest of the app shows, so a customer
-// never sees "Open" here and "New" on the ticket list for the same ticket.
-const STATUS_ORDER = [
-  { key: "open", label: "New", color: "bg-neutral-400" },
-  { key: "in_progress", label: "In Progress", color: "bg-blue-500" },
-  { key: "resolved", label: "Resolved", color: "bg-emerald-500" },
-];
+// Customers see progress in plain language, never internal status keys.
+// `pending` is a legacy value the copilot used to set; it reads as in progress.
+const STAGE = {
+  open: { step: 1, label: "Received", tone: "info" },
+  pending: { step: 2, label: "In progress", tone: "warn" },
+  in_progress: { step: 2, label: "In progress", tone: "warn" },
+  resolved: { step: 3, label: "Resolved", tone: "ok" },
+  closed: { step: 3, label: "Resolved", tone: "ok" },
+  forced_closed: { step: 3, label: "Closed", tone: "neutral" },
+};
+const STEPS = ["Received", "In progress", "Resolved"];
+const stageOf = (t) => STAGE[t.status] || STAGE.open;
 
-const CATEGORY_COLORS = [
-  "bg-brand",
-  "bg-neutral-500",
-  "bg-neutral-400",
-  "bg-neutral-300",
-];
+const fadeUp = (delay) => ({
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.3, delay, ease: [0.2, 0.8, 0.2, 1] },
+});
+
+const Progress = ({ step }) => (
+  <ol aria-label={`Progress: ${STEPS[step - 1]}`} className="grid grid-cols-3 gap-2">
+    {STEPS.map((label, i) => {
+      const done = i < step;
+      return (
+        <li key={label} aria-current={i === step - 1 ? "step" : undefined} className="flex flex-col gap-2">
+          <span className={`h-1.5 rounded-full ${done ? "bg-forest-700 dark:bg-sage" : "bg-neutral-200 dark:bg-neutral-800"}`} />
+          <span className={`text-[12px] ${i === step - 1 ? "font-semibold text-on-surface" : done ? "text-on-surface" : "text-neutral-500"}`}>{label}</span>
+        </li>
+      );
+    })}
+  </ol>
+);
 
 const CustomerDashboard = ({ user }) => {
   const navigate = useNavigate();
   const { tickets, getTickets } = useTicket();
   const loading = useSelector((s) => s.ticket.loading);
-
-  const firstName = (user?.fullName || user?.name || "there").split(/\s+/)[0];
+  const firstName = (user?.fullName || user?.name || "").split(/\s+/)[0];
 
   useEffect(() => {
     getTickets({ limit: 100 }).catch(() => {});
   }, [getTickets]);
 
-  const { total, open, inProgress, resolved, byStatus, byCategory } =
-    useMemo(() => {
-      const byStatus = {};
-      const byCategory = {};
-      for (const t of tickets) {
-        // `pending` is a legacy value the copilot used to set; fold it into
-        // in_progress so the breakdown matches the labels shown elsewhere.
-        const key = t.status === "pending" ? "in_progress" : t.status;
-        byStatus[key] = (byStatus[key] || 0) + 1;
-        const cat = t.category || "general";
-        byCategory[cat] = (byCategory[cat] || 0) + 1;
+  const { openOnes, doneOnes, counts } = useMemo(() => {
+    const openOnes = [];
+    const doneOnes = [];
+    const counts = { received: 0, progress: 0, resolved: 0 };
+    for (const t of tickets) {
+      const s = stageOf(t);
+      if (s.step === 3) {
+        doneOnes.push(t);
+        counts.resolved += 1;
+      } else {
+        openOnes.push(t);
+        counts[s.step === 1 ? "received" : "progress"] += 1;
       }
-      return {
-        total: tickets.length,
-        open: byStatus.open || 0,
-        inProgress: byStatus.in_progress || 0,
-        resolved: (byStatus.resolved || 0) + (byStatus.closed || 0),
-        byStatus,
-        byCategory,
-      };
-    }, [tickets]);
+    }
+    const recent = (a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+    return { openOnes: openOnes.sort(recent), doneOnes: doneOnes.sort(recent), counts };
+  }, [tickets]);
 
-  const kpis = [
-    {
-      icon: "confirmation_number",
-      label: "My Tickets",
-      value: total.toLocaleString(),
-      badge: "total",
-      badgeType: "neutral",
-    },
-    {
-      icon: "radio_button_checked",
-      label: "Open",
-      value: open.toLocaleString(),
-      badge: "awaiting",
-      badgeType: "neutral",
-    },
-    {
-      icon: "pending",
-      label: "In Progress",
-      value: inProgress.toLocaleString(),
-      badge: "active",
-      badgeType: "neutral",
-    },
-    {
-      icon: "check_circle",
-      label: "Resolved",
-      value: resolved.toLocaleString(),
-      badge: "completed",
-      badgeType: "success",
-    },
-  ];
-
-  const showSkeleton = loading && tickets.length === 0;
-  const recent = tickets.slice(0, 5);
-  const categoryEntries = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+  const initialLoad = loading && tickets.length === 0;
 
   return (
     <PageWrapper>
@@ -106,190 +78,134 @@ const CustomerDashboard = ({ user }) => {
         <Sidebar />
         <div className="ml-64 min-h-screen flex flex-col">
           <TopBar />
-          <main className="p-[32px] flex flex-col gap-[32px] flex-1">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="flex justify-between items-end"
+          <main className="p-6 md:p-8 flex flex-col gap-6 flex-1">
+            <motion.section
+              {...fadeUp(0)}
+              className="relative overflow-hidden flex flex-col md:flex-row md:items-center gap-6 px-7 py-8 md:px-9 rounded-[24px] bg-forest-900 text-mint"
             >
-              <div>
-                <h2 className="text-[32px] font-bold text-black dark:text-white tracking-tight">
-                  Welcome back, {firstName}
-                </h2>
-                <p className="text-[14px] text-neutral-500 dark:text-neutral-400">
-                  Here's an overview of your support requests.
+              <div aria-hidden="true" className="absolute -right-16 -top-10 w-[420px] flex flex-col -rotate-12 opacity-80 pointer-events-none">
+                <span className="h-16 rounded-full bg-forest-800" />
+                <span className="h-16 -mt-6 rounded-full bg-forest-700" />
+                <span className="h-16 -mt-6 rounded-full bg-sage/50" />
+              </div>
+              <div className="relative flex-1 flex flex-col gap-2">
+                <h1 className="font-display text-[28px] md:text-[32px] font-extrabold tracking-[-0.03em]">
+                  Hi{firstName ? ` ${firstName}` : ""}, how can we help?
+                </h1>
+                <p className="text-[15px] text-[#b9d6c0] max-w-[520px]">
+                  Start a chat for a quick answer. If it needs a person, we'll open a request and keep you posted here.
                 </p>
               </div>
-              <button
-                onClick={() => navigate("/dashboard/chat")}
-                className="flex items-center gap-[8px] bg-brand text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  chat_bubble_outline
-                </span>
-                Get Support
-              </button>
-            </motion.div>
-
-            {/* KPIs */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.08, ease: "easeOut" }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[24px]"
-            >
-              {showSkeleton
-                ? [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
-                : kpis.map((k) => <KpiCard key={k.label} {...k} />)}
-            </motion.div>
-
-            {/* Breakdown: status + category */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.16, ease: "easeOut" }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]"
-            >
-              {/* By status */}
-              <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
-                <h4 className="font-bold text-black dark:text-white mb-[20px]">
-                  Tickets by Status
-                </h4>
-                {total === 0 ? (
-                  <p className="text-[13px] text-neutral-400">No tickets yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-[16px]">
-                    {STATUS_ORDER.map((s) => {
-                      const count = byStatus[s.key] || 0;
-                      const pct = total ? Math.round((count / total) * 100) : 0;
-                      return (
-                        <div key={s.key}>
-                          <div className="flex items-center justify-between mb-[6px]">
-                            <span className="text-[13px] text-neutral-600 dark:text-neutral-300">
-                              {s.label}
-                            </span>
-                            <span className="text-[13px] font-bold text-black dark:text-white">
-                              {count}
-                            </span>
-                          </div>
-                          <div className="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${s.color}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* By category */}
-              <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
-                <h4 className="font-bold text-black dark:text-white mb-[20px]">
-                  Tickets by Category
-                </h4>
-                {categoryEntries.length === 0 ? (
-                  <p className="text-[13px] text-neutral-400">No tickets yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-[16px]">
-                    {categoryEntries.map(([cat, count], i) => {
-                      const pct = total ? Math.round((count / total) * 100) : 0;
-                      return (
-                        <div key={cat}>
-                          <div className="flex items-center justify-between mb-[6px]">
-                            <span className="text-[13px] text-neutral-600 dark:text-neutral-300 capitalize">
-                              {cat}
-                            </span>
-                            <span className="text-[13px] font-bold text-black dark:text-white">
-                              {count}
-                            </span>
-                          </div>
-                          <div className="h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                CATEGORY_COLORS[i % CATEGORY_COLORS.length]
-                              }`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Recent tickets */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.24, ease: "easeOut" }}
-              className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
-                <h4 className="font-bold text-black dark:text-white">
-                  Recent Tickets
-                </h4>
+              <div className="relative flex flex-wrap gap-3">
                 <button
-                  onClick={() => navigate("/dashboard/tickets")}
-                  className="text-[12px] font-semibold text-neutral-500 hover:text-black dark:hover:text-white transition-colors"
+                  type="button"
+                  onClick={() => navigate("/dashboard/chat")}
+                  className="h-12 px-5 rounded-full bg-sage text-forest-950 text-[15px] font-semibold flex items-center gap-2 hover:bg-mint transition-colors active:scale-[0.98]"
                 >
-                  View all
+                  <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                  Start a chat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard/tickets")}
+                  className="h-12 px-5 rounded-full border border-forest-700 text-mint text-[15px] font-semibold flex items-center hover:bg-forest-800 transition-colors"
+                >
+                  My tickets
                 </button>
               </div>
+            </motion.section>
 
-              {recent.length === 0 ? (
-                <div className="px-[24px] py-[48px] text-center">
-                  <span className="material-symbols-outlined text-neutral-300 dark:text-neutral-700 text-[40px] block mb-[8px]">
-                    confirmation_number
-                  </span>
-                  <p className="text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-                    No tickets yet
-                  </p>
-                  <p className="text-[12px] text-neutral-400 mt-[2px]">
-                    Start a chat with support to create your first ticket.
-                  </p>
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-5">
+              <motion.section {...fadeUp(0.06)} aria-labelledby="open-h" className="flex flex-col gap-3.5">
+                <div className="flex items-center justify-between">
+                  <h2 id="open-h" className="font-display text-[18px] font-bold text-on-surface">
+                    Your open requests
+                  </h2>
+                  {openOnes.length > 3 && (
+                    <button type="button" onClick={() => navigate("/dashboard/tickets")} className="text-[13px] font-semibold text-forest-700 dark:text-sage">
+                      View all {openOnes.length}
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="divide-y divide-neutral-50 dark:divide-neutral-800">
-                  {recent.map((t) => {
-                    const label = ticketStatusLabel(t.status, t.slaBreached);
+
+                {initialLoad ? (
+                  [0, 1].map((i) => <div key={i} className="h-[150px] rounded-[20px] bg-neutral-100 dark:bg-neutral-900 animate-pulse" />)
+                ) : openOnes.length ? (
+                  openOnes.slice(0, 3).map((t) => {
+                    const s = stageOf(t);
                     return (
                       <button
                         key={t._id}
+                        type="button"
                         onClick={() => navigate("/dashboard/tickets")}
-                        className="w-full text-left flex items-center gap-[16px] px-[24px] py-[14px] hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                        className="flex flex-col gap-4 p-5 md:p-6 rounded-[20px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800 text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-lg"
                       >
-                        <span
-                          className={`px-2 py-1 text-[10px] font-bold rounded uppercase shrink-0 ${ticketStatusBadgeClass(
-                            label
-                          )}`}
-                        >
-                          {label}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-semibold text-black dark:text-white truncate">
-                            {t.title}
-                          </p>
-                          <p className="text-[11px] text-neutral-400">
-                            {shortId(t._id)} • {t.category || "general"} •{" "}
-                            {ticketPriorityLabel(t.priority)} priority
-                          </p>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0 flex flex-col gap-1">
+                            <span className="text-[16px] font-semibold text-on-surface">{t.title}</span>
+                            <span className="text-[13px] text-neutral-500">
+                              Request {t.ticketNumber || shortId(t._id)} · opened {formatRelative(t.createdAt)}
+                            </span>
+                          </div>
+                          <Badge tone={s.tone}>{s.label}</Badge>
                         </div>
-                        <span className="text-[11px] text-neutral-400 shrink-0">
-                          {formatRelative(t.createdAt)}
-                        </span>
+                        <Progress step={s.step} />
                       </button>
                     );
-                  })}
-                </div>
-              )}
-            </motion.div>
+                  })
+                ) : (
+                  <div className="flex flex-col items-center gap-3 px-6 py-12 rounded-[20px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800 text-center">
+                    <span className="w-14 h-14 rounded-2xl bg-ok-soft text-ok flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[28px]">task_alt</span>
+                    </span>
+                    <p className="text-[16px] font-semibold text-on-surface">No open requests</p>
+                    <p className="text-[14px] text-neutral-500 max-w-[360px]">If something comes up, start a chat and we'll take it from there.</p>
+                  </div>
+                )}
+              </motion.section>
+
+              <motion.aside {...fadeUp(0.12)} className="flex flex-col gap-5">
+                <section aria-labelledby="sum-h" className="flex flex-col gap-3 p-5 rounded-[20px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800">
+                  <h2 id="sum-h" className="font-display text-[16px] font-bold text-on-surface">
+                    At a glance
+                  </h2>
+                  <dl className="grid grid-cols-3 gap-2">
+                    {[
+                      ["Received", counts.received],
+                      ["In progress", counts.progress],
+                      ["Resolved", counts.resolved],
+                    ].map(([l, v]) => (
+                      <div key={l} className="flex flex-col-reverse gap-0.5 p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950">
+                        <dt className="text-[11px] text-neutral-500">{l}</dt>
+                        <dd className="font-display text-[22px] font-bold text-on-surface m-0">{initialLoad ? "—" : v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+
+                <section aria-labelledby="done-h" className="flex flex-col gap-1 p-5 rounded-[20px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800">
+                  <h2 id="done-h" className="font-display text-[16px] font-bold text-on-surface mb-2">
+                    Recently resolved
+                  </h2>
+                  {doneOnes.length ? (
+                    doneOnes.slice(0, 4).map((t) => (
+                      <button
+                        key={t._id}
+                        type="button"
+                        onClick={() => navigate("/dashboard/tickets")}
+                        className="flex items-center gap-3 py-2.5 border-t border-neutral-100 dark:border-neutral-800 first:border-0 text-left"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-ok">check_circle</span>
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-on-surface truncate">{t.title}</span>
+                        <span className="text-[11px] text-neutral-500 shrink-0">{formatRelative(t.updatedAt || t.createdAt)}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-[13px] text-neutral-500">Nothing resolved yet.</p>
+                  )}
+                </section>
+              </motion.aside>
+            </div>
           </main>
         </div>
       </div>
