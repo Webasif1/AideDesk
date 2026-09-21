@@ -1,25 +1,22 @@
-const KpiCard = ({ icon, label, value, badge, badgeType = "success" }) => {
-  const badgeStyles = {
-    success: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950",
-    neutral: "text-neutral-400 bg-neutral-50 dark:text-neutral-400 dark:bg-neutral-900",
-  };
+import Badge from "../../../components/ui/Badge";
 
-  return (
-    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] transition-all hover:border-black/20 dark:hover:border-white/20">
-      <div className="flex justify-between items-start mb-[16px]">
-        <div className="p-[8px] bg-neutral-50 dark:bg-neutral-700 rounded-lg text-black dark:text-white">
-          <span className="material-symbols-outlined">{icon}</span>
-        </div>
-        <span
-          className={`text-[11px] font-semibold px-[8px] py-[4px] rounded-full ${badgeStyles[badgeType]}`}
-        >
-          {badge}
-        </span>
-      </div>
-      <p className="text-neutral-500 dark:text-neutral-400 text-[13px] font-medium">{label}</p>
-      <h3 className="text-[30px] font-bold mt-[4px] tracking-tight text-black dark:text-white">{value}</h3>
+// badgeType maps onto the shared Badge tones; "success" is kept for callers
+// written before the design-system tones existed.
+const TONE = { success: "ok", neutral: "neutral", warn: "warn", err: "err", info: "info", ok: "ok" };
+
+const KpiCard = ({ icon, label, value, badge, badgeType = "neutral" }) => (
+  <div className="flex flex-col gap-3 p-5 rounded-[20px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800 transition-shadow hover:shadow-md">
+    <div className="flex items-center justify-between gap-2">
+      <span className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-forest-700 dark:text-sage flex items-center justify-center">
+        <span className="material-symbols-outlined text-[20px]">{icon}</span>
+      </span>
+      {badge && <Badge tone={TONE[badgeType] || "neutral"}>{badge}</Badge>}
     </div>
-  );
-};
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[13px] font-medium text-neutral-600 dark:text-neutral-400">{label}</p>
+      <p className="font-display text-[30px] font-bold tracking-[-0.03em] text-on-surface">{value}</p>
+    </div>
+  </div>
+);
 
 export default KpiCard;
