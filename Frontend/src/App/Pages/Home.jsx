@@ -1,32 +1,32 @@
 import Navbar from "../Components/landing/Navbar";
 import HeroSection from "../Components/landing/HeroSection";
 import StatsSection from "../Components/landing/StatsSection";
-import FeaturesSection from "../Components/landing/FeaturesSection";
-import IntegrationFlowSection from "../Components/landing/IntegrationFlowSection";
-import CTASection from "../Components/landing/CTASection";
+import WhySection from "../Components/landing/WhySection";
+import FeatureRows from "../Components/landing/FeatureRows";
+import SecuritySection from "../Components/landing/SecuritySection";
+import PricingTeaser from "../Components/landing/PricingTeaser";
 import Footer from "../Components/landing/Footer";
 import PageWrapper from "../Components/ui/PageWrapper";
 import FadeUp from "../../components/ui/FadeUp";
 
+// Testimonials and customer logos are intentionally absent until there are
+// real ones to show. The footer carries the closing call to action.
 const Home = () => {
   return (
     <PageWrapper>
       <div className="bg-background text-on-background antialiased">
         <Navbar />
-        <FadeUp delay={0}>
-          <HeroSection />
+        <HeroSection />
+        <StatsSection />
+        <FadeUp>
+          <WhySection />
         </FadeUp>
-        <FadeUp delay={0.05}>
-          <StatsSection />
+        <FeatureRows />
+        <FadeUp>
+          <SecuritySection />
         </FadeUp>
-        <FadeUp delay={0.05}>
-          <FeaturesSection />
-        </FadeUp>
-        <FadeUp delay={0.05}>
-          <IntegrationFlowSection />
-        </FadeUp>
-        <FadeUp delay={0.05}>
-          <CTASection />
+        <FadeUp>
+          <PricingTeaser />
         </FadeUp>
         <Footer />
       </div>
