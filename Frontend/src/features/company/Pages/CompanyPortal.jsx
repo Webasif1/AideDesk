@@ -35,13 +35,13 @@ const CompanyPortal = () => {
   };
 
   return (
-    <div className="flex h-screen bg-surface-container-lowest dark:bg-[#111]">
+    <div className="flex h-screen bg-surface-container-lowest dark:bg-[#051f20]">
       {/* Sidebar */}
       <aside className="w-[220px] shrink-0 flex flex-col border-r border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-950">
         {/* Brand */}
         <div className="px-5 pt-5 pb-4 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-black dark:bg-white flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
               <span className="text-white dark:text-black font-bold text-[13px]">A</span>
             </div>
             <span className="text-[14px] font-bold text-black dark:text-white">AideDesk</span>

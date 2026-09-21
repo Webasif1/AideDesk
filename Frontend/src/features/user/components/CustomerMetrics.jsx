@@ -32,7 +32,7 @@ const CustomerMetrics = () => {
       right: (
         <div className="h-1.5 w-24 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-black dark:bg-white"
+            className="h-full bg-brand"
             style={{ width: `${stats?.activeRate ?? 0}%` }}
           />
         </div>
@@ -63,7 +63,7 @@ const CustomerMetrics = () => {
       {metrics.map((m) => (
         <div
           key={m.label}
-          className="bg-white dark:bg-[#1a1a1a] border border-neutral-100 dark:border-neutral-700 p-[24px] rounded-xl"
+          className="bg-white dark:bg-[#0b2b26] border border-neutral-100 dark:border-neutral-700 p-[24px] rounded-xl"
         >
           <p className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-[8px]">
             {m.label}

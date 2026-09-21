@@ -13,7 +13,7 @@ const Team = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-white dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-white dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
         <div className="ml-64 min-h-screen flex flex-col">
           <TopBar />
@@ -34,7 +34,7 @@ const Team = () => {
               </div>
               <button
                 onClick={() => setShowModal(true)}
-                className="bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 active:scale-95"
+                className="bg-brand text-white dark:text-black px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 active:scale-95"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
                 Add Agent

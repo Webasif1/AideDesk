@@ -66,7 +66,7 @@ const AddAgentModal = ({ onClose }) => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.98 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
-        className="max-w-[640px] w-full bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-xl dark:shadow-none"
+        className="max-w-[640px] w-full bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-xl dark:shadow-none"
       >
         {/* Header */}
         <div className="px-[32px] py-[24px] border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
@@ -106,7 +106,7 @@ const AddAgentModal = ({ onClose }) => {
                 value={form.name}
                 onChange={set("name")}
                 placeholder="e.g. Sarah Jenkins"
-                className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+                className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
               />
             </div>
             <div className="flex flex-col gap-[8px]">
@@ -118,7 +118,7 @@ const AddAgentModal = ({ onClose }) => {
                 value={form.email}
                 onChange={set("email")}
                 placeholder="sarah@company.com"
-                className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
+                className="w-full h-11 px-[16px] bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors"
               />
             </div>
           </div>
@@ -174,7 +174,7 @@ const AddAgentModal = ({ onClose }) => {
         </motion.div>
 
         {/* Footer */}
-        <div className="px-[32px] py-[24px] bg-neutral-50 dark:bg-[#111] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[16px]">
+        <div className="px-[32px] py-[24px] bg-neutral-50 dark:bg-[#051f20] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[16px]">
           <button
             type="button"
             onClick={onClose}
@@ -185,7 +185,7 @@ const AddAgentModal = ({ onClose }) => {
           <button
             type="submit"
             disabled={submitting}
-            className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors flex items-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-brand text-white dark:text-black rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors flex items-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>

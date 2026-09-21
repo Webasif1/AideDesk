@@ -15,7 +15,7 @@ const TicketSummaryCard = ({ ticket }) => {
 
   return (
     <div className="flex justify-center mb-[16px]">
-      <div className="w-full max-w-[560px] rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[18px] py-[16px] shadow-sm dark:shadow-none">
+      <div className="w-full max-w-[560px] rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] px-[18px] py-[16px] shadow-sm dark:shadow-none">
         <div className="flex items-start gap-[10px]">
           <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[18px] text-neutral-500 dark:text-neutral-400">

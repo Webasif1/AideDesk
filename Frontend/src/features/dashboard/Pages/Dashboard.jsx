@@ -89,7 +89,7 @@ const AgentDashboard = ({ ticketStats, ticketLoading, loadStats, user }) => {
 
   return (
     <PageWrapper>
-      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
         <div className="ml-64 min-h-screen flex flex-col">
           <TopBar />
@@ -148,14 +148,14 @@ const AgentDashboard = ({ ticketStats, ticketLoading, loadStats, user }) => {
               className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]"
             >
               {/* Quick links – spans 2 cols */}
-              <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
+              <div className="lg:col-span-2 bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
                 <h4 className="font-bold text-black dark:text-white mb-[20px]">Quick Links</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
                   <button
                     onClick={() => navigate("/dashboard/tickets")}
                     className="flex items-center gap-[14px] p-[16px] bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-xl border border-neutral-100 dark:border-neutral-700 transition-all active:scale-[0.98] group text-left"
                   >
-                    <div className="w-10 h-10 bg-black dark:bg-white rounded-lg flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center shrink-0">
                       <span className="material-symbols-outlined text-white dark:text-black text-[20px]">confirmation_number</span>
                     </div>
                     <div>
@@ -167,7 +167,7 @@ const AgentDashboard = ({ ticketStats, ticketLoading, loadStats, user }) => {
                     onClick={() => navigate("/dashboard/chat")}
                     className="flex items-center gap-[14px] p-[16px] bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-xl border border-neutral-100 dark:border-neutral-700 transition-all active:scale-[0.98] group text-left"
                   >
-                    <div className="w-10 h-10 bg-black dark:bg-white rounded-lg flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center shrink-0">
                       <span className="material-symbols-outlined text-white dark:text-black text-[20px]">chat_bubble_outline</span>
                     </div>
                     <div>
@@ -179,7 +179,7 @@ const AgentDashboard = ({ ticketStats, ticketLoading, loadStats, user }) => {
               </div>
 
               {/* Performance snapshot – 1 col */}
-              <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col gap-[20px]">
+              <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col gap-[20px]">
                 <h4 className="font-bold text-black dark:text-white">My Performance</h4>
                 <div className="flex flex-col gap-[16px]">
                   <div className="flex items-center justify-between">
@@ -274,7 +274,7 @@ const Dashboard = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -307,7 +307,7 @@ const Dashboard = () => {
                 </button>
                 <button
                   onClick={() => setShowReport(true)}
-                  className="flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
+                  className="flex items-center gap-[8px] bg-brand text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     add

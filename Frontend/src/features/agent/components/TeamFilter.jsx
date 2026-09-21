@@ -9,7 +9,7 @@ const TeamFilter = ({ active, onChange, search, onSearch }) => (
           onClick={() => onChange(f)}
           className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
             active === f
-              ? "bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 shadow-sm text-black dark:text-white"
+              ? "bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 shadow-sm text-black dark:text-white"
               : "text-neutral-500 hover:text-black dark:hover:text-white"
           }`}
         >

@@ -50,7 +50,7 @@ const GeneralSection = () => {
   };
 
   return (
-    <section className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+    <section className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
         <h3 className="text-[18px] font-semibold text-black dark:text-white">
           General Workspace
@@ -73,7 +73,7 @@ const GeneralSection = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Workspace name"
-              className="w-full px-[16px] py-[8px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-sm focus:border-black dark:focus:border-white focus:ring-0 outline-none transition-colors"
+              className="w-full px-[16px] py-[8px] bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-sm focus:border-black dark:focus:border-white focus:ring-0 outline-none transition-colors"
             />
           </div>
         </div>
@@ -120,7 +120,7 @@ const GeneralSection = () => {
             <Tooltip text="Coming soon" className="w-full">
               <select
                 disabled
-                className="w-full px-[16px] py-[8px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-neutral-400 dark:text-neutral-500 rounded-lg text-sm outline-none opacity-60 cursor-not-allowed"
+                className="w-full px-[16px] py-[8px] bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-600 text-neutral-400 dark:text-neutral-500 rounded-lg text-sm outline-none opacity-60 cursor-not-allowed"
               >
                 <option>(GMT+00:00) UTC</option>
               </select>
@@ -133,7 +133,7 @@ const GeneralSection = () => {
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="bg-black dark:bg-white text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-brand text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {saving && (
               <span className="material-symbols-outlined text-sm animate-spin">

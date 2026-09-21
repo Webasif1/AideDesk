@@ -7,7 +7,7 @@ const PLACEHOLDER_COLUMNS = 14;
 
 const TicketVolumeChart = () => {
   return (
-    <div className="lg:col-span-3 relative bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden flex flex-col">
+    <div className="lg:col-span-3 relative bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden flex flex-col">
       {/* Inactive — analytics pipeline not wired yet */}
       <div className="pointer-events-none select-none opacity-60 flex flex-col flex-1">
         {/* Header */}
@@ -20,7 +20,7 @@ const TicketVolumeChart = () => {
           </div>
           <div className="flex items-center gap-[16px]">
             <div className="flex items-center gap-[6px]">
-              <div className="w-2.5 h-2.5 rounded-full bg-black dark:bg-white" />
+              <div className="w-2.5 h-2.5 rounded-full bg-brand" />
               <span className="text-[11px] font-medium text-neutral-600 dark:text-neutral-300">
                 AI Managed
               </span>

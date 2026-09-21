@@ -72,7 +72,7 @@ const ChatHeader = ({ conversation, onClose }) => {
 
   return (
     <div
-      className="shrink-0 flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a]"
+      className="shrink-0 flex items-center justify-between px-[20px] py-[14px] border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26]"
       style={{ animation: "headerIn 0.2s ease-out both" }}
     >
       {/* Left: avatar + name */}

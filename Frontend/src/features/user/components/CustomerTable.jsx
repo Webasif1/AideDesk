@@ -142,10 +142,10 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
+    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm dark:shadow-none">
       {/* Page-specific search — the global one in the header was decorative */}
       <div className="px-[24px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
-        <div className="flex items-center bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
+        <div className="flex items-center bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
           <span className="material-symbols-outlined text-neutral-400 text-[18px]">
             search
           </span>
@@ -170,7 +170,7 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-100 dark:border-neutral-700">
+            <tr className="bg-neutral-50 dark:bg-[#163832] border-b border-neutral-100 dark:border-neutral-700">
               {["Name", "Email", "Account", "Last Active", ""].map((h) => (
                 <th
                   key={h}
@@ -275,7 +275,7 @@ const CustomerTable = ({ activeTab = "All Customers" }) => {
       </div>
 
       {/* Pagination */}
-      <div className="px-[24px] py-[16px] bg-neutral-50/30 dark:bg-[#111] border-t border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
+      <div className="px-[24px] py-[16px] bg-neutral-50/30 dark:bg-[#051f20] border-t border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
         <p className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
           {total === 0
             ? "No customers"

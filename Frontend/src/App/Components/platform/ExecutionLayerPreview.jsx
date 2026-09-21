@@ -46,7 +46,7 @@ const ExecutionLayerPreview = () => {
           <path
             d="M 0 0 C 40 0 40 40 80 40"
             fill="none"
-            stroke="#E5E5E5"
+            stroke="#d2e8d7"
             strokeWidth="2"
           />
         </svg>

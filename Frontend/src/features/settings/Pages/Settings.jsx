@@ -19,7 +19,7 @@ const Settings = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-neutral-50 dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-neutral-50 dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -79,7 +79,7 @@ const Settings = () => {
                   {activeTab === "Security" && <SecuritySection />}
                   {activeTab === "Billing" && <BillingSection />}
                   {activeTab === "API & Integrations" && (
-                    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] text-center py-[64px]">
+                    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] text-center py-[64px]">
                       <span className="material-symbols-outlined text-neutral-300 dark:text-neutral-700 text-[48px] block mb-[16px]">
                         api
                       </span>

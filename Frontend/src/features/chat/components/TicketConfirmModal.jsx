@@ -146,7 +146,7 @@ const TicketConfirmModal = ({ draft, onConfirm, onCancel }) => {
             <button
               onClick={handleConfirm}
               disabled={submitting || !title.trim()}
-              className="px-4 py-2 bg-black text-white text-[13px] font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-2 bg-brand text-white text-[13px] font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
             >
               {submitting ? "Creating..." : "Create Ticket"}
             </button>

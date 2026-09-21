@@ -24,7 +24,7 @@ const TeamCapacity = () => {
   return (
     <div className="mt-8">
       {/* Capacity panel */}
-      <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl flex flex-col gap-4">
+      <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h4 className="text-[18px] font-semibold text-black dark:text-white">Team Capacity</h4>
           <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
@@ -39,7 +39,7 @@ const TeamCapacity = () => {
             </div>
             <div className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full">
               <div
-                className="h-full bg-black dark:bg-white rounded-full transition-all"
+                className="h-full bg-brand rounded-full transition-all"
                 style={{ width: `${bandwidth}%` }}
               />
             </div>

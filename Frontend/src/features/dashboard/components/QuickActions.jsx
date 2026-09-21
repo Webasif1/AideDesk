@@ -22,7 +22,7 @@ const QuickActions = () => {
   ];
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col">
+    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col">
       <h4 className="font-bold text-black dark:text-white mb-[24px]">Quick Actions</h4>
 
       <div className="flex flex-col gap-[12px]">

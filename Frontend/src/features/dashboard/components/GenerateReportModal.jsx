@@ -89,7 +89,7 @@ const GenerateReportModal = ({ onClose }) => {
                   onClick={() => setSelected(r.id)}
                   className={`flex items-start gap-[12px] p-[16px] border rounded-xl text-left transition-all ${
                     selected === r.id
-                      ? "border-black bg-black text-white"
+                      ? "border-black bg-brand text-white"
                       : "border-neutral-200 bg-neutral-50 hover:border-black"
                   }`}
                 >
@@ -163,7 +163,7 @@ const GenerateReportModal = ({ onClose }) => {
                     onClick={() => setFormat(f)}
                     className={`flex-1 h-11 border rounded-lg text-[13px] font-medium transition-all ${
                       format === f
-                        ? "border-black bg-black text-white"
+                        ? "border-black bg-brand text-white"
                         : "border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-black"
                     }`}
                   >
@@ -176,7 +176,7 @@ const GenerateReportModal = ({ onClose }) => {
 
           {/* Preview summary */}
           <div className="p-[20px] bg-neutral-50 border border-neutral-200 rounded-xl flex items-center gap-[16px]">
-            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-white text-[20px]">
                 summarize
               </span>
@@ -208,7 +208,7 @@ const GenerateReportModal = ({ onClose }) => {
             <button
               disabled
               aria-disabled="true"
-              className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-black text-white rounded-lg flex items-center gap-2 opacity-40 cursor-not-allowed"
+              className="px-[24px] py-[12px] text-[12px] font-semibold uppercase tracking-widest bg-brand text-white rounded-lg flex items-center gap-2 opacity-40 cursor-not-allowed"
             >
               Generate & Download
               <span className="material-symbols-outlined text-sm">download</span>

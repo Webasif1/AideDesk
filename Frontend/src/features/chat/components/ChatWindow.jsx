@@ -199,7 +199,7 @@ const ChatWindow = ({ conversation, onClose }) => {
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50 dark:bg-[#111] gap-[12px]">
+      <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50 dark:bg-[#051f20] gap-[12px]">
         <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
           <span className="material-symbols-outlined text-[32px] text-neutral-300 dark:text-neutral-600">
             chat_bubble_outline
@@ -235,13 +235,13 @@ const ChatWindow = ({ conversation, onClose }) => {
       <ChatHeader conversation={conversation} onClose={onClose} />
 
       {showTicketCard && (
-        <div className="shrink-0 px-[20px] pt-[20px] bg-neutral-50 dark:bg-[#111]">
+        <div className="shrink-0 px-[20px] pt-[20px] bg-neutral-50 dark:bg-[#051f20]">
           <TicketSummaryCard ticket={conversation.ticket} />
         </div>
       )}
 
       <div
-        className={`chat-scroll flex-1 min-h-0 overflow-y-auto px-[20px] pb-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#111] ${
+        className={`chat-scroll flex-1 min-h-0 overflow-y-auto px-[20px] pb-[20px] flex flex-col gap-[2px] bg-neutral-50 dark:bg-[#051f20] ${
           showTicketCard ? "pt-0" : "pt-[20px]"
         }`}
       >

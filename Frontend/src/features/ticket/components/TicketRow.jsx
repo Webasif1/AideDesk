@@ -12,7 +12,7 @@ const statusStyle = {
 // which defeated the point of having the level at all.
 const priorityStyle = {
   Urgent: "bg-red-600 dark:bg-red-500 text-white",
-  High: "bg-black dark:bg-white text-white dark:text-black",
+  High: "bg-brand text-white dark:text-black",
   Medium: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
   Low: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
 };
@@ -65,7 +65,7 @@ const TicketRow = ({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-black dark:text-white text-sm">{subject}</span>
           {aiHandled && (
-            <span className="text-[9px] font-bold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-[5px] py-[1px] rounded-full shrink-0">
+            <span className="text-[9px] font-bold uppercase tracking-widest bg-brand text-white dark:text-black px-[5px] py-[1px] rounded-full shrink-0">
               AI
             </span>
           )}

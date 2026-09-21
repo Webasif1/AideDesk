@@ -45,7 +45,7 @@ const WorkspaceList = () => {
   };
 
   const inputCls =
-    "w-full border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-[14px] bg-white dark:bg-[#1a1a1a] text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors";
+    "w-full border border-neutral-200 dark:border-neutral-700 rounded-xl px-4 py-3 text-[14px] bg-white dark:bg-[#0b2b26] text-black dark:text-white placeholder:text-neutral-400 focus:outline-none focus:border-black dark:focus:border-white transition-colors";
 
   return (
     <div className="p-8 max-w-3xl">
@@ -58,7 +58,7 @@ const WorkspaceList = () => {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 bg-brand text-white dark:text-black text-[13px] font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
         >
           <span className="material-symbols-outlined text-[16px]">add</span>
           New workspace
@@ -131,7 +131,7 @@ const WorkspaceList = () => {
                   <button
                     type="submit"
                     disabled={creating || !form.name || !form.slug}
-                    className="flex-1 py-3 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[14px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
+                    className="flex-1 py-3 rounded-xl bg-brand text-white dark:text-black text-[14px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
                   >
                     {creating ? "Creating…" : "Create"}
                   </button>

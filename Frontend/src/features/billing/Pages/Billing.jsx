@@ -92,7 +92,7 @@ Thanks`,
 
   return (
     <PageWrapper>
-      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -144,8 +144,8 @@ Thanks`,
                       onClick={() => setPicked(p.id)}
                       className={`text-left p-[20px] rounded-xl border transition-all flex flex-col ${
                         active
-                          ? "border-black dark:border-white bg-white dark:bg-[#1a1a1a] ring-2 ring-black dark:ring-white"
-                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] hover:border-black dark:hover:border-white"
+                          ? "border-black dark:border-white bg-white dark:bg-[#0b2b26] ring-2 ring-black dark:ring-white"
+                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] hover:border-black dark:hover:border-white"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -158,7 +158,7 @@ Thanks`,
                           </span>
                         )}
                         {p.highlight && !current && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black dark:bg-white text-white dark:text-black">
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand text-white dark:text-black">
                             Popular
                           </span>
                         )}
@@ -197,7 +197,7 @@ Thanks`,
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.16, ease: "easeOut" }}
-                className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden sticky top-[24px]"
+                className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden sticky top-[24px]"
               >
                 <div className="px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
                   <h3 className="text-[16px] font-semibold text-black dark:text-white">
@@ -230,7 +230,7 @@ Thanks`,
                   <button
                     onClick={handleContactSales}
                     disabled={isCurrent}
-                    className="w-full h-11 rounded-lg bg-black dark:bg-white text-white dark:text-black text-[13px] font-semibold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full h-11 rounded-lg bg-brand text-white dark:text-black text-[13px] font-semibold uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isCurrent ? (
                       "Current Plan"

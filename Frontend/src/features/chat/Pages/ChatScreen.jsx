@@ -13,7 +13,7 @@ import { useChat } from "../hooks/useChat";
 
 // Customer landing when they have no conversation open yet.
 const CustomerEmpty = ({ onCreate }) => (
-  <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50 dark:bg-[#111] gap-[14px] px-6 text-center">
+  <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50 dark:bg-[#051f20] gap-[14px] px-6 text-center">
     <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
       <span className="material-symbols-outlined text-[32px] text-neutral-300 dark:text-neutral-600">
         support_agent
@@ -29,7 +29,7 @@ const CustomerEmpty = ({ onCreate }) => (
     </div>
     <button
       onClick={onCreate}
-      className="mt-[4px] flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
+      className="mt-[4px] flex items-center gap-[8px] bg-brand text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
     >
       <span className="material-symbols-outlined text-[18px]">add</span>
       Create a Ticket
@@ -60,7 +60,7 @@ const CollapsedRail = ({ label, icon, onExpand }) => (
   <button
     onClick={onExpand}
     title={`Show ${label}`}
-    className="w-[36px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col items-center gap-[10px] pt-[14px] hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+    className="w-[36px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] flex flex-col items-center gap-[10px] pt-[14px] hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
   >
     <span className="material-symbols-outlined text-[18px] text-neutral-400">
       chevron_right
@@ -223,7 +223,7 @@ const ChatScreen = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-white dark:bg-[#111] text-on-surface h-dvh overflow-hidden font-['Poppins'] flex">
+      <div className="bg-white dark:bg-[#051f20] text-on-surface h-dvh overflow-hidden font-sans flex">
         <Sidebar />
 
         <div className="ml-64 flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -243,7 +243,7 @@ const ChatScreen = () => {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className="w-[240px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
+                className="w-[240px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] flex flex-col overflow-hidden"
               >
                 <PanelCollapseBar
                   label="Customers"
@@ -281,7 +281,7 @@ const ChatScreen = () => {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut", delay: 0.05 }}
-                className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] flex flex-col overflow-hidden"
+                className="w-[300px] shrink-0 border-r border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] flex flex-col overflow-hidden"
               >
                 <PanelCollapseBar
                   label="Conversations"

@@ -55,7 +55,7 @@ const RowActionsMenu = ({ items = [], icon = "more_horiz", label = "Row actions"
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[196px] bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl dark:shadow-none overflow-hidden py-[4px]"
+            className="absolute right-0 top-[calc(100%+6px)] z-50 w-[196px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl dark:shadow-none overflow-hidden py-[4px]"
           >
             {items.map((item) => (
               <button

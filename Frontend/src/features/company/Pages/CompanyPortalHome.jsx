@@ -19,7 +19,7 @@ const StatCard = ({ icon, label, value, sub, delay = 0, onClick, error, onRetry 
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.35 }}
     onClick={error ? undefined : onClick}
-    className={`bg-white dark:bg-[#1a1a1a] border rounded-2xl p-5 ${
+    className={`bg-white dark:bg-[#0b2b26] border rounded-2xl p-5 ${
       error
         ? "border-red-200 dark:border-red-900/50"
         : "border-neutral-100 dark:border-neutral-700"
@@ -241,7 +241,7 @@ const CompanyPortalHome = () => {
           <p className="text-[13px] text-neutral-500 mb-4">Create your first workspace to get started.</p>
           <button
             onClick={() => navigate("/company-portal/workspaces")}
-            className="bg-black dark:bg-white text-white dark:text-black text-[13px] font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
+            className="bg-brand text-white dark:text-black text-[13px] font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
           >
             Create workspace
           </button>

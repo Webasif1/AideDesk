@@ -104,7 +104,7 @@ const TicketMetrics = () => {
       {metrics.map((m) => (
         <div
           key={m.label}
-          className="p-[24px] border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-[#1a1a1a] hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
+          className="p-[24px] border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-[#0b2b26] hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
         >
           <div className="flex items-center justify-between mb-[16px]">
             <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">

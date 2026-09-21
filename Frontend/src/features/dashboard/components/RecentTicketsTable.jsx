@@ -42,7 +42,7 @@ const RecentTicketsTable = () => {
   });
 
   return (
-    <div className="lg:col-span-2 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+    <div className="lg:col-span-2 bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="p-[24px] border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
         <h4 className="font-bold text-black dark:text-white">Recent Ticket Updates</h4>
         <button
@@ -95,7 +95,7 @@ const RecentTicketsTable = () => {
                   <td className="px-[24px] py-[16px]">
                     <div className="flex items-center gap-[12px]">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border ${t.ai ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white" : "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white border-neutral-200 dark:border-neutral-700"}`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border ${t.ai ? "bg-brand text-white dark:text-black border-black dark:border-white" : "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white border-neutral-200 dark:border-neutral-700"}`}
                       >
                         {t.initials}
                       </div>

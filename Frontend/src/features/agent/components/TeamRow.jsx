@@ -1,7 +1,7 @@
 import RowActionsMenu from "../../../components/ui/RowActionsMenu";
 
 const roleStyle = {
-  Lead: "bg-black text-white dark:bg-white dark:text-black",
+  Lead: "bg-brand text-white dark:bg-brand dark:text-black",
   Agent: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200",
   Admin: "bg-neutral-200 text-black border border-neutral-300 dark:bg-neutral-700 dark:text-white dark:border-neutral-600",
 };

@@ -33,7 +33,7 @@ const BillingSection = () => {
   return (
     <section className="grid grid-cols-12 gap-[24px]">
       {/* Current plan */}
-      <div className="col-span-12 md:col-span-8 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
+      <div className="col-span-12 md:col-span-8 bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
         <div className="flex justify-between items-start mb-[24px]">
           <div>
             <h3 className="text-[18px] font-semibold text-black dark:text-white mb-1">
@@ -43,7 +43,7 @@ const BillingSection = () => {
               Manage your subscription and billing details.
             </p>
           </div>
-          <span className="px-[8px] py-1 bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold rounded-full uppercase">
+          <span className="px-[8px] py-1 bg-brand text-white dark:text-black text-[10px] font-bold rounded-full uppercase">
             {plan.name}
           </span>
         </div>
@@ -71,7 +71,7 @@ const BillingSection = () => {
         <div className="pt-[24px] border-t border-neutral-100 dark:border-neutral-800 flex gap-[16px]">
           <button
             onClick={() => navigate("/dashboard/billing")}
-            className="bg-black dark:bg-white text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95"
+            className="bg-brand text-white dark:text-black px-[24px] py-[8px] rounded-lg text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors active:scale-95"
           >
             Change Plan
           </button>
@@ -89,7 +89,7 @@ const BillingSection = () => {
           This panel used to state "Visa •••• 4242, Expires 12/26" as fact. No
           card has ever been stored: there is no payment processor, and the
           number is the well-known Stripe test card. */}
-      <div className="col-span-12 md:col-span-4 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden flex flex-col">
+      <div className="col-span-12 md:col-span-4 bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden flex flex-col">
         <div className="px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
           <h3 className="text-[14px] font-semibold text-black dark:text-white">
             Payment Method
@@ -108,7 +108,7 @@ const BillingSection = () => {
       {/* Billing history — invoices are produced by a billing processor, and
           there isn't one. The two "$499.00 PAID" rows here were invented, and
           contradicted the plan card directly above them, which reads $0/month. */}
-      <div className="col-span-12 bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+      <div className="col-span-12 bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
         <div className="px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
           <h3 className="text-[18px] font-semibold text-black dark:text-white">
             Billing History

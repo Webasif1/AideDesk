@@ -24,7 +24,7 @@ const AppearanceSection = () => {
   const mode = useSelector((s) => s.theme.mode);
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <div className="px-[24px] py-[20px] border-b border-neutral-100 dark:border-neutral-800">
         <h3 className="text-[16px] font-semibold text-black dark:text-white">
           Appearance

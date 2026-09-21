@@ -15,7 +15,7 @@ const Customers = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
 
         <div className="ml-64 min-h-screen flex flex-col">
@@ -58,7 +58,7 @@ const Customers = () => {
                 </Tooltip>
                 <button
                   onClick={() => setShowModal(true)}
-                  className="flex items-center gap-[8px] px-[16px] py-[8px] bg-black dark:bg-white text-white dark:text-black text-[13px] font-medium rounded-xl hover:opacity-90 transition-all active:scale-95"
+                  className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand text-white dark:text-black text-[13px] font-medium rounded-xl hover:opacity-90 transition-all active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     add

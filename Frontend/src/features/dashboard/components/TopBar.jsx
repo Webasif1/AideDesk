@@ -148,7 +148,7 @@ const TopBar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md flex justify-between items-center h-16 shrink-0 px-[32px]">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 dark:border-neutral-700 bg-white/80 dark:bg-[#051f20]/80 backdrop-blur-md flex justify-between items-center h-16 shrink-0 px-[32px]">
       {/* Left: read-only notice for suspended accounts, otherwise nothing.
           The global search that used to live here was decorative — it had no
           handler at all. Pages that need search now carry their own. */}
@@ -182,7 +182,7 @@ const TopBar = () => {
             >
               <span className="material-symbols-outlined">notifications</span>
               {unreadCount > 0 && (
-                <span className="absolute top-[7px] right-[7px] w-[18px] h-[18px] bg-black dark:bg-white rounded-full border-2 border-white dark:border-neutral-950 flex items-center justify-center">
+                <span className="absolute top-[7px] right-[7px] w-[18px] h-[18px] bg-brand rounded-full border-2 border-white dark:border-neutral-950 flex items-center justify-center">
                   <span className="text-white dark:text-black text-[9px] font-bold leading-none">
                     {unreadCount}
                   </span>
@@ -191,7 +191,7 @@ const TopBar = () => {
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 top-[calc(100%+8px)] w-[360px] bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
+              <div className="absolute right-0 top-[calc(100%+8px)] w-[360px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
                 {/* Header */}
                 <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
                   <div>
@@ -234,7 +234,7 @@ const TopBar = () => {
                       <div
                         className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                           n.unread
-                            ? "bg-black dark:bg-white text-white dark:text-black"
+                            ? "bg-brand text-white dark:text-black"
                             : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"
                         }`}
                       >
@@ -260,7 +260,7 @@ const TopBar = () => {
                         </p>
                       </div>
                       {n.unread && (
-                        <div className="w-2 h-2 rounded-full bg-black dark:bg-white shrink-0 mt-[6px]" />
+                        <div className="w-2 h-2 rounded-full bg-brand shrink-0 mt-[6px]" />
                       )}
                     </div>
                   ))}
@@ -327,7 +327,7 @@ const TopBar = () => {
 
             {/* Avatar with status dot */}
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center border border-neutral-200 group-hover:border-neutral-400 transition-colors overflow-hidden">
+              <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center border border-neutral-200 group-hover:border-neutral-400 transition-colors overflow-hidden">
                 {profileImage ? (
                   <img
                     src={profileImage}
@@ -349,11 +349,11 @@ const TopBar = () => {
 
           {/* Profile dropdown */}
           {profileOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] w-[240px] bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
+            <div className="absolute right-0 top-[calc(100%+10px)] w-[240px] bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl overflow-hidden z-50 animate-in">
               {/* Profile summary */}
               <div className="px-[16px] py-[14px] border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-[12px]">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-black dark:bg-neutral-700 flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-brand dark:bg-neutral-700 flex items-center justify-center overflow-hidden">
                     {profileImage ? (
                       <img
                         src={profileImage}
@@ -367,7 +367,7 @@ const TopBar = () => {
                     )}
                   </div>
                   <span
-                    className={`absolute -bottom-[3px] -right-[3px] w-[13px] h-[13px] rounded-full border-2 border-white dark:border-[#1a1a1a] ${currentStatus.color}`}
+                    className={`absolute -bottom-[3px] -right-[3px] w-[13px] h-[13px] rounded-full border-2 border-white dark:border-[#0b2b26] ${currentStatus.color}`}
                   />
                 </div>
                 <div className="min-w-0">

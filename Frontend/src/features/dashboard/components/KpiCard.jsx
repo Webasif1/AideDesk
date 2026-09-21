@@ -5,7 +5,7 @@ const KpiCard = ({ icon, label, value, badge, badgeType = "success" }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] transition-all hover:border-black/20 dark:hover:border-white/20">
+    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] transition-all hover:border-black/20 dark:hover:border-white/20">
       <div className="flex justify-between items-start mb-[16px]">
         <div className="p-[8px] bg-neutral-50 dark:bg-neutral-700 rounded-lg text-black dark:text-white">
           <span className="material-symbols-outlined">{icon}</span>

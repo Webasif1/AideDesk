@@ -8,7 +8,7 @@ const ComingSoonOverlay = ({ label = "Coming Soon", sub }) => (
     <span className="material-symbols-outlined text-[26px] text-neutral-500 dark:text-neutral-300 mb-2">
       lock
     </span>
-    <span className="px-3 py-1 rounded-full bg-black dark:bg-white text-white dark:text-black text-[11px] font-bold uppercase tracking-widest">
+    <span className="px-3 py-1 rounded-full bg-brand text-white dark:text-black text-[11px] font-bold uppercase tracking-widest">
       {label}
     </span>
     {sub && (

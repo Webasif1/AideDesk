@@ -8,7 +8,7 @@ const CHANNELS = ["Live Chat", "Email", "Dashboard"];
 
 const CsatBreakdown = () => {
   return (
-    <div className="relative bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col overflow-hidden">
+    <div className="relative bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px] flex flex-col overflow-hidden">
       <div className="pointer-events-none select-none opacity-60 flex flex-col flex-1">
         <h4 className="font-bold text-black dark:text-white mb-[4px]">Customer Satisfaction</h4>
         <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mb-[24px]">

@@ -55,7 +55,7 @@ const TeamMetrics = () => {
       {metrics.map((m) => (
         <div
           key={m.label}
-          className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl"
+          className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 p-[24px] rounded-xl"
         >
           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-1">
             {m.label}

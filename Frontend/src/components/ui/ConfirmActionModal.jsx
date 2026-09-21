@@ -26,7 +26,7 @@ const TONES = {
     icon: "check_circle",
     iconWrap: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
     confirm:
-      "bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100",
+      "bg-brand text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-100",
   },
 };
 
@@ -92,7 +92,7 @@ const ConfirmActionModal = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.98 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="max-w-[520px] w-full bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-xl dark:shadow-none"
+            className="max-w-[520px] w-full bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-xl dark:shadow-none"
           >
             {/* Header */}
             <div className="px-[32px] pt-[28px] pb-[20px] flex items-start gap-[16px]">
@@ -133,7 +133,7 @@ const ConfirmActionModal = ({
                   onChange={(e) => setReason(e.target.value)}
                   placeholder={reasonPlaceholder}
                   autoFocus
-                  className="w-full px-[14px] py-[10px] bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] leading-relaxed placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors resize-none"
+                  className="w-full px-[14px] py-[10px] bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-600 text-black dark:text-white rounded-lg text-[14px] leading-relaxed placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-black dark:focus:border-white transition-colors resize-none"
                 />
                 <p className="text-[12px] text-neutral-400 dark:text-neutral-500 mt-[8px] leading-relaxed">
                   {reasonHelp}
@@ -151,7 +151,7 @@ const ConfirmActionModal = ({
             )}
 
             {/* Footer */}
-            <div className="px-[32px] py-[20px] bg-neutral-50 dark:bg-[#111] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[12px]">
+            <div className="px-[32px] py-[20px] bg-neutral-50 dark:bg-[#051f20] border-t border-neutral-200 dark:border-neutral-700 flex justify-end items-center gap-[12px]">
               <button
                 type="button"
                 onClick={onCancel}

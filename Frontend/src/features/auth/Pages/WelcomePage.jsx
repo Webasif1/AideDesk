@@ -19,7 +19,7 @@ const WelcomePage = () => {
   }, [isAuthenticated, user, role, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-container-lowest dark:bg-[#111] px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-container-lowest dark:bg-[#051f20] px-4">
       <AnimatePresence mode="wait">
         {!showWizard ? (
           <motion.div
@@ -35,7 +35,7 @@ const WelcomePage = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.4 }}
-              className="w-14 h-14 rounded-2xl bg-black dark:bg-white flex items-center justify-center mx-auto mb-6"
+              className="w-14 h-14 rounded-2xl bg-brand flex items-center justify-center mx-auto mb-6"
             >
               <span className="text-white dark:text-black font-bold text-xl">A</span>
             </motion.div>
@@ -77,7 +77,7 @@ const WelcomePage = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowWizard(true)}
-              className="w-full bg-black dark:bg-white text-white dark:text-black font-semibold text-[14px] py-3 rounded-xl hover:opacity-90 transition-opacity"
+              className="w-full bg-brand text-white dark:text-black font-semibold text-[14px] py-3 rounded-xl hover:opacity-90 transition-opacity"
             >
               Set up my company
             </motion.button>

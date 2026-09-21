@@ -21,7 +21,7 @@ const Tickets = () => {
 
   return (
     <PageWrapper>
-      <div className="bg-white dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-white dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
         <div className="ml-64 min-h-screen flex flex-col">
           <TopBar />
@@ -52,7 +52,7 @@ const Tickets = () => {
                 <button
                   onClick={() => setShowModal(true)}
                   disabled={isReadOnly}
-                  className="bg-black dark:bg-white text-white dark:text-black px-6 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors font-medium text-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                  className="bg-brand text-white dark:text-black px-6 py-2.5 rounded-lg flex items-center gap-2 hover:opacity-90 transition-colors font-medium text-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
                   Create New Ticket

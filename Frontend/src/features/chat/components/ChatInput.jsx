@@ -60,7 +60,7 @@ const ChatInput = ({
 
   if (lockedReason) {
     return (
-      <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#111] px-[16px] py-[18px]">
+      <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-[#051f20] px-[16px] py-[18px]">
         <div className="flex flex-col items-center gap-[10px] text-center">
           <div className="flex items-center gap-[10px]">
             <span className="material-symbols-outlined text-[18px] text-neutral-400">
@@ -75,7 +75,7 @@ const ChatInput = ({
               type="button"
               onClick={lockedAction.onClick}
               disabled={lockedAction.pending}
-              className="px-[16px] py-[7px] rounded-lg bg-black dark:bg-white text-white dark:text-black text-[12px] font-semibold transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-[16px] py-[7px] rounded-lg bg-brand text-white dark:text-black text-[12px] font-semibold transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {lockedAction.pending ? "Taking over…" : lockedAction.label}
             </button>
@@ -87,8 +87,8 @@ const ChatInput = ({
 
   return (
     <div
-      className={`shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a] px-[16px] pt-[12px] pb-[16px] transition-all ${
-        focused ? "bg-white dark:bg-[#1a1a1a]" : "bg-neutral-50 dark:bg-[#111]"
+      className={`shrink-0 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26] px-[16px] pt-[12px] pb-[16px] transition-all ${
+        focused ? "bg-white dark:bg-[#0b2b26]" : "bg-neutral-50 dark:bg-[#051f20]"
       }`}
     >
       {/* Toolbar */}
@@ -138,8 +138,8 @@ const ChatInput = ({
       <div
         className={`flex items-end gap-[10px] border rounded-xl px-[14px] py-[10px] transition-all ${
           focused
-            ? "border-black dark:border-white bg-white dark:bg-[#1a1a1a] shadow-sm dark:shadow-none"
-            : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#1a1a1a]"
+            ? "border-black dark:border-white bg-white dark:bg-[#0b2b26] shadow-sm dark:shadow-none"
+            : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-[#0b2b26]"
         }`}
       >
         <textarea
@@ -161,7 +161,7 @@ const ChatInput = ({
           disabled={(!text.trim() && !attachment) || disabled}
           className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all ${
             text.trim() || attachment
-              ? "bg-black dark:bg-white text-white dark:text-black hover:opacity-80 active:scale-95"
+              ? "bg-brand text-white dark:text-black hover:opacity-80 active:scale-95"
               : "bg-neutral-100 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-600 cursor-not-allowed"
           }`}
         >

@@ -58,7 +58,7 @@ export const ToastHost = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: 24, scale: 0.96 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="pointer-events-auto flex items-center gap-2.5 rounded-xl bg-neutral-900 dark:bg-white px-4 py-3 shadow-xl border border-white/10 dark:border-black/10 max-w-[340px]"
+            className="pointer-events-auto flex items-center gap-2.5 rounded-xl bg-neutral-900 dark:bg-brand px-4 py-3 shadow-xl border border-white/10 dark:border-black/10 max-w-[340px]"
           >
             <span
               className={`material-symbols-outlined text-[20px] ${

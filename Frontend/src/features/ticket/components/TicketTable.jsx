@@ -120,11 +120,11 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
   const pages = pagination?.pages ?? 1;
 
   return (
-    <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a]">
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden bg-white dark:bg-[#0b2b26]">
       {/* Search runs server-side — the table only holds one page, so filtering
           here in the client would never reach a ticket on another page. */}
       <div className="px-[24px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
-        <div className="flex items-center bg-neutral-50 dark:bg-[#111] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
+        <div className="flex items-center bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
           <span className="material-symbols-outlined text-[18px] text-neutral-400">
             search
           </span>
@@ -150,7 +150,7 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
 
       <table className="w-full text-left">
         <thead>
-          <tr className="bg-neutral-50 dark:bg-[#222] border-b border-neutral-200 dark:border-neutral-700">
+          <tr className="bg-neutral-50 dark:bg-[#163832] border-b border-neutral-200 dark:border-neutral-700">
             {headers.map((h, i) => (
               <th
                 key={h || `col-${i}`}
@@ -197,7 +197,7 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
       </table>
 
       {/* Pagination */}
-      <div className="bg-neutral-50 dark:bg-[#111] px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+      <div className="bg-neutral-50 dark:bg-[#051f20] px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
         <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
           {total === 0
             ? "No tickets"
@@ -207,14 +207,14 @@ const TicketTable = ({ activeTab = "All Tickets" }) => {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#1a1a1a] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#0b2b26] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
             disabled={page >= pages}
             onClick={() => setPage((p) => Math.min(pages, p + 1))}
-            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#1a1a1a] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#0b2b26] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Next
           </button>

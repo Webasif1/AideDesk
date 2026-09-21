@@ -87,7 +87,7 @@ const CompanySetupWizard = ({ onClose }) => {
           <div
             key={i}
             className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-              i <= step ? "bg-black dark:bg-white" : "bg-neutral-200 dark:bg-neutral-700"
+              i <= step ? "bg-brand" : "bg-neutral-200 dark:bg-neutral-700"
             }`}
           />
         ))}
@@ -170,7 +170,7 @@ const CompanySetupWizard = ({ onClose }) => {
                       onClick={() => set("size", s)}
                       className={`px-4 py-2 rounded-full text-[13px] font-semibold border transition-all ${
                         form.size === s
-                          ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
+                          ? "bg-brand text-white dark:text-black border-black dark:border-white"
                           : "bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
                       }`}
                     >
@@ -264,7 +264,7 @@ const CompanySetupWizard = ({ onClose }) => {
         <button
           onClick={step === STEPS.length - 1 ? handleSubmit : () => setStep((s) => s + 1)}
           disabled={!canAdvance() || loading}
-          className="flex-1 py-3 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[14px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
+          className="flex-1 py-3 rounded-xl bg-brand text-white dark:text-black text-[14px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
         >
           {loading ? "Creating…" : step === STEPS.length - 1 ? "Create company" : "Continue"}
         </button>

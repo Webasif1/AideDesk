@@ -67,7 +67,7 @@ const ChatBubble = ({
             <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
               {sender?.name}
               {isAI && (
-                <span className="ml-[6px] text-[9px] font-bold uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black px-[5px] py-[1px] rounded-full">
+                <span className="ml-[6px] text-[9px] font-bold uppercase tracking-widest bg-brand text-white dark:text-black px-[5px] py-[1px] rounded-full">
                   AI
                 </span>
               )}
@@ -81,10 +81,10 @@ const ChatBubble = ({
           className={`relative rounded-2xl px-[14px] py-[10px] text-[13px] leading-relaxed transition-all
             ${
               isMine
-                ? "bg-black dark:bg-white text-white dark:text-black rounded-br-[4px]"
-                : "bg-white dark:bg-[#222] border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-white rounded-bl-[4px] shadow-sm dark:shadow-none"
+                ? "bg-brand text-white dark:text-black rounded-br-[4px]"
+                : "bg-white dark:bg-[#163832] border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-white rounded-bl-[4px] shadow-sm dark:shadow-none"
             }
-            ${isTyping ? "py-0 px-0 bg-white dark:bg-[#222] border border-neutral-200 dark:border-neutral-700 rounded-bl-[4px]" : ""}
+            ${isTyping ? "py-0 px-0 bg-white dark:bg-[#163832] border border-neutral-200 dark:border-neutral-700 rounded-bl-[4px]" : ""}
           `}
         >
           {isTyping ? (

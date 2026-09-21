@@ -26,7 +26,7 @@ const STATUS_ORDER = [
 ];
 
 const CATEGORY_COLORS = [
-  "bg-black dark:bg-white",
+  "bg-brand",
   "bg-neutral-500",
   "bg-neutral-400",
   "bg-neutral-300",
@@ -102,7 +102,7 @@ const CustomerDashboard = ({ user }) => {
 
   return (
     <PageWrapper>
-      <div className="bg-surface dark:bg-[#111] text-on-surface min-h-screen font-['Poppins']">
+      <div className="bg-surface dark:bg-[#051f20] text-on-surface min-h-screen font-sans">
         <Sidebar />
         <div className="ml-64 min-h-screen flex flex-col">
           <TopBar />
@@ -124,7 +124,7 @@ const CustomerDashboard = ({ user }) => {
               </div>
               <button
                 onClick={() => navigate("/dashboard/chat")}
-                className="flex items-center gap-[8px] bg-black dark:bg-white text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
+                className="flex items-center gap-[8px] bg-brand text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
               >
                 <span className="material-symbols-outlined text-[18px]">
                   chat_bubble_outline
@@ -153,7 +153,7 @@ const CustomerDashboard = ({ user }) => {
               className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]"
             >
               {/* By status */}
-              <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
+              <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
                 <h4 className="font-bold text-black dark:text-white mb-[20px]">
                   Tickets by Status
                 </h4>
@@ -188,7 +188,7 @@ const CustomerDashboard = ({ user }) => {
               </div>
 
               {/* By category */}
-              <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
+              <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl p-[24px]">
                 <h4 className="font-bold text-black dark:text-white mb-[20px]">
                   Tickets by Category
                 </h4>
@@ -229,7 +229,7 @@ const CustomerDashboard = ({ user }) => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.24, ease: "easeOut" }}
-              className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden"
+              className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden"
             >
               <div className="flex items-center justify-between px-[24px] py-[16px] border-b border-neutral-100 dark:border-neutral-800">
                 <h4 className="font-bold text-black dark:text-white">

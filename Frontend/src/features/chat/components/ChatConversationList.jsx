@@ -114,7 +114,7 @@ const ChatConversationList = ({
             onClick={() => setFilter(f)}
             className={`shrink-0 text-[11px] font-semibold px-[10px] py-[4px] rounded-full transition-all ${
               filter === f
-                ? "bg-black dark:bg-white text-white dark:text-black"
+                ? "bg-brand text-white dark:text-black"
                 : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700"
             }`}
           >

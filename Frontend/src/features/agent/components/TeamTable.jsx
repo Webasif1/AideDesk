@@ -143,7 +143,7 @@ const TeamTable = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
       <TeamFilter
         active={filter}
         onChange={setFilter}
