@@ -18,7 +18,9 @@ const FloatingThemeToggle = () => {
   // Dashboard pages carry the toggle in their TopBar cluster instead — the
   // floating pill used to sit bottom-left over the sidebar's status panel and
   // the conversation list. This is now only the fallback for pages with no
-  // TopBar: marketing, auth, onboarding and the company portal.
+  // TopBar: marketing, auth, onboarding and the company portal. It sits
+  // bottom-right because top-right covered the navbar's sign-up and mobile
+  // menu buttons.
   if (path.startsWith("/dashboard")) return null;
 
   return (
@@ -30,15 +32,15 @@ const FloatingThemeToggle = () => {
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.96 }}
-      className={`fixed top-5 right-5 z-[9999] group flex items-center gap-2 pl-2 pr-4 py-2 rounded-full border backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] transition-colors ${
+      className={`fixed bottom-5 right-5 z-[9999] group flex items-center gap-2 pl-2 pr-4 py-2 rounded-full border backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(0,0,0,0.25)] transition-colors ${
         isDark
-          ? "border-white/10 bg-neutral-900/80 hover:bg-neutral-800/90 text-neutral-100"
-          : "border-black/5 bg-white/85 hover:bg-white text-neutral-900"
+          ? "border-forest-700 bg-forest-900/85 hover:bg-forest-800 text-mint"
+          : "border-neutral-200 bg-white/85 hover:bg-white text-forest-950"
       }`}
     >
       <span
         className={`relative flex items-center justify-center w-7 h-7 rounded-full overflow-hidden ${
-          isDark ? "bg-gradient-to-br from-indigo-500/30 to-fuchsia-500/30" : "bg-gradient-to-br from-amber-200 to-orange-300"
+          isDark ? "bg-forest-700" : "bg-gradient-to-br from-amber-200 to-orange-300"
         }`}
       >
         <AnimatePresence mode="wait" initial={false}>
@@ -49,7 +51,7 @@ const FloatingThemeToggle = () => {
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
               exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="material-symbols-outlined text-[16px] text-indigo-100"
+              className="material-symbols-outlined text-[16px] text-mint"
               style={{ fontVariationSettings: "'FILL' 1, 'wght' 500" }}
             >
               dark_mode
