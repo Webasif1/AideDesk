@@ -1,24 +1,33 @@
 import { Link } from "react-router-dom";
 
-const Logo = ({ size = "md", linkTo = "/" }) => {
+// The mark is three stacked capsules in the brand greens. `onDark` swaps the
+// bottom capsule and wordmark to mint for use on forest backgrounds (the app
+// sidebar, auth panels, the marketing hero).
+export const LogoMark = ({ size = 32, onDark = false }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+    <rect x="3" y="3" width="26" height="11" rx="5.5" fill="#235347" />
+    <rect x="3" y="10.5" width="26" height="11" rx="5.5" fill="#8EB69B" />
+    <rect x="3" y="18" width="26" height="11" rx="5.5" fill={onDark ? "#DAF1DE" : "#0B2B26"} />
+  </svg>
+);
+
+const Logo = ({ size = "md", linkTo = "/", onDark = false }) => {
   const sizes = {
-    sm: { box: "w-5 h-5", icon: "text-[14px]", text: "text-sm" },
-    md: { box: "w-8 h-8", icon: "text-[20px]", text: "text-[18px]" },
-    lg: { box: "w-9 h-9", icon: "text-[22px]", text: "text-[20px]" },
+    sm: { mark: 20, text: "text-sm" },
+    md: { mark: 30, text: "text-[19px]" },
+    lg: { mark: 34, text: "text-[21px]" },
   };
 
   const s = sizes[size];
 
   return (
-    <Link to={linkTo} className="flex items-center gap-2 w-fit">
-      <div
-        className={`${s.box} bg-primary rounded-lg flex items-center justify-center`}
+    <Link to={linkTo} className="flex items-center gap-2.5 w-fit" aria-label="AideDesk home">
+      <LogoMark size={s.mark} onDark={onDark} />
+      <span
+        className={`font-display font-extrabold tracking-[-0.02em] ${s.text} ${
+          onDark ? "text-mint" : "text-on-surface"
+        }`}
       >
-        <span className={`material-symbols-outlined text-on-primary ${s.icon}`}>
-          support_agent
-        </span>
-      </div>
-      <span className={`font-bold tracking-tight text-on-surface ${s.text}`}>
         AideDesk
       </span>
     </Link>

@@ -11,6 +11,8 @@ const baseItems = [
   { label: "Settings", icon: "settings", path: "/dashboard/settings", roles: ["admin", "customer"] },
 ];
 
+// The rail is forest green in both themes; it is the one surface that anchors
+// the brand inside the app, so it does not follow the light/dark switch.
 const Sidebar = () => {
   const role = useSelector((s) => s.auth.role);
   // Reflects the real-time connection rather than always claiming green.
@@ -18,28 +20,28 @@ const Sidebar = () => {
   const navItems = baseItems.filter((item) => item.roles.includes(role));
 
   return (
-    <aside className="fixed h-screen w-64 left-0 top-0 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 z-50 flex flex-col px-[24px] py-[24px]">
+    <aside className="fixed h-screen w-64 left-0 top-0 border-r border-forest-900 dark:border-forest-800 bg-forest-900 dark:bg-[#041819] z-50 flex flex-col px-[16px] py-[22px]">
       {/* Logo */}
-      <div className="mb-[32px] px-[8px]">
-        <Logo />
+      <div className="mb-[28px] px-[10px]">
+        <Logo onDark />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 flex flex-col gap-[4px]">
+      <nav aria-label="Main navigation" className="flex-1 flex flex-col gap-[2px]">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === "/dashboard"}
             className={({ isActive }) =>
-              `flex items-center gap-[12px] px-[16px] py-[12px] rounded-xl text-[14px] font-medium tracking-tight transition-all duration-200 active:scale-[0.98] ${
+              `flex items-center gap-[12px] px-[14px] h-[42px] rounded-xl text-[14px] font-medium transition-colors duration-150 active:scale-[0.98] focus-visible:outline-sage ${
                 isActive
-                  ? "bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white font-semibold"
-                  : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-black dark:hover:text-white"
+                  ? "bg-forest-700 dark:bg-forest-800 text-mint font-semibold"
+                  : "text-[#a9c9b3] hover:bg-forest-800 dark:hover:bg-forest-900 hover:text-mint"
               }`
             }
           >
-            <span className="material-symbols-outlined text-[22px]">
+            <span className="material-symbols-outlined text-[20px]">
               {item.icon}
             </span>
             {item.label}
@@ -48,24 +50,17 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom: status */}
-      <div className="pt-[24px] border-t border-neutral-100 dark:border-neutral-800">
-        <div className="bg-neutral-50 dark:bg-neutral-900 p-[16px] rounded-xl border border-neutral-100 dark:border-neutral-800">
-          <p className="text-[10px] font-semibold text-neutral-400 mb-[8px] uppercase tracking-wider">
-            System Status
-          </p>
-          <div className="flex items-center gap-[8px]">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                socketConnected
-                  ? "bg-emerald-500 animate-pulse"
-                  : "bg-neutral-400 dark:bg-neutral-600"
-              }`}
-            />
-            <span className="text-[13px] font-medium text-neutral-700 dark:text-neutral-200">
-              {socketConnected ? "Live updates on" : "Reconnecting…"}
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center gap-[10px] px-[14px] py-[12px] rounded-xl bg-forest-800 dark:bg-forest-900 text-[12px] text-[#a9c9b3]">
+        <span
+          className={`w-2 h-2 rounded-full shrink-0 ${
+            socketConnected
+              ? "bg-sage shadow-[0_0_0_4px_rgba(142,182,155,0.18)] animate-pulse"
+              : "bg-neutral-500"
+          }`}
+        />
+        <span className="font-medium">
+          {socketConnected ? "Live updates connected" : "Reconnecting…"}
+        </span>
       </div>
     </aside>
   );
