@@ -11,7 +11,7 @@ const HeroSection = () => {
           AI Customer Support that works while you sleep.
         </h1>
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-10">
-          Resolve 90% of customer inquiries instantly. AideDesk routes complex issues to humans and handles the rest with absolute precision.
+          AideDesk's AI copilot answers routine questions right away, drafts tickets for you to confirm, and hands complex issues to your team with full context.
         </p>
         <HeroCTAButtons />
         <ProductPreview />

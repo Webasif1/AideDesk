@@ -58,7 +58,7 @@ const FeaturesSection = () => {
               </div>
               <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Analytics Dashboard</h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                Deep insights into resolution times, customer sentiment, and AI deflection rates. Export directly to CSV.
+                Resolution times, response times and AI-handled volume in one view. Figures shown are illustrative.
               </p>
             </div>
             <div className="md:w-2/3 w-full grid grid-cols-3 gap-4">

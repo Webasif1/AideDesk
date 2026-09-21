@@ -1,10 +1,10 @@
 import StatItem from './StatItem';
 
 const stats = [
-  { value: '10k+', label: 'Conversations Handled' },
-  { value: '90%',  label: 'AI Resolution Rate' },
-  { value: '24/7', label: 'Uptime & Availability' },
-  { value: '<1s',  label: 'Response Latency' },
+  { value: '1 inbox', label: 'Tickets, chat & portal' },
+  { value: '3 roles', label: 'Admin, agent & customer' },
+  { value: '24/7', label: 'AI copilot on duty' },
+  { value: 'Live', label: 'Real-time updates' },
 ];
 
 const StatsSection = () => {

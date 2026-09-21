@@ -24,8 +24,8 @@ const rows = [
       },
       {
         type: "outcome",
-        title: "45% Escalation Drop",
-        body: "Tier 1 teams resolve technical queries autonomously, protecting engineering time and decreasing average time-to-resolution by hours.",
+        title: "Fewer Escalations",
+        body: "Tier 1 teams can resolve more technical queries themselves, protecting engineering time and shortening time-to-resolution.",
       },
     ],
   },
@@ -47,7 +47,7 @@ const rows = [
       {
         type: "outcome",
         title: "Zero-Touch Resolution",
-        body: "Up to 60% of logistical inquiries are deflected entirely, allowing agents to focus on high-value retention and complex returns.",
+        body: "Routine order and tracking questions can be answered automatically, so agents can focus on retention and complex returns.",
       },
     ],
   },
