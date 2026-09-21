@@ -138,11 +138,12 @@ const TicketTable = ({ view, onTotal, onChanged }) => {
     onTotal?.(total);
   }, [onTotal, total]);
 
-  // Opening a ticket takes you to its conversation — that thread is where the
-  // AI's reply and any human follow-up live. A ticket whose chat was never
-  // created still opens the chat page, scoped to its customer; the chat page
-  // materialises the missing thread on arrival rather than leaving a dead row.
+  // Staff open the ticket's own page. Customers go to its conversation — that
+  // thread is where the AI's reply and any human follow-up live. A ticket whose
+  // chat was never created still opens the chat page, scoped to its customer;
+  // the chat page materialises the missing thread on arrival.
   const openTicket = (t) => {
+    if (!isCustomer) return navigate(`/dashboard/tickets/${t._id}`);
     const chatId = typeof t.chat === "object" ? t.chat?._id : t.chat;
     const customerId = t.customerId?._id || t.customerId;
     if (chatId) navigate(`/dashboard/chat?chat=${chatId}`);

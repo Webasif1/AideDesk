@@ -208,3 +208,31 @@ describe("assignment eligibility", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("listing by customer", () => {
+  const list = (query, cookie = A.cookies.admin) =>
+    request(app).get("/api/tickets").query(query).set("Cookie", cookie);
+
+  it("narrows an admin's list to one customer's tickets", async () => {
+    await ticketModel.create({
+      title: "Someone else's problem",
+      description: "Belongs to the other customer.",
+      companyId: A.company._id,
+      customerId: A.otherCustomer._id,
+    });
+    const res = await list({ customerId: String(A.customer._id) });
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    for (const t of res.body.data) expect(String(t.customerId._id)).toBe(String(A.customer._id));
+  });
+
+  it("keeps a customer on their own tickets whatever id they pass", async () => {
+    const res = await list({ customerId: String(A.otherCustomer._id) }, A.cookies.customer);
+    expect(res.status).toBe(200);
+    for (const t of res.body.data) expect(String(t.customerId._id)).toBe(String(A.customer._id));
+  });
+
+  it("refuses a malformed id with 400, not 500", async () => {
+    expect((await list({ customerId: "nope" })).status).toBe(400);
+  });
+});

@@ -73,7 +73,7 @@ router.post(
  * @route   GET /api/tickets
  * @desc    List tickets scoped by role.
  *          Admin → all company | Agent → assigned only | Customer → own
- *          Query: ?status=open&priority=high&category=billing&assignedAgent=id&page=1&limit=20&from=date&to=date
+ *          Query: ?status=open&priority=high&category=billing&assignedAgent=id&customerId=id&page=1&limit=20&from=date&to=date
  * @access  Private — All roles
  */
 router.get('/', requireRole('admin', 'agent', 'customer'), getTickets);

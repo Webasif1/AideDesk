@@ -194,7 +194,7 @@ export const createTicket = asyncHandler(async (req, res) => {
 // Admin: all company tickets
 // Agent: only tickets assigned to them
 // Customer: own tickets only
-// Query: ?status=open&priority=high&category=billing&assignedAgent=id&page=1&limit=20&from=date&to=date
+// Query: ?status=open&priority=high&category=billing&assignedAgent=id&customerId=id&page=1&limit=20&from=date&to=date
 // ============================================
 // Legal status moves. A ticket previously accepted any enum value from any
 // state, so "closed -> resolved" and "open -> forced_closed" both went through.
@@ -212,8 +212,8 @@ const TICKET_TRANSITIONS = {
 
 export const getTickets = asyncHandler(async (req, res) => {
   const {
-    status, priority, category, assignedAgent, search, slaBreached, sort,
-    from, to
+    status, priority, category, assignedAgent, customerId, search, slaBreached,
+    sort, from, to
   } = req.query;
   const { page, limit, skip } = parsePaging(req.query);
 
@@ -247,6 +247,16 @@ export const getTickets = asyncHandler(async (req, res) => {
   // Title/ticket-number search. The list is paginated server-side, so this has to
   // run here — filtering the current page in the client would only ever search
   // the rows already on screen. Input is escaped: it lands inside a $regex.
+  // One customer's history, for the ticket detail page. Staff only: a
+  // customer is already pinned to their own tickets above. The role scope
+  // still applies, so an agent sees only that customer's tickets they own.
+  if (customerId && req.role !== "customer") {
+    if (!mongoose.isValidObjectId(customerId)) {
+      throw new AppError("Invalid customerId", HTTP_STATUS.BAD_REQUEST, "INVALID_ID");
+    }
+    filter.customerId = customerId;
+  }
+
   if (search && search.trim()) {
     const term = escapeRegex(search.trim());
     filter.$or = [

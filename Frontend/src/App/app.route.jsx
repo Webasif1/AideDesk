@@ -36,6 +36,7 @@ import Dashboard from "../features/dashboard/Pages/Dashboard";
 import Settings from "../features/settings/Pages/Settings";
 import Customers from "../features/user/Pages/Customers";
 import Tickets from "../features/ticket/Pages/Tickets";
+import TicketDetail from "../features/ticket/Pages/TicketDetail";
 import Team from "../features/agent/Pages/Team";
 import ChatScreen from "../features/chat/Pages/ChatScreen";
 import Billing from "../features/billing/Pages/Billing";
@@ -151,6 +152,15 @@ const AppRoutes = createBrowserRouter([
         element: (
           <Authenticated roles={["admin", "agent", "customer"]}>
             <Tickets />
+          </Authenticated>
+        ),
+      },
+      {
+        // Staff only: customers follow their tickets in the chat thread.
+        path: "/dashboard/tickets/:id",
+        element: (
+          <Authenticated roles={["admin", "agent"]}>
+            <TicketDetail />
           </Authenticated>
         ),
       },
