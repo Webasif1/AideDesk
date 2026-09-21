@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
 import { setError } from "../state/auth.slice";
+import { LogoMark } from "../../../components/ui/Logo";
 
 // ============================================
 // Customer support-portal sign-in.
@@ -24,16 +25,16 @@ const Aurora = () => (
       className="absolute -top-[20%] -left-[10%] w-[55vw] h-[55vw] rounded-full blur-[120px] opacity-50"
       style={{
         background:
-          "radial-gradient(circle at 30% 30%, #6366f1 0%, rgba(99,102,241,0) 70%)",
+          "radial-gradient(circle at 30% 30%, #235347 0%, rgba(35,83,71,0) 70%)",
       }}
       animate={{ x: [0, 60, -20, 0], y: [0, 40, 80, 0], scale: [1, 1.12, 0.96, 1] }}
       transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
     />
     <motion.div
-      className="absolute top-[10%] -right-[15%] w-[50vw] h-[50vw] rounded-full blur-[120px] opacity-45"
+      className="absolute top-[10%] -right-[15%] w-[50vw] h-[50vw] rounded-full blur-[120px] opacity-25"
       style={{
         background:
-          "radial-gradient(circle at 60% 40%, #a855f7 0%, rgba(168,85,247,0) 70%)",
+          "radial-gradient(circle at 60% 40%, #8eb69b 0%, rgba(142,182,155,0) 70%)",
       }}
       animate={{ x: [0, -50, 20, 0], y: [0, 60, -30, 0], scale: [1, 0.94, 1.1, 1] }}
       transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
@@ -42,7 +43,7 @@ const Aurora = () => (
       className="absolute -bottom-[25%] left-[20%] w-[60vw] h-[60vw] rounded-full blur-[130px] opacity-40"
       style={{
         background:
-          "radial-gradient(circle at 50% 50%, #06b6d4 0%, rgba(6,182,212,0) 70%)",
+          "radial-gradient(circle at 50% 50%, #163832 0%, rgba(22,56,50,0) 70%)",
       }}
       animate={{ x: [0, 40, -40, 0], y: [0, -40, 20, 0], scale: [1, 1.08, 0.98, 1] }}
       transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
@@ -173,7 +174,7 @@ const CustomerLogin = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#07070c] text-white antialiased selection:bg-indigo-400/30">
+    <div className="relative min-h-screen w-full overflow-hidden bg-forest-950 text-mint antialiased selection:bg-sage/30">
       <Aurora />
 
       {/* Fine grid keeps the glass card from floating on flat colour */}
@@ -195,12 +196,8 @@ const CustomerLogin = () => {
           className="w-full max-w-[440px] lg:max-w-[420px]"
         >
           <div className="flex items-center gap-[10px] mb-[28px]">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-400 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <span className="material-symbols-outlined text-[20px] text-white">
-                support_agent
-              </span>
-            </div>
-            <span className="text-[15px] font-semibold tracking-tight">
+            <LogoMark size={34} onDark />
+            <span className="font-display text-[17px] font-extrabold tracking-[-0.02em]">
               AideDesk
             </span>
             <span className="text-[10px] uppercase tracking-[0.18em] text-white/40 border border-white/15 rounded-full px-[8px] py-[3px]">
@@ -208,9 +205,9 @@ const CustomerLogin = () => {
             </span>
           </div>
 
-          <h1 className="text-[38px] sm:text-[46px] leading-[1.05] font-semibold tracking-[-0.03em]">
+          <h1 className="font-display text-[38px] sm:text-[46px] leading-[1.05] font-extrabold tracking-[-0.03em]">
             Help that
-            <span className="block bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">
+            <span className="block text-sage">
               answers instantly.
             </span>
           </h1>
@@ -230,7 +227,7 @@ const CustomerLogin = () => {
                 className="flex items-center gap-[12px]"
               >
                 <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[16px] text-indigo-200">
+                  <span className="material-symbols-outlined text-[16px] text-sage">
                     {h.icon}
                   </span>
                 </div>
@@ -319,7 +316,7 @@ const CustomerLogin = () => {
                   disabled={loading}
                   whileHover={{ scale: loading ? 1 : 1.015 }}
                   whileTap={{ scale: loading ? 1 : 0.985 }}
-                  className="group relative overflow-hidden mt-[6px] h-[54px] rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 text-[14px] font-semibold tracking-tight shadow-[0_12px_40px_-12px_rgba(139,92,246,0.9)] disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="group relative overflow-hidden mt-[6px] h-[54px] rounded-2xl bg-sage text-forest-950 hover:bg-mint transition-colors text-[14px] font-semibold tracking-tight shadow-[0_12px_40px_-12px_rgba(142,182,155,0.6)] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-[8px]">
                     {loading ? (
