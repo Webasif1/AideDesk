@@ -3,61 +3,105 @@
 /* Tell Tailwind v4 to use .dark class instead of prefers-color-scheme */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── AideDesk palette ───────────────────────────────────
+   The six brand greens, darkest to lightest:
+   #051F20 forest-950 · #0B2B26 forest-900 · #163832 forest-800
+   #235347 forest-700 · #8EB69B sage · #DAF1DE mint
+   The neutral scale below is re-pointed at green-tinted steps between them,
+   so every existing neutral-* utility picks up the brand without a rewrite. */
 @theme {
-  /* ── Colors ────────────────────────────────────── */
-  --color-surface-container-low: #f3f3f3;
-  --color-surface-container-highest: #e2e2e2;
-  --color-inverse-on-surface: #f1f1f1;
-  --color-error: #ba1a1a;
-  --color-tertiary-fixed-dim: #c6c5cf;
-  --color-on-tertiary-fixed-variant: #46464e;
-  --color-tertiary: #000000;
-  --color-error-container: #ffdad6;
+  /* ── Brand ─────────────────────────────────────── */
+  --color-forest-950: #051f20;
+  --color-forest-900: #0b2b26;
+  --color-forest-800: #163832;
+  --color-forest-700: #235347;
+  --color-sage: #8eb69b;
+  --color-mint: #daf1de;
+
+  /* Primary action fill; flips to sage in dark mode (see .dark below). */
+  --color-brand: #235347;
+  --color-brand-hover: #163832;
+
+  /* ── Neutral scale (green-tinted) ──────────────── */
+  --color-neutral-50: #f3faf4;
+  --color-neutral-100: #e6f4e9;
+  --color-neutral-200: #d2e8d7;
+  --color-neutral-300: #b9d6c0;
+  --color-neutral-400: #8eb69b;
+  --color-neutral-500: #557a6e;
+  --color-neutral-600: #3c6456;
+  --color-neutral-700: #235347;
+  --color-neutral-800: #163832;
+  --color-neutral-900: #0b2b26;
+  --color-neutral-950: #051f20;
+
+  /* Ink replaces pure black everywhere (text, overlays). */
+  --color-black: #051f20;
+
+  /* ── Material-style tokens (used by older screens) ── */
+  --color-surface-container-low: #eef8f0;
+  --color-surface-container-highest: #d2e8d7;
+  --color-inverse-on-surface: #daf1de;
+  --color-error: #a93e3a;
+  --color-tertiary-fixed-dim: #b9d6c0;
+  --color-on-tertiary-fixed-variant: #235347;
+  --color-tertiary: #051f20;
+  --color-error-container: #f8e3e1;
   --color-on-secondary: #ffffff;
-  --color-surface-container-high: #e8e8e8;
-  --color-on-surface: #1b1b1b;
-  --color-surface-variant: #e2e2e2;
-  --color-surface-dim: #dadada;
+  --color-surface-container-high: #daf1de;
+  --color-on-surface: #051f20;
+  --color-surface-variant: #e6f4e9;
+  --color-surface-dim: #d2e8d7;
   --color-surface-container-lowest: #ffffff;
   --color-on-tertiary: #ffffff;
-  --color-surface-container: #eeeeee;
-  --color-secondary-container: #dfe0e0;
-  --color-surface-bright: #f9f9f9;
-  --color-secondary-fixed: #e2e2e2;
-  --color-on-error-container: #93000a;
-  --color-on-primary: #ffffff;
-  --color-surface-tint: #5e5e5e;
-  --color-primary: #000000;
-  --color-secondary: #5d5f5f;
-  --color-on-tertiary-container: #83838c;
-  --color-primary-fixed: #e2e2e2;
-  --color-on-secondary-container: #616363;
-  --color-on-primary-fixed: #1b1b1b;
-  --color-on-secondary-fixed: #1a1c1c;
+  --color-surface-container: #e6f4e9;
+  --color-secondary-container: #daf1de;
+  --color-surface-bright: #f3faf4;
+  --color-secondary-fixed: #daf1de;
+  --color-on-error-container: #7a2a27;
+  --color-on-primary: #daf1de;
+  --color-surface-tint: #235347;
+  --color-primary: #235347;
+  --color-secondary: #3c6456;
+  --color-on-tertiary-container: #557a6e;
+  --color-primary-fixed: #daf1de;
+  --color-on-secondary-container: #235347;
+  --color-on-primary-fixed: #051f20;
+  --color-on-secondary-fixed: #051f20;
   --color-on-error: #ffffff;
-  --color-on-primary-fixed-variant: #474747;
-  --color-primary-container: #1b1b1b;
-  --color-primary-fixed-dim: #c6c6c6;
-  --color-on-surface-variant: #4c4546;
-  --color-inverse-surface: #303030;
-  --color-inverse-primary: #c6c6c6;
-  --color-on-primary-container: #848484;
-  --color-surface: #f9f9f9;
-  --color-background: #f9f9f9;
-  --color-outline: #7e7576;
-  --color-secondary-fixed-dim: #c6c6c7;
-  --color-on-secondary-fixed-variant: #454747;
-  --color-on-tertiary-fixed: #1a1b22;
-  --color-outline-variant: #cfc4c5;
-  --color-on-background: #1b1b1b;
-  --color-tertiary-container: #1a1b22;
-  --color-tertiary-fixed: #e3e1ec;
+  --color-on-primary-fixed-variant: #163832;
+  --color-primary-container: #163832;
+  --color-primary-fixed-dim: #b9d6c0;
+  --color-on-surface-variant: #3c6456;
+  --color-inverse-surface: #0b2b26;
+  --color-inverse-primary: #8eb69b;
+  --color-on-primary-container: #8eb69b;
+  --color-surface: #f3faf4;
+  --color-background: #f3faf4;
+  --color-outline: #557a6e;
+  --color-secondary-fixed-dim: #b9d6c0;
+  --color-on-secondary-fixed-variant: #235347;
+  --color-on-tertiary-fixed: #051f20;
+  --color-outline-variant: #d2e8d7;
+  --color-on-background: #051f20;
+  --color-tertiary-container: #0b2b26;
+  --color-tertiary-fixed: #daf1de;
 
   /* ── Border Radius ─────────────────────────────── */
-  --radius-DEFAULT: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-DEFAULT: 0.375rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
   --radius-full: 9999px;
+
+  /* ── Shadows (green-tinted, soft) ──────────────── */
+  --shadow-sm: 0 1px 2px rgb(5 31 32 / 0.06);
+  --shadow: 0 1px 2px rgb(5 31 32 / 0.06), 0 4px 12px rgb(5 31 32 / 0.05);
+  --shadow-md: 0 1px 2px rgb(5 31 32 / 0.06), 0 8px 24px rgb(5 31 32 / 0.07);
+  --shadow-lg: 0 16px 36px rgb(5 31 32 / 0.14);
+  --shadow-xl: 0 24px 48px rgb(5 31 32 / 0.18);
+  --shadow-2xl: 0 32px 64px rgb(5 31 32 / 0.24);
 
   /* ── Spacing ───────────────────────────────────── */
   --spacing-gutter: 24px;
@@ -70,14 +114,17 @@
   --spacing-container-max: 1280px;
 
   /* ── Font Family ───────────────────────────────── */
-  --font-family-headline-md: "Poppins", sans-serif;
-  --font-family-body-md: "Poppins", sans-serif;
-  --font-family-body-lg: "Poppins", sans-serif;
-  --font-family-body-sm: "Poppins", sans-serif;
-  --font-family-display-xl: "Poppins", sans-serif;
-  --font-family-headline-lg: "Poppins", sans-serif;
-  --font-family-label-bold: "Poppins", sans-serif;
-  --font-family-button: "Poppins", sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", "Geist", ui-sans-serif, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-family-headline-md: "Manrope", sans-serif;
+  --font-family-body-md: "Geist", sans-serif;
+  --font-family-body-lg: "Geist", sans-serif;
+  --font-family-body-sm: "Geist", sans-serif;
+  --font-family-display-xl: "Manrope", sans-serif;
+  --font-family-headline-lg: "Manrope", sans-serif;
+  --font-family-label-bold: "Geist", sans-serif;
+  --font-family-button: "Geist", sans-serif;
 
   /* ── Font Size ─────────────────────────────────── */
   --font-size-headline-md: 24px;
@@ -92,50 +139,86 @@
 
 /* ── Base Styles ───────────────────────────────────── */
 body {
-  font-family: "Poppins", sans-serif;
-  background-color: #f9f9f9;
-  color: #1b1b1b;
+  font-family: var(--font-sans);
+  background-color: #f3faf4;
+  color: #051f20;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+:focus-visible {
+  outline: 2px solid #8eb69b;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #8eb69b;
+  color: #051f20;
+}
+
 /* ── Dark Mode ─────────────────────────────────────── */
+/* Layered forest rather than an inversion: page #051F20, cards #0B2B26,
+   raised #163832, text mint. */
 .dark body {
-  background-color: #111111;
-  color: #e8e8e8;
+  background-color: #051f20;
+  color: #daf1de;
 }
 
 .dark {
-  --color-surface-container-lowest: #111111;
-  --color-surface-container-low: #1a1a1a;
-  --color-surface-container: #1f1f1f;
-  --color-surface-container-high: #282828;
-  --color-surface-container-highest: #333333;
-  --color-surface: #111111;
-  --color-background: #111111;
-  --color-on-surface: #e8e8e8;
-  --color-on-background: #e8e8e8;
-  --color-primary: #ffffff;
-  --color-primary-container: #e8e8e8;
-  --color-on-primary: #111111;
-  --color-on-primary-container: #888888;
-  --color-secondary: #a0a0a0;
-  --color-on-secondary: #111111;
-  --color-surface-variant: #282828;
-  --color-on-surface-variant: #b0b0b0;
-  --color-outline: #555555;
-  --color-outline-variant: #333333;
-  --color-inverse-surface: #e8e8e8;
-  --color-inverse-on-surface: #1b1b1b;
-  --color-inverse-primary: #333333;
+  --color-brand: #8eb69b;
+  --color-brand-hover: #b9d6c0;
+  /* White text and fills read as mint on forest. */
+  --color-white: #daf1de;
+
+  --color-surface-container-lowest: #051f20;
+  --color-surface-container-low: #0b2b26;
+  --color-surface-container: #0b2b26;
+  --color-surface-container-high: #163832;
+  --color-surface-container-highest: #235347;
+  --color-surface: #051f20;
+  --color-background: #051f20;
+  --color-on-surface: #daf1de;
+  --color-on-background: #daf1de;
+  --color-primary: #8eb69b;
+  --color-primary-container: #daf1de;
+  --color-on-primary: #051f20;
+  --color-on-primary-container: #557a6e;
+  --color-secondary: #8eb69b;
+  --color-on-secondary: #051f20;
+  --color-surface-variant: #163832;
+  --color-on-surface-variant: #8eb69b;
+  --color-outline: #557a6e;
+  --color-outline-variant: #163832;
+  --color-inverse-surface: #daf1de;
+  --color-inverse-on-surface: #051f20;
+  --color-inverse-primary: #235347;
 }
 
 .depth-1 {
-  border: 1px solid #e2e2e2;
+  border: 1px solid #d2e8d7;
 }
 
 .depth-2 {
-  border: 1px solid #1b1b1b;
-  box-shadow: 4px 4px 0px 0px rgba(27, 27, 27, 0.05);
+  border: 1px solid #b9d6c0;
+  box-shadow: 0 1px 2px rgb(5 31 32 / 0.06), 0 8px 24px rgb(5 31 32 / 0.06);
+}
+
+/* ── Motion ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Chat thread scrollbar ─────────────────────────── */
@@ -146,7 +229,7 @@ body {
    reverse. */
 .chat-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #b8b8b8 #f0f0f0;
+  scrollbar-color: #b9d6c0 #eef8f0;
   /* Wheel deltas stop here instead of chaining to the page behind. */
   overscroll-behavior: contain;
 }
@@ -154,29 +237,29 @@ body {
   width: 10px;
 }
 .chat-scroll::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: #eef8f0;
 }
 .chat-scroll::-webkit-scrollbar-thumb {
-  background-color: #b8b8b8;
+  background-color: #b9d6c0;
   border-radius: 9999px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid #eef8f0;
 }
 .chat-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #9a9a9a;
+  background-color: #8eb69b;
 }
 
 .dark .chat-scroll {
-  scrollbar-color: #4a4a4a #1a1a1a;
+  scrollbar-color: #235347 #0b2b26;
 }
 .dark .chat-scroll::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: #0b2b26;
 }
 .dark .chat-scroll::-webkit-scrollbar-thumb {
-  background-color: #4a4a4a;
-  border-color: #1a1a1a;
+  background-color: #235347;
+  border-color: #0b2b26;
 }
 .dark .chat-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #5e5e5e;
+  background-color: #3c6456;
 }
 
 /* ── Full-height route lock ────────────────────────── */
