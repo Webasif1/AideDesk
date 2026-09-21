@@ -9,6 +9,7 @@ import CustomerDashboard from "../components/CustomerDashboard";
 import GenerateReportModal from "../components/GenerateReportModal";
 import PageWrapper from "../../../App/Components/ui/PageWrapper";
 import { SkeletonCard } from "../../../components/ui/Skeleton";
+import Button from "../../../components/ui/Button";
 import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -109,14 +110,9 @@ const AgentDashboard = ({ ticketStats, ticketLoading, loadStats, user }) => {
                   Welcome back, {agentName}. Here's your workload today.
                 </p>
               </div>
-              <button
-                onClick={loadStats}
-                title="Refresh"
-                className="flex items-center gap-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white px-[16px] py-[10px] rounded-xl font-medium text-[13px] transition-all active:scale-95 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                <span className="material-symbols-outlined text-[18px]">refresh</span>
+              <Button variant="secondary" icon="refresh" onClick={loadStats}>
                 Refresh
-              </button>
+              </Button>
             </motion.div>
 
             {/* Agent KPIs */}
@@ -297,23 +293,12 @@ const Dashboard = () => {
                 </p>
               </div>
               <div className="flex items-center gap-[12px]">
-                <button
-                  onClick={loadStats}
-                  title="Refresh"
-                  className="flex items-center gap-[8px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white px-[16px] py-[10px] rounded-xl font-medium text-[13px] transition-all active:scale-95 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                >
-                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                <Button variant="secondary" icon="refresh" onClick={loadStats}>
                   Refresh
-                </button>
-                <button
-                  onClick={() => setShowReport(true)}
-                  className="flex items-center gap-[8px] bg-brand text-white dark:text-black px-[20px] py-[10px] rounded-xl font-medium text-[13px] transition-transform active:scale-95 hover:opacity-90"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    add
-                  </span>
+                </Button>
+                <Button icon="add" onClick={() => setShowReport(true)}>
                   Create Report
-                </button>
+                </Button>
               </div>
             </motion.div>
 

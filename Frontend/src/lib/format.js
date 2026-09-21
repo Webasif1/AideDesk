@@ -57,16 +57,24 @@ export const ticketStatusLabel = (status, slaBreached) => {
 // cannot drift between the ticket table and the dashboard.
 export const ticketStatusBadgeClass = (label) =>
   ({
-    New: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
-    "In Progress":
-      "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400",
-    Resolved:
-      "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400",
-    Overdue: "bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400",
+    New: "bg-info-soft text-info",
+    "In Progress": "bg-warn-soft text-warn",
+    Resolved: "bg-ok-soft text-ok",
+    Overdue: "bg-err-soft text-err",
     "Forced Closed":
-      "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
+      "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
   })[label] ||
   "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300";
+
+// Badge tone for a status label, for the shared <Badge> component.
+export const ticketStatusTone = (label) =>
+  ({ New: "info", "In Progress": "warn", Resolved: "ok", Overdue: "err" })[label] ||
+  "neutral";
+
+// Badge tone for a priority label. Urgent and High stay visually distinct.
+export const ticketPriorityTone = (label) =>
+  ({ Urgent: "err", High: "warn", Medium: "info", Low: "neutral" })[label] ||
+  "neutral";
 
 // Backend priority → display label, 1:1.
 //

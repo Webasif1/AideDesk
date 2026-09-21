@@ -35,6 +35,18 @@
   --color-neutral-900: #0b2b26;
   --color-neutral-950: #051f20;
 
+  /* ── Status tones ──────────────────────────────── */
+  /* Desaturated so they sit beside the greens; each pairs a text/icon colour
+     with a soft fill. Always shown with a label, never colour alone. */
+  --color-ok: #2b7a50;
+  --color-ok-soft: #e1f2e6;
+  --color-warn: #8a6414;
+  --color-warn-soft: #f7edd4;
+  --color-err: #a93e3a;
+  --color-err-soft: #f8e3e1;
+  --color-info: #2c6878;
+  --color-info-soft: #dceef1;
+
   /* Ink replaces pure black everywhere (text, overlays). */
   --color-black: #051f20;
 
@@ -175,6 +187,15 @@ h3 {
   --color-brand-hover: #b9d6c0;
   /* White text and fills read as mint on forest. */
   --color-white: #daf1de;
+
+  --color-ok: #86cfa1;
+  --color-ok-soft: rgb(134 207 161 / 0.14);
+  --color-warn: #e6c170;
+  --color-warn-soft: rgb(230 193 112 / 0.14);
+  --color-err: #ee958f;
+  --color-err-soft: rgb(238 149 143 / 0.14);
+  --color-info: #86c0cc;
+  --color-info-soft: rgb(134 192 204 / 0.14);
 
   --color-surface-container-lowest: #051f20;
   --color-surface-container-low: #0b2b26;

@@ -1,21 +1,6 @@
 import { accountFlagPill } from "../../../lib/accountStatus";
-
-const statusStyle = {
-  "In Progress": "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400",
-  New: "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400",
-  Resolved: "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400",
-  Overdue: "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400",
-  "Forced Closed": "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
-};
-
-// Urgent is visually distinct from High — they used to render identically,
-// which defeated the point of having the level at all.
-const priorityStyle = {
-  Urgent: "bg-red-600 dark:bg-red-500 text-white",
-  High: "bg-brand text-white dark:text-black",
-  Medium: "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
-  Low: "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
-};
+import { ticketPriorityTone, ticketStatusTone } from "../../../lib/format";
+import Badge from "../../../components/ui/Badge";
 
 const TicketRow = ({
   status,
@@ -54,11 +39,9 @@ const TicketRow = ({
     }`}
   >
     <td className="py-4 px-6">
-      <span
-        className={`px-2 py-1 text-[10px] font-bold rounded uppercase ${statusStyle[status]}`}
-      >
+      <Badge tone={ticketStatusTone(status)} dot>
         {status}
-      </span>
+      </Badge>
     </td>
     <td className="py-4 px-6">
       <div className="flex flex-col">
@@ -100,11 +83,8 @@ const TicketRow = ({
       </td>
     )}
     <td className="py-4 px-6">
-      <span
-        className={`px-2 py-1 text-[10px] font-bold rounded uppercase ${priorityStyle[priority]}`}
-      >
-        {priority}
-      </span>
+      {/* Urgent and High use different tones so the most severe tickets stand out. */}
+      <Badge tone={ticketPriorityTone(priority)}>{priority}</Badge>
     </td>
     <td className="py-4 px-6">
       <div className="flex flex-col text-[11px]">
