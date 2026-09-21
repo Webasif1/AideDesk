@@ -1,167 +1,63 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import Navbar from "../Components/landing/Navbar";
 import Footer from "../Components/landing/Footer";
 import PageWrapper from "../Components/ui/PageWrapper";
+import FadeUp from "../../components/ui/FadeUp";
 
-const docSections = [
-  {
-    icon: "rocket_launch",
-    title: "Getting Started",
-    desc: "Workspace setup, onboarding guides, and your first automation.",
-  },
-  {
-    icon: "api",
-    title: "API Reference",
-    desc: "Full REST API specs, authentication, rate limits, and error codes.",
-  },
-  {
-    icon: "hub",
-    title: "Integrations",
-    desc: "Connect AideDesk to Slack, Zendesk, Intercom, and 40+ tools.",
-  },
-  {
-    icon: "psychology",
-    title: "AI & Models",
-    desc: "Prompt engineering, routing logic, and training your support model.",
-  },
-  {
-    icon: "admin_panel_settings",
-    title: "Admin & Security",
-    desc: "SSO, RBAC, audit logs, and enterprise compliance controls.",
-  },
-  {
-    icon: "code",
-    title: "SDKs & Webhooks",
-    desc: "Node.js, Python SDKs and real-time webhook event subscriptions.",
-  },
+// Developer docs are not written yet. This page says so plainly and points to
+// the help center, which covers how the product works today. It used to show a
+// "Notify me" form that submitted nowhere and promised "40+ tools" and SDKs.
+const PLANNED = [
+  { icon: "rocket_launch", title: "Setup guides", desc: "Workspaces, roles and your first tickets, step by step." },
+  { icon: "admin_panel_settings", title: "Admin & security", desc: "Roles, sessions and account controls." },
+  { icon: "auto_awesome", title: "AI copilot", desc: "How the copilot answers, drafts tickets and hands over." },
+  { icon: "api", title: "API & webhooks", desc: "Written alongside the API when it ships." },
 ];
 
-const Docs = () => {
-  return (
-    <PageWrapper>
-      <div className="bg-background text-on-surface antialiased min-h-screen flex flex-col">
-        <Navbar />
-
-        <main className="flex-1 px-6 py-[80px]">
-          <motion.div
-            className="max-w-[1280px] mx-auto"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+const Docs = () => (
+  <PageWrapper>
+    <div className="bg-background text-on-background antialiased min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 w-full max-w-[1100px] mx-auto px-6 py-16 md:py-24 flex flex-col gap-14">
+        <section className="flex flex-col items-center gap-5 text-center">
+          <span className="inline-flex items-center gap-2 h-8 px-3.5 rounded-full border border-dashed border-neutral-400 dark:border-neutral-600 text-[12px] font-semibold uppercase tracking-[0.1em] text-neutral-600 dark:text-neutral-400">
+            In progress
+          </span>
+          <h1 className="font-display text-[40px] md:text-[56px] font-extrabold tracking-[-0.04em] text-on-surface">Documentation</h1>
+          <p className="max-w-[600px] text-[17px] leading-relaxed text-neutral-700 dark:text-neutral-300">
+            Full documentation is still being written. For how AideDesk works today, the help center has step-by-step answers.
+          </p>
+          <Link
+            to="/support"
+            className="h-12 px-6 rounded-full bg-brand text-white dark:text-black text-[15px] font-semibold flex items-center gap-2 hover:bg-brand-hover transition-colors"
           >
-            <div className="text-center mb-[72px]">
-              <div className="inline-flex items-center gap-2 bg-surface-container-low border border-surface-container-highest rounded-full px-4 py-1.5 mb-[32px]">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-[12px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                  Coming Soon
-                </span>
-              </div>
-              <h1
-                className="text-on-surface mb-[16px]"
-                style={{
-                  fontSize: "48px",
-                  fontWeight: "600",
-                  lineHeight: "1.1",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Documentation
-              </h1>
-              <p
-                className="text-on-surface-variant max-w-xl mx-auto"
-                style={{ fontSize: "16px", lineHeight: "1.7" }}
-              >
-                Our developer documentation is being written. Below is a preview
-                of what will be covered. Full docs launch alongside our public
-                API release.
-              </p>
-            </div>
+            Go to the help center
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </Link>
+        </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px] mb-[72px]">
-              {docSections.map((s) => (
-                <div
-                  key={s.title}
-                  className="bg-surface border border-surface-container-highest rounded-xl p-[28px] flex flex-col gap-[16px] opacity-80"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low border border-surface-container-highest flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary text-[20px]">
-                      {s.icon}
-                    </span>
-                  </div>
-                  <div>
-                    <h3
-                      className="text-on-surface mb-[6px]"
-                      style={{ fontSize: "18px", fontWeight: "500" }}
-                    >
-                      {s.title}
-                    </h3>
-                    <p
-                      className="text-on-surface-variant"
-                      style={{ fontSize: "13px", lineHeight: "1.6" }}
-                    >
-                      {s.desc}
-                    </p>
-                  </div>
-                  <div className="mt-auto pt-[8px]">
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant border border-surface-container-highest rounded-full px-3 py-1">
-                      In progress
-                    </span>
+        <FadeUp>
+          <section aria-labelledby="planned-h" className="flex flex-col gap-5">
+            <h2 id="planned-h" className="font-display text-[22px] font-bold text-on-surface">What the docs will cover</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {PLANNED.map((s) => (
+                <div key={s.title} className="flex gap-4 p-6 rounded-3xl bg-white dark:bg-neutral-900 border border-dashed border-neutral-300 dark:border-neutral-700">
+                  <span className="w-11 h-11 shrink-0 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-forest-700 dark:text-sage flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[22px]">{s.icon}</span>
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="font-display text-[17px] font-bold text-on-surface">{s.title}</h3>
+                    <p className="text-[14px] leading-relaxed text-neutral-600 dark:text-neutral-400">{s.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-
-            <div className="max-w-[560px] mx-auto bg-surface border border-surface-container-highest rounded-xl p-[40px] text-center">
-              <span className="material-symbols-outlined text-primary text-[32px] mb-[16px] block">
-                notifications
-              </span>
-              <h2
-                className="text-on-surface mb-[8px]"
-                style={{ fontSize: "20px", fontWeight: "600" }}
-              >
-                Get notified when docs launch
-              </h2>
-              <p
-                className="text-on-surface-variant mb-[24px]"
-                style={{ fontSize: "13px", lineHeight: "1.6" }}
-              >
-                Drop your email and we'll ping you the moment documentation goes
-                live.
-              </p>
-              <div className="flex gap-[8px]">
-                <input
-                  type="email"
-                  placeholder="name@company.com"
-                  className="flex-1 h-11 bg-surface-container-low border border-surface-variant rounded-xl px-[16px] text-[14px] text-primary placeholder:text-on-tertiary-container focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                />
-                <button
-                  type="button"
-                  className="h-11 px-[20px] bg-primary text-on-primary rounded-xl text-[14px] font-semibold hover:opacity-90 transition-opacity whitespace-nowrap"
-                >
-                  Notify Me
-                </button>
-              </div>
-            </div>
-
-            <div className="text-center mt-[48px]">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 text-[13px] text-on-surface-variant hover:text-primary transition-colors group"
-              >
-                <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
-                  arrow_back
-                </span>
-                Back to Home
-              </Link>
-            </div>
-          </motion.div>
-        </main>
-
-        <Footer />
-      </div>
-    </PageWrapper>
-  );
-};
+          </section>
+        </FadeUp>
+      </main>
+      <Footer />
+    </div>
+  </PageWrapper>
+);
 
 export default Docs;
