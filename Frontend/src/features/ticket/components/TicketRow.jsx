@@ -1,110 +1,62 @@
 import { accountFlagPill } from "../../../lib/accountStatus";
-import { ticketPriorityTone, ticketStatusTone } from "../../../lib/format";
+import { initialsOf, ticketPriorityTone, ticketStatusTone } from "../../../lib/format";
 import Badge from "../../../components/ui/Badge";
 
-const TicketRow = ({
-  status,
-  subject,
-  ticketId,
-  category,
-  requester,
-  company,
-  priority,
-  time,
-  created,
-  timeColor,
-  chatId,
-  aiHandled,
-  onOpen,
-  showRequester = true,
-  accountStatus,
-}) => {
-  const accountPill = accountFlagPill(accountStatus);
+// One ticket in the list. The subject is the real control that opens the
+// conversation; the checkbox (staff only) feeds the bulk-action bar.
+const TicketRow = ({ t, columns, selectable, selected, onToggle, onOpen }) => {
+  const accountPill = accountFlagPill(t.accountStatus);
   return (
-  <tr
-    onClick={onOpen}
-    role={chatId ? "button" : undefined}
-    tabIndex={chatId ? 0 : undefined}
-    onKeyDown={(e) => {
-      if (chatId && (e.key === "Enter" || e.key === " ")) {
-        e.preventDefault();
-        onOpen?.();
-      }
-    }}
-    title={chatId ? "Open conversation" : undefined}
-    className={`transition-colors group ${
-      chatId
-        ? "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800"
-        : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
-    }`}
-  >
-    <td className="py-4 px-6">
-      <Badge tone={ticketStatusTone(status)} dot>
-        {status}
-      </Badge>
-    </td>
-    <td className="py-4 px-6">
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-black dark:text-white text-sm">{subject}</span>
-          {aiHandled && (
-            <span className="text-[9px] font-bold uppercase tracking-widest bg-brand text-white dark:text-black px-[5px] py-[1px] rounded-full shrink-0">
-              AI
+    <div
+      className={`grid ${columns} items-center gap-x-3 min-h-[54px] px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 transition-colors ${
+        selected ? "bg-neutral-50 dark:bg-neutral-900" : "hover:bg-neutral-50/60 dark:hover:bg-neutral-900/60"
+      }`}
+    >
+      {selectable && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          aria-label={`Select ticket ${t.ticketId}`}
+          className="w-4 h-4 m-0 accent-brand dark:accent-sage"
+        />
+      )}
+      <span className="font-mono text-[12px] text-neutral-500 truncate">{t.ticketId}</span>
+      <button type="button" onClick={onOpen} className="flex flex-col gap-0.5 min-w-0 text-left group">
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="text-[13px] font-semibold text-on-surface truncate group-hover:underline">{t.subject}</span>
+          {accountPill && (
+            <span className={`text-[9px] font-bold uppercase tracking-wide px-[6px] py-[1px] rounded-full shrink-0 ${accountPill.className}`}>
+              {accountPill.label}
             </span>
           )}
-        </div>
-        <span className="text-xs text-neutral-400">
-          {ticketId} • {category}
         </span>
-      </div>
-    </td>
-    {showRequester && (
-      <td className="py-4 px-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-neutral-400 text-[16px]">
-              person
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-[6px]">
-              <span className="font-medium text-sm text-black dark:text-white">{requester}</span>
-              {accountPill && (
-                <span
-                  className={`text-[9px] font-bold uppercase tracking-wide px-[6px] py-[1px] rounded-full shrink-0 ${accountPill.className}`}
-                >
-                  {accountPill.label}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{company}</span>
-          </div>
-        </div>
-      </td>
-    )}
-    <td className="py-4 px-6">
-      {/* Urgent and High use different tones so the most severe tickets stand out. */}
-      <Badge tone={ticketPriorityTone(priority)}>{priority}</Badge>
-    </td>
-    <td className="py-4 px-6">
-      <div className="flex flex-col text-[11px]">
-        <span className={`font-medium ${timeColor || "text-neutral-900 dark:text-white"}`}>
-          {time}
-        </span>
-        <span className="text-neutral-400">Created: {created}</span>
-      </div>
-    </td>
-    <td className="py-4 px-6 text-right">
-      <button
-        onClick={(e) => e.stopPropagation()}
-        className="text-neutral-400 dark:text-neutral-500 hover:text-black dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <span className="material-symbols-outlined">
-          {chatId ? "chat_bubble_outline" : "more_horiz"}
-        </span>
+        <span className="text-[12px] text-neutral-500 truncate">{t.requester}</span>
       </button>
-    </td>
-  </tr>
+      <span className="justify-self-start">
+        <Badge tone={ticketStatusTone(t.status)} dot>
+          {t.status}
+        </Badge>
+      </span>
+      <span className="justify-self-start">
+        <Badge tone={ticketPriorityTone(t.priority)}>{t.priority}</Badge>
+      </span>
+      {t.assignee !== undefined && (
+        <span className={`flex items-center gap-2 min-w-0 text-[13px] ${t.assignee ? "text-on-surface" : "text-neutral-500"}`}>
+          <span
+            aria-hidden="true"
+            className={`w-6 h-6 shrink-0 rounded-full text-[10px] font-bold flex items-center justify-center text-neutral-700 dark:text-neutral-300 ${
+              t.assignee ? "bg-neutral-100 dark:bg-neutral-800" : "border border-dashed border-neutral-300 dark:border-neutral-700"
+            }`}
+          >
+            {t.assignee ? initialsOf(t.assignee) : "AI"}
+          </span>
+          <span className="truncate">{t.assignee || "AI copilot"}</span>
+        </span>
+      )}
+      <span className="text-[13px] text-neutral-600 dark:text-neutral-400 truncate">{t.category}</span>
+      <span className="text-[12px] text-neutral-500 whitespace-nowrap">{t.updated}</span>
+    </div>
   );
 };
 

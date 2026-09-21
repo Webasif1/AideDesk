@@ -3,10 +3,11 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import TicketRow from "./TicketRow";
 import { SkeletonRow } from "../../../components/ui/Skeleton";
+import { toast } from "../../../components/ui/toast";
 import { useTicket } from "../hooks/useTicket";
+import { useAgent } from "../../agent/hooks/useAgent";
 import {
   formatRelative,
-  formatClock,
   ticketStatusLabel,
   ticketPriorityLabel,
   customerName,
@@ -16,209 +17,410 @@ import {
 const cap = (s = "") => (s ? s[0].toUpperCase() + s.slice(1) : "");
 const LIMIT = 10;
 
-// Each tab is a server-side query, not a filter over the page already fetched.
-// Filtering client-side meant a tab only ever searched the current 10 rows, so
-// "Open" could show nothing while the metrics counted open tickets on page 2.
-const TAB_QUERY = {
-  "All Tickets": {},
-  Unassigned: { assignedAgent: "unassigned" },
-  "Recently Updated": { sort: "updatedAt" },
-  Open: { status: "open" },
-  Resolved: { status: "resolved,closed" },
+const PRIORITIES = ["urgent", "high", "medium", "low"];
+const CATEGORIES = ["billing", "technical", "account", "general"];
+// Targets the status endpoint accepts from at least one state. A move the
+// backend refuses for a given ticket (e.g. closed → resolved) is reported back
+// per ticket rather than hidden.
+const BULK_STATUS = [
+  ["in_progress", "In progress"],
+  ["resolved", "Resolved"],
+  ["closed", "Closed"],
+  ["open", "Reopen"],
+];
+
+// Column templates. Staff get the checkbox and assignee; customers see only
+// what means something to them.
+const STAFF_COLS = "grid-cols-[16px_76px_minmax(0,1fr)_128px_86px_150px_92px_72px]";
+const CUSTOMER_COLS = "grid-cols-[76px_minmax(0,1fr)_128px_86px_92px_72px]";
+
+const FilterSelect = ({ label, value, onChange, options, active }) => (
+  <label
+    className={`h-[38px] pl-3 pr-2 rounded-[10px] border flex items-center gap-1.5 text-[13px] text-on-surface ${
+      active
+        ? "border-neutral-300 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800"
+        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0b2b26]"
+    }`}
+  >
+    <span className="text-neutral-500">{label}</span>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="bg-transparent font-semibold focus:outline-none cursor-pointer max-w-[150px]"
+    >
+      {options.map(([v, l]) => (
+        <option key={v} value={v}>
+          {l}
+        </option>
+      ))}
+    </select>
+  </label>
+);
+
+const pageList = (page, pages) => {
+  const start = Math.max(1, Math.min(page - 2, pages - 4));
+  return Array.from({ length: Math.min(5, pages) }, (_, i) => start + i);
 };
 
-const TicketTable = ({ activeTab = "All Tickets" }) => {
+const TicketTable = ({ view, onTotal, onChanged }) => {
   const navigate = useNavigate();
-  const { getTickets } = useTicket();
+  const { getTickets, updateTicketStatus, assignAgent } = useTicket();
+  const { getAgents } = useAgent();
   const tickets = useSelector((s) => s.ticket.tickets);
   const loading = useSelector((s) => s.ticket.loading);
   const pagination = useSelector((s) => s.ticket.pagination);
+  const agents = useSelector((s) => s.agent.agents);
   const role = useSelector((s) => s.auth.role);
   const activeWorkspaceId = useSelector((s) => s.company.activeWorkspaceId);
   const userWorkspaceId = useSelector((s) => s.auth.user?.workspaceId);
   const workspaceId = activeWorkspaceId || userWorkspaceId;
 
   const isCustomer = role === "customer";
+  const isAdmin = role === "admin";
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [priority, setPriority] = useState("");
+  const [category, setCategory] = useState("");
+  const [assignee, setAssignee] = useState("");
+  const [sort, setSort] = useState("createdAt");
+  const [selected, setSelected] = useState(() => new Set());
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
     return () => clearTimeout(id);
   }, [search]);
 
+  // Only admins may filter or assign by agent; the endpoint is admin-only.
+  useEffect(() => {
+    if (isAdmin) getAgents({ page: 1, limit: 100 }).catch(() => {});
+  }, [getAgents, isAdmin, workspaceId]);
+
+  // The Unassigned view already pins the assignee, so its filter steps aside.
+  const assigneeFilter = view.query.assignedAgent ? "" : assignee;
+
   // Adjusted during render rather than in an effect so the fetch below never
-  // fires once against a stale page. Switching tab changes the result set, so it
-  // belongs in the scope alongside the workspace and the search term.
-  const scope = `${workspaceId}|${activeTab}|${debouncedSearch}`;
+  // fires once against a stale page. Anything that changes the result set
+  // returns to page 1 and drops a selection the new rows no longer contain.
+  const scope = `${workspaceId}|${view.id}|${debouncedSearch}|${priority}|${category}|${assigneeFilter}|${sort}`;
   const [prevScope, setPrevScope] = useState(scope);
   if (scope !== prevScope) {
     setPrevScope(scope);
     setPage(1);
+    setSelected(new Set());
   }
 
   const query = useMemo(
     () => ({
       page,
       limit: LIMIT,
-      ...(TAB_QUERY[activeTab] || {}),
+      ...view.query,
       ...(debouncedSearch && { search: debouncedSearch }),
+      ...(priority && { priority }),
+      ...(category && { category }),
+      ...(assigneeFilter && { assignedAgent: assigneeFilter }),
+      ...(sort === "updatedAt" && { sort }),
     }),
-    [page, activeTab, debouncedSearch]
+    [page, view, debouncedSearch, priority, category, assigneeFilter, sort]
   );
 
+  const load = useCallback(() => getTickets(query).catch(() => {}), [getTickets, query]);
+
   useEffect(() => {
-    getTickets(query).catch(() => {});
-  }, [getTickets, query, workspaceId]);
+    load();
+  }, [load, workspaceId]);
+
+  const total = pagination?.total ?? 0;
+  const pages = pagination?.pages ?? 1;
+
+  useEffect(() => {
+    onTotal?.(total);
+  }, [onTotal, total]);
 
   // Opening a ticket takes you to its conversation — that thread is where the
   // AI's reply and any human follow-up live. A ticket whose chat was never
   // created still opens the chat page, scoped to its customer; the chat page
   // materialises the missing thread on arrival rather than leaving a dead row.
-  const openTicket = useCallback(
-    (chatId, customerId) => {
-      if (chatId) navigate(`/dashboard/chat?chat=${chatId}`);
-      else if (customerId) navigate(`/dashboard/chat?customer=${customerId}`);
-    },
-    [navigate]
-  );
-
-  const rows = (tickets || []).map((t) => {
-    // `chat` is an id when lean, or a populated document on the detail route.
+  const openTicket = (t) => {
     const chatId = typeof t.chat === "object" ? t.chat?._id : t.chat;
     const customerId = t.customerId?._id || t.customerId;
-    return {
-      key: t._id,
-      chatId: chatId || customerId,
-      onOpen: () => openTicket(chatId, customerId),
-      aiHandled: !t.assignedAgent,
-      status: ticketStatusLabel(t.status, t.slaBreached),
-      subject: t.title,
-      ticketId: t.ticketNumber || shortId(t._id),
-      category: cap(t.category),
-      requester: customerName(t.customerId),
-      company: t.customerId?.email || "—",
-      accountStatus: t.customerId?.accountStatus,
-      priority: ticketPriorityLabel(t.priority),
-      time: formatRelative(t.updatedAt || t.createdAt),
-      created: formatClock(t.createdAt),
-      timeColor: t.slaBreached
-        ? "text-red-600 dark:text-red-400"
-        : "text-neutral-900 dark:text-white",
-    };
-  });
+    if (chatId) navigate(`/dashboard/chat?chat=${chatId}`);
+    else if (customerId) navigate(`/dashboard/chat?customer=${customerId}`);
+  };
 
-  // Requester column is meaningless for a customer (always themselves).
-  const showRequester = !isCustomer;
-  const headers = showRequester
-    ? ["Status", "Subject", "Requester", "Priority", "Time", ""]
-    : ["Status", "Subject", "Priority", "Time", ""];
-  const colCount = headers.length;
+  const rows = (tickets || []).map((t) => ({
+    raw: t,
+    id: t._id,
+    ticketId: t.ticketNumber || shortId(t._id),
+    subject: t.title,
+    requester: isCustomer
+      ? `Opened ${formatRelative(t.createdAt)}`
+      : `${customerName(t.customerId)}${t.customerId?.email ? ` · ${t.customerId.email}` : ""}`,
+    accountStatus: isCustomer ? undefined : t.customerId?.accountStatus,
+    status: ticketStatusLabel(t.status, t.slaBreached),
+    priority: ticketPriorityLabel(t.priority),
+    // No human assignee means the AI copilot is handling it.
+    assignee: isCustomer ? undefined : t.assignedAgent?.name || t.assignedAgent?.email || "",
+    category: cap(t.category) || "—",
+    updated: formatRelative(t.updatedAt || t.createdAt),
+  }));
 
-  const total = pagination?.total ?? rows.length;
-  const pages = pagination?.pages ?? 1;
+  const pageIds = rows.map((r) => r.id);
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const someOnPage = pageIds.some((id) => selected.has(id));
+
+  const toggle = (id) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const toggleAll = () => setSelected(allOnPage ? new Set() : new Set(pageIds));
+
+  // One request per ticket: the API has no bulk endpoint. Every outcome is
+  // collected so a partial failure says how many landed and why the rest didn't.
+  const runBulk = async (label, fn) => {
+    const ids = [...selected];
+    setBusy(true);
+    const results = await Promise.allSettled(ids.map(fn));
+    setBusy(false);
+    const failed = results.filter((r) => r.status === "rejected");
+    const done = ids.length - failed.length;
+    if (!failed.length) {
+      toast(`${label}: ${done} ${done === 1 ? "ticket" : "tickets"} updated.`, { type: "success" });
+    } else {
+      const reason = failed[0].reason?.response?.data?.message || failed[0].reason?.message || "Request failed";
+      toast(`${label}: ${done} updated, ${failed.length} not — ${reason}`, { type: done ? "info" : "error" });
+    }
+    setSelected(new Set());
+    load();
+    onChanged?.();
+  };
+
+  const bulkStatus = (status) => {
+    const label = BULK_STATUS.find(([v]) => v === status)?.[1];
+    runBulk(`Status → ${label}`, (id) => updateTicketStatus({ id, status }));
+  };
+  const bulkAssign = (agentId) => {
+    const agent = (agents || []).find((a) => a._id === agentId);
+    runBulk(`Assign to ${agent?.name || "agent"}`, (id) => assignAgent({ id, agentId }));
+  };
+
+  const columns = isCustomer ? CUSTOMER_COLS : STAFF_COLS;
+  const headers = isCustomer
+    ? ["ID", "Subject", "Status", "Priority", "Category", "Updated"]
+    : ["ID", "Subject", "Status", "Priority", "Assignee", "Category", "Updated"];
+  const filtered = !!(debouncedSearch || priority || category || assigneeFilter);
+  const clearFilters = () => {
+    setSearch("");
+    setPriority("");
+    setCategory("");
+    setAssignee("");
+  };
+
+  const agentOptions = (agents || []).map((a) => [a._id, a.name || a.email]);
+  const from = total === 0 ? 0 : (page - 1) * LIMIT + 1;
+  const to = Math.min(page * LIMIT, total);
 
   return (
-    <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden bg-white dark:bg-[#0b2b26]">
-      {/* Search runs server-side — the table only holds one page, so filtering
-          here in the client would never reach a ticket on another page. */}
-      <div className="px-[24px] py-[14px] border-b border-neutral-100 dark:border-neutral-800">
-        <div className="flex items-center bg-neutral-50 dark:bg-[#051f20] border border-neutral-200 dark:border-neutral-700 rounded-lg px-[12px] py-[7px] gap-[8px] max-w-[360px] focus-within:border-black dark:focus-within:border-white transition-colors">
-          <span className="material-symbols-outlined text-[18px] text-neutral-400">
-            search
-          </span>
+    <div className="flex flex-col gap-4">
+      {/* Search and filters all run server-side — the table only ever holds one
+          page, so filtering in the client would miss tickets on other pages. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 w-full sm:w-[280px] h-[38px] px-3 rounded-[10px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#0b2b26] text-neutral-500 focus-within:border-neutral-400 dark:focus-within:border-neutral-600">
+          <span aria-hidden="true" className="material-symbols-outlined text-[17px]">search</span>
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tickets by title or number…"
-            className="bg-transparent text-[13px] text-black dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none w-full"
+            aria-label="Filter tickets"
+            placeholder="Filter by subject or ticket number"
+            className="flex-1 min-w-0 bg-transparent text-[13px] text-on-surface placeholder:text-neutral-500 focus:outline-none"
           />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              title="Clear search"
-              className="shrink-0 p-[2px] rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[16px] text-neutral-400">
-                close
-              </span>
-            </button>
-          )}
-        </div>
+        </label>
+        <FilterSelect
+          label="Priority"
+          value={priority}
+          onChange={setPriority}
+          active={!!priority}
+          options={[["", "Any"], ...PRIORITIES.map((p) => [p, cap(p)])]}
+        />
+        <FilterSelect
+          label="Category"
+          value={category}
+          onChange={setCategory}
+          active={!!category}
+          options={[["", "Any"], ...CATEGORIES.map((c) => [c, cap(c)])]}
+        />
+        {isAdmin && !view.query.assignedAgent && (
+          <FilterSelect
+            label="Assignee"
+            value={assignee}
+            onChange={setAssignee}
+            active={!!assignee}
+            options={[["", "Anyone"], ["unassigned", "AI copilot"], ...agentOptions]}
+          />
+        )}
+        {filtered && (
+          <button type="button" onClick={clearFilters} className="h-[38px] px-2 text-[13px] text-neutral-600 dark:text-neutral-400 underline underline-offset-2 hover:text-on-surface">
+            Clear filters
+          </button>
+        )}
+        <div className="flex-1" />
+        <FilterSelect
+          label="Sort"
+          value={sort}
+          onChange={setSort}
+          active={false}
+          options={[
+            ["createdAt", "Newest"],
+            ["updatedAt", "Recently updated"],
+          ]}
+        />
       </div>
 
-      <table className="w-full text-left">
-        <thead>
-          <tr className="bg-neutral-50 dark:bg-[#163832] border-b border-neutral-200 dark:border-neutral-700">
-            {headers.map((h, i) => (
-              <th
-                key={h || `col-${i}`}
-                className="py-4 px-6 text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+      <div className="flex flex-col rounded-2xl bg-white dark:bg-[#0b2b26] border border-neutral-200 dark:border-neutral-800 shadow-[0_1px_2px_rgba(5,31,32,0.05),0_8px_24px_rgba(5,31,32,0.05)] dark:shadow-none overflow-hidden">
+        {!isCustomer && selected.size > 0 && (
+          <div role="region" aria-label="Bulk actions" className="flex flex-wrap items-center gap-3 min-h-12 px-4 py-2 bg-brand text-mint dark:bg-sage dark:text-forest-950 text-[13px]">
+            <span className="font-semibold" aria-live="polite">
+              {selected.size} selected
+            </span>
+            <span aria-hidden="true" className="w-px h-5 bg-current opacity-30" />
+            <select
+              value=""
+              disabled={busy}
+              onChange={(e) => e.target.value && bulkStatus(e.target.value)}
+              aria-label="Change status of selected tickets"
+              className="h-8 px-2.5 rounded-lg bg-white/15 dark:bg-forest-950/10 font-medium focus:outline-none cursor-pointer disabled:opacity-60 [&>option]:text-forest-950"
+            >
+              <option value="">Change status…</option>
+              {BULK_STATUS.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            {isAdmin && (
+              <select
+                value=""
+                disabled={busy || !agentOptions.length}
+                onChange={(e) => e.target.value && bulkAssign(e.target.value)}
+                aria-label="Assign selected tickets"
+                className="h-8 px-2.5 rounded-lg bg-white/15 dark:bg-forest-950/10 font-medium focus:outline-none cursor-pointer disabled:opacity-60 [&>option]:text-forest-950"
               >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-          {loading && rows.length === 0 ? (
-            [...Array(6)].map((_, i) => (
-              <tr key={i}>
-                <td colSpan={colCount} className="px-0 py-0">
-                  <SkeletonRow />
-                </td>
-              </tr>
-            ))
-          ) : rows.length === 0 ? (
-            <tr>
-              <td colSpan={colCount} className="px-6 py-16 text-center">
-                <span className="material-symbols-outlined text-[40px] text-neutral-300 dark:text-neutral-700 block mb-2">
+                <option value="">{agentOptions.length ? "Assign to…" : "No agents to assign"}</option>
+                {agentOptions.map(([v, l]) => (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            )}
+            {busy && <span aria-hidden="true" className="w-4 h-4 rounded-full border-2 border-current border-r-transparent animate-spin" />}
+            <div className="flex-1" />
+            <button type="button" onClick={() => setSelected(new Set())} className="h-8 px-2.5 underline underline-offset-2">
+              Clear selection
+            </button>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <div className="min-w-[880px]">
+            <div className={`grid ${columns} items-center gap-x-3 h-10 px-4 border-b border-neutral-100 dark:border-neutral-800 text-[11px] font-semibold tracking-[0.06em] uppercase text-neutral-500`}>
+              {!isCustomer && (
+                <input
+                  type="checkbox"
+                  checked={allOnPage}
+                  ref={(el) => el && (el.indeterminate = someOnPage && !allOnPage)}
+                  onChange={toggleAll}
+                  disabled={!pageIds.length}
+                  aria-label="Select all tickets on this page"
+                  className="w-4 h-4 m-0 accent-brand dark:accent-sage"
+                />
+              )}
+              {headers.map((h) => (
+                <span key={h}>{h}</span>
+              ))}
+            </div>
+
+            {loading && rows.length === 0 ? (
+              [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
+            ) : rows.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+                <span aria-hidden="true" className="material-symbols-outlined text-[36px] text-neutral-300 dark:text-neutral-700">
                   confirmation_number
                 </span>
-                <p className="text-[14px] font-semibold text-neutral-600 dark:text-neutral-300">
-                  No tickets to show
+                <p className="text-[14px] font-semibold text-on-surface">No tickets to show</p>
+                <p className="text-[13px] text-neutral-500">
+                  {filtered
+                    ? "Nothing matches these filters."
+                    : view.id === "open"
+                      ? "Nothing is open right now."
+                      : `No tickets in "${view.label}".`}
                 </p>
-                <p className="text-[12px] text-neutral-400 mt-1">
-                  {debouncedSearch
-                    ? `Nothing matches "${debouncedSearch}".`
-                    : activeTab === "All Tickets"
-                      ? "Create a ticket to get started."
-                      : `No tickets match "${activeTab}".`}
-                </p>
-              </td>
-            </tr>
-          ) : (
-            rows.map((t) => (
-              <TicketRow key={t.key} {...t} showRequester={showRequester} />
-            ))
-          )}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
-      <div className="bg-neutral-50 dark:bg-[#051f20] px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
-          {total === 0
-            ? "No tickets"
-            : `Page ${pagination?.page ?? page} of ${pages} • ${total.toLocaleString()} tickets`}
-        </span>
-        <div className="flex gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#0b2b26] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            disabled={page >= pages}
-            onClick={() => setPage((p) => Math.min(pages, p + 1))}
-            className="px-3 py-1 border border-neutral-200 dark:border-neutral-700 rounded text-[11px] bg-white dark:bg-[#0b2b26] text-black dark:text-white font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+                {filtered && (
+                  <button type="button" onClick={clearFilters} className="mt-1 text-[13px] font-semibold text-brand dark:text-sage underline underline-offset-2">
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              rows.map((r) => (
+                <TicketRow
+                  key={r.id}
+                  t={r}
+                  columns={columns}
+                  selectable={!isCustomer}
+                  selected={selected.has(r.id)}
+                  onToggle={() => toggle(r.id)}
+                  onOpen={() => openTicket(r.raw)}
+                />
+              ))
+            )}
+          </div>
         </div>
+
+        <nav aria-label="Pagination" className="flex items-center gap-2 min-h-[52px] px-4 py-2 text-[13px] text-neutral-500">
+          <span className="flex-1">{total === 0 ? "No tickets" : `Showing ${from}–${to} of ${total.toLocaleString()}`}</span>
+          {pages > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous page"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="w-8 h-8 rounded-lg border border-neutral-200 dark:border-neutral-800 flex items-center justify-center text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">chevron_left</span>
+              </button>
+              {pageList(page, pages).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-current={n === page ? "page" : undefined}
+                  onClick={() => setPage(n)}
+                  className={`w-8 h-8 rounded-lg text-[13px] ${
+                    n === page
+                      ? "bg-brand text-mint dark:bg-sage dark:text-forest-950 font-semibold"
+                      : "border border-neutral-200 dark:border-neutral-800 text-on-surface hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                type="button"
+                aria-label="Next page"
+                disabled={page >= pages}
+                onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                className="w-8 h-8 rounded-lg border border-neutral-200 dark:border-neutral-800 flex items-center justify-center text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span aria-hidden="true" className="material-symbols-outlined text-[16px]">chevron_right</span>
+              </button>
+            </>
+          )}
+        </nav>
       </div>
     </div>
   );
