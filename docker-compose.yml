@@ -1,0 +1,29 @@
+# Production-style run: one container serving the API and the built frontend
+# at http://localhost:3000. For hot-reload development use:
+#   docker compose -f docker-compose.dev.yml up --build
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    # Public DNS so the container can resolve MongoDB Atlas (SRV), OpenRouter
+    # and Gemini — the default resolver fails here.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - ./Backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Frontend and API now share one origin.
+      FRONTEND_URL: http://localhost:3000
+      API_URL: http://localhost:3000
+    volumes:
+      # Keep user-uploaded attachments across rebuilds.
+      - uploads:/app/uploads
+
+volumes:
+  uploads:
