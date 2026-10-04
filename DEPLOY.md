@@ -1,224 +1,261 @@
-# Deploying AideDesk on AWS
-
-One small EC2 server runs everything: the app container (API + React build) and
-Caddy in front of it for HTTPS. MongoDB Atlas, Pinecone, OpenRouter and Gemini
-stay where they are — the server only needs to reach them.
-
-A CI/CD pipeline ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
-ships every push to `main`:
+# Deploying AideDesk on AWS (ECS Fargate)
 
 ```
-git push → GitHub Actions: run tests → build Docker image → push to ghcr.io
-                                                                 ↓
-                         EC2 server: pull the new image → restart → health check
+Browser ──https──▶ Load Balancer (free HTTPS certificate for your domain)
+                        │
+                        ▼
+                 ECS Fargate task ── your Docker image (API + React build), stored in ECR
+                        │
+                        ▼
+         MongoDB Atlas · Pinecone · OpenRouter · Gemini (unchanged)
 ```
+
+Every push to `main` runs the pipeline
+([.github/workflows/deploy.yml](.github/workflows/deploy.yml)): run tests →
+build the image → push it to ECR → ECS swaps the running task for the new one.
+If the new version fails its health check, ECS keeps the old one running.
 
 ## What it costs
 
-Prices are for `us-east-1`; other regions are close. GitHub Actions and the
-GitHub container registry are free for public repos.
+Prices are for `us-east-1`; other regions cost a little more.
 
-| Item                     | Per month                                          |
-| ------------------------ | -------------------------------------------------- |
-| Server                   | `t3.micro` (1 GB RAM) ~$7.60, `t3.small` (2 GB) ~$15.20 |
-| 20 GB disk (gp3)         | ~$1.60                                             |
-| Elastic IP (public IPv4) | ~$3.65                                             |
-| Data out                 | $0 for the first 100 GB                            |
-| **Total**                | **~$13 with t3.micro, ~$20 with t3.small**         |
+| Item                                    | Per day                | 49 days               |
+| --------------------------------------- | ---------------------- | --------------------- |
+| Fargate task, 0.25 vCPU / 0.5 GB        | ~$0.30 (Spot: ~$0.09)  | ~$15 (Spot: ~$5)      |
+| Task's public IP                        | ~$0.12                 | ~$6                   |
+| Load balancer + its 2 public IPs        | ~$0.78                 | ~$38                  |
+| ECR image storage, CloudWatch logs      | a few cents            | under $1              |
+| **Total**                               | **~$1.20 (Spot: ~$1)** | **~$60 (Spot: ~$50)** |
 
-The image is built on GitHub, not on the server, so `t3.micro` is enough.
-`t3.small` gives more headroom if you can afford it.
+**Free plan:** AWS never charges your card. When the credits run out or the
+plan's end date arrives, AWS stops everything and closes the account. The
+only way to get billed is to upgrade yourself — so **never click "Upgrade
+plan"**, even when a page or email says you need it.
 
-**Free plan** (Billing and Cost Management → Credits shows "Free plan
-status"): AWS never charges your card. When the credits run out or the plan's
-end date arrives, AWS stops everything and closes the account, keeping your
-data for 90 days in case you upgrade. The only way to get billed is to
-upgrade to the Paid plan yourself — so **never click "Upgrade plan"**, even
-when a page or email says you need it. You can skip step 9.
+**Things that quietly cost money — avoid them:**
 
-**Paid plan:** AWS bills your card once credits are gone. Do step 9.
+- **NAT Gateway** (~$1.10/day). You only need one if the task has no public
+  IP — keep **Public IP: On**.
+- **More than one task**, or auto scaling with a maximum above 1.
+- **Container Insights** (extra CloudWatch charges).
+- **A second load balancer.** If you make a test one, delete it.
 
-> AWS gives extra credits for some first steps — setting up a budget and
-> launching an EC2 instance are among them. Check the **Explore AWS** panel on
-> the console home page.
+## Names used in this guide
+
+| Thing           | Name                                              |
+| --------------- | ------------------------------------------------- |
+| ECR repository  | `aidedesk`                                        |
+| Cluster         | `aidedesk-cluster`                                |
+| Task definition | `aidedesk`                                        |
+| Container       | `aidedesk`                                        |
+| Service         | `aidedesk-service`                                |
+| Security group  | `aidedesk-sg`                                     |
+| Your site       | `aidedesk.yourdomain.com` — use your real domain  |
+
+If your teacher uses other names, use theirs — then tell the pipeline: GitHub
+→ repo → Settings → Secrets and variables → Actions → **Variables** → add the
+one that differs (`ECR_REPOSITORY`, `ECS_CLUSTER`, `ECS_SERVICE`,
+`ECS_TASK_DEFINITION` or `CONTAINER_NAME`). For a different repository name,
+also change `repository/aidedesk` in
+[deploy/github-actions-iam-policy.json](deploy/github-actions-iam-policy.json).
 
 ---
 
 ## 1. Before you start
 
-- **Push this code to GitHub.** The server clones `main` from GitHub. Until
-  step 8 is done, the pipeline tests and builds but skips the deploy.
-- **Pick your region.** Use the same region as your MongoDB Atlas cluster
-  (Atlas → your cluster → shows e.g. `AWS / N. Virginia (us-east-1)`). Use
-  that region for every step below.
-- **Check your plan and credits:** Billing and Cost Management → **Credits**.
+- **Region:** use the same region as your MongoDB Atlas cluster (Atlas →
+  your cluster shows e.g. `AWS / Mumbai (ap-south-1)`). Pick it at the top
+  right of the AWS console and use it for every step.
+- **MongoDB Atlas → Network Access → Add IP Address → Allow access from
+  anywhere** (`0.0.0.0/0`). A Fargate task gets a new IP on every deploy;
+  your database password still protects the database.
 
-## 2. Spending alert
+## 2. ECR repository (where your images are stored)
 
-Tells you how fast you are using the $100.
+ECR → **Create repository**:
 
-Billing and Cost Management → **Budgets** → **Create budget**:
+- Name **`aidedesk`**, Private.
+- Image tag mutability: **Mutable** (the pipeline re-uses the `latest` tag).
 
-1. **Customize (advanced)** → **Cost budget** → Next.
-2. Period **Monthly**, **Recurring**, **Fixed**, amount **`15`**.
-3. Scope: **All AWS services**. Open **Advanced options** and **untick
-   Credits**. Without this, credits cancel out your usage and the
-   budget always shows $0.
-4. Alerts: **80% of actual** and **100% of forecasted**, with your email.
+Then open the repository → **Lifecycle policy** → **Create rule**: *Image
+count more than* **5**, tag status **Any** → **Expire**. Old images get
+deleted, so storage stays near $0.
 
-## 3. Launch the server
+Copy the repository **URI** (looks like
+`123456789012.dkr.ecr.ap-south-1.amazonaws.com/aidedesk`).
 
-EC2 → **Launch instance**:
+## 3. Let GitHub push images and deploy
 
-| Setting            | Value                                                                       |
-| ------------------ | --------------------------------------------------------------------------- |
-| Name               | `aidedesk`                                                                  |
-| Image (AMI)        | **Ubuntu Server 24.04 LTS**, **64-bit (x86)** — not Arm; the pipeline builds x86 images |
-| Instance type      | **t3.micro** or **t3.small** (see costs) — on the Free plan it must show the "Free tier eligible" label |
-| Key pair           | **Create new key pair** → type RSA, format `.pem` → it downloads. Keep it safe: the pipeline logs in with it (step 8) |
-| Network settings   | Create security group, tick **Allow SSH**, **Allow HTTPS**, **Allow HTTP** — all from **Anywhere** (GitHub's servers connect from changing addresses) |
-| Storage            | **20** GiB **gp3**                                                          |
-| Advanced → User data | Paste the whole of [deploy/server-setup.sh](deploy/server-setup.sh)       |
+**a. Permissions.** IAM → **Users** → the user you created → **Add
+permissions → Create inline policy** → **JSON** → paste all of
+[deploy/github-actions-iam-policy.json](deploy/github-actions-iam-policy.json)
+→ name it `github-actions-deploy` → Create. It covers pushing to ECR, so the
+ECR policy you attached earlier is no longer needed.
 
-The user data installs Docker, adds 2 GB swap and clones the repo. It runs by
-itself on first boot.
+**b. Access key.** Same user → **Security credentials** → **Create access
+key** → use case **Third-party service** → Create. Copy both values now —
+the secret is shown only once.
 
-## 4. Fixed IP address
+**c. GitHub.** Repo → **Settings** → **Secrets and variables** → **Actions**:
 
-Without this the IP changes every time the server stops and starts.
+- **Secrets** tab → add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+- **Variables** tab → add `AWS_REGION` = your region code, e.g. `ap-south-1`.
 
-EC2 → **Elastic IPs** → **Allocate** → select it → **Actions → Associate** →
-choose the `aidedesk` instance. Write the IP down (example: `3.91.20.15`).
+> Never put the keys in code, in `.env`, or in a chat. The repo is public and
+> bots scan GitHub for AWS keys within minutes.
 
-## 5. Domain name
+**d. First image.** Repo → **Actions** → **CI/CD** → **Run workflow**. When
+**test** and **build** are green, the image is in ECR. The **deploy** job will
+note that the service doesn't exist yet — that's expected until step 8.
 
-Pick one:
+## 4. HTTPS certificate (free)
 
-- **Your own domain:** add a DNS **A record** pointing to the Elastic IP.
-  Your domain is then e.g. `aidedesk.example.com`.
-- **No domain:** use a free sslip.io name built from the IP with dashes, e.g.
-  `3-91-20-15.sslip.io`. It points to that IP automatically. Fine for a demo;
-  a real domain is more reliable for certificates.
+Certificate Manager (ACM) → **Request** → **Request a public certificate**:
 
-## 6. Let the server reach MongoDB Atlas
+- Domain name: **`aidedesk.yourdomain.com`**
+- Validation: **DNS validation** → Request.
 
-Atlas → **Network Access** → **Add IP Address** → enter the Elastic IP →
-Confirm.
+Open the certificate, copy the **CNAME name** and **CNAME value**, and add
+that CNAME record where you manage your domain's DNS. Wait until the status is
+**Issued** (5–30 minutes).
 
-## 7. Put your settings on the server
+## 5. Security group
 
-The pipeline ships code, never secrets — those live only on the server.
+EC2 → **Security Groups** → **Create security group**:
 
-EC2 → select `aidedesk` → **Connect** → **EC2 Instance Connect** → Connect.
-A terminal opens in your browser. Run:
+- Name **`aidedesk-sg`**, VPC: the default one.
+- Inbound rules: **HTTP** (80) from **Anywhere-IPv4**, **HTTPS** (443) from
+  **Anywhere-IPv4** → Create.
 
-```bash
-# Wait until the first-boot setup has finished (prints "status: done")
-cloud-init status --wait
+Then **Edit inbound rules** → **Add rule**: **Custom TCP**, port **3000**,
+source **`aidedesk-sg`** (pick it from the list) → Save. The load balancer
+can now reach the app, and port 3000 stays closed to the internet.
 
-cd ~/AideDesk
+## 6. Task definition
 
-# Your environment variables: paste the contents of your local Backend/.env,
-# then Ctrl+O, Enter, Ctrl+X to save.
-nano Backend/.env
+ECS → **Task definitions** → **Create new task definition**:
 
-# Your domain from step 5 (no https://)
-echo "DOMAIN=3-91-20-15.sslip.io" > .env
-```
+| Setting              | Value                                                   |
+| -------------------- | ------------------------------------------------------- |
+| Family               | `aidedesk`                                              |
+| Launch type          | **AWS Fargate**                                         |
+| OS / Architecture    | **Linux / X86_64**                                      |
+| CPU / Memory         | **.25 vCPU / .5 GB** (use 1 GB if logs show it running out of memory) |
+| Task execution role  | **Create new role** (or `ecsTaskExecutionRole` if it exists) |
+| Container name       | `aidedesk`                                              |
+| Image URI            | your repository URI from step 2 + `:latest`             |
+| Port mapping         | **3000**, TCP, HTTP                                     |
+| Log collection       | On (default)                                            |
 
-You can paste your local `Backend/.env` exactly as it is. The compose file
-already sets `NODE_ENV=production`, `PORT`, `FRONTEND_URL`, `API_URL` and
-`TRUST_PROXY` for you.
+**Environment variables** — click *Add environment variable* for each:
 
-## 8. Connect GitHub to the server (CI/CD)
+| Key            | Value                              |
+| -------------- | ---------------------------------- |
+| `NODE_ENV`     | `production`                       |
+| `PORT`         | `3000`                             |
+| `FRONTEND_URL` | `https://aidedesk.yourdomain.com`  |
+| `API_URL`      | `https://aidedesk.yourdomain.com`  |
+| `TRUST_PROXY`  | `1`                                |
 
-GitHub → your repo → **Settings** → **Secrets and variables** → **Actions** →
-**New repository secret**. Add two:
+Then add every other line from your local `Backend/.env`: `MONGO_URI`,
+`JWT_SECRET`, `GOOGLE_USER_EMAIL`, `GOOGLE_USER_PASSWORD`, `PINECONE_API_KEY`,
+`OPENROUTER_API_KEY`, `GEMINI_API_KEY`. Paste the values **without quotes**.
 
-| Name          | Value                                                                        |
-| ------------- | ---------------------------------------------------------------------------- |
-| `EC2_HOST`    | The Elastic IP from step 4, e.g. `3.91.20.15`                                 |
-| `EC2_SSH_KEY` | The whole `.pem` file from step 3 — open it in Notepad and copy everything, including the `-----BEGIN` and `-----END` lines |
+> Anyone who can log in to your AWS account can read these values. That's fine
+> for learning; for a real product you'd store them in AWS Secrets Manager.
 
-Then run the first deploy: repo → **Actions** → **CI/CD** → **Run workflow**
-→ Run. It takes a few minutes. When all three jobs (test, build, deploy) are
-green, open `https://<your-domain>` — done.
+## 7. Cluster
 
-From now on, every `git push` to `main` deploys by itself.
+ECS → **Clusters** → **Create cluster**:
 
-## 9. Kill switch: stop the server if real money starts being charged
+- Name **`aidedesk-cluster`**
+- Infrastructure: **AWS Fargate (serverless)** only
+- Monitoring: **Container Insights off**
 
-**Paid plan only.** Skip this on the Free plan — AWS can't charge you there.
+## 8. Service and load balancer
 
-**a. Role that lets Budgets stop the server.** IAM → **Roles** → **Create
-role** → **AWS service** → use case **Budgets** → attach the policy
-**`AWSBudgetsActions_RolePolicyForResourceAdministrationWithSSM`** → name it
-`BudgetsStopEC2` → Create.
+Open `aidedesk-cluster` → **Services** → **Create**:
 
-**b. The budget.** Budgets → **Create budget** → **Customize (advanced)** →
-**Cost budget**:
+| Section                       | Setting                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------- |
+| Compute                       | Capacity provider strategy → **Use custom** → **FARGATE_SPOT**, weight 1 (or **FARGATE** if your teacher wants it) |
+| Task definition               | Family `aidedesk`, latest revision                                         |
+| Service name                  | `aidedesk-service`                                                         |
+| Desired tasks                 | **1**                                                                      |
+| Deployment failure detection  | Circuit breaker **on**, **Rollback on failures** on (the default)          |
+| Networking                    | Default VPC, all subnets, security group **`aidedesk-sg` only** (remove `default`), **Public IP: On** |
+| Load balancing                | **Application Load Balancer** → Create new: `aidedesk-alb`              |
+| — Container                   | `aidedesk 3000:3000`                                                       |
+| — Listener                    | Create new: port **443**, protocol **HTTPS**, certificate **aidedesk.yourdomain.com** (from step 4) |
+| — Target group                | Create new: `aidedesk-tg`, protocol **HTTP**, health check path **`/api/health`** |
+| Service auto scaling          | **Off** (or Min **1** / Max **1** if your teacher wants it configured)    |
 
-1. Period **Monthly**, **Recurring**, **Fixed**, amount **`1`**.
-2. Scope **All AWS services**. **Leave Advanced options as they are**: credits
-   stay included, so this budget only counts money you actually pay. It sits
-   at $0 while credits last.
-3. Alert: **100% of actual**, with your email.
-4. **Attach actions** → IAM role `BudgetsStopEC2` → action type **Automate
-   instances to stop for EC2 or RDS** → your region → instance `aidedesk` →
-   **Automatically run this action: Yes**.
+→ **Create**. It takes about 5 minutes.
 
-Budgets update a few times a day, so the stop can come hours late (cents of
-overrun). A stopped server still costs ~$5/month for its disk and IP. When
-you're finished, do the full shutdown below.
+## 9. Finish up
+
+**a. Send http to https.** EC2 → **Load Balancers** → `aidedesk-alb` →
+**Listeners** → **Add listener**: HTTP, port 80 → **Redirect to URL** →
+HTTPS, port 443, status 301 → Add. Also copy the load balancer's **DNS name**
+(like `aidedesk-alb-123456.ap-south-1.elb.amazonaws.com`).
+
+**b. Point your domain at it.** At your DNS provider, add a **CNAME** record:
+name `aidedesk`, value = that DNS name.
+
+**c. Keep logs cheap.** CloudWatch → **Log groups** → `/ecs/aidedesk` →
+Actions → **Edit retention** → **1 week**.
+
+Open `https://aidedesk.yourdomain.com` — done. From now on every push to
+`main` deploys by itself.
+
+> Uploaded attachments are stored inside the container, so each deploy starts
+> without them. Fine for learning; a real product would keep them in S3.
 
 ---
 
 ## Updating the site
 
-Push to `main`. Watch it in the repo's **Actions** tab. If the tests fail,
-nothing is deployed and the live site keeps running the previous version.
+Push to `main` and watch the repo's **Actions** tab. If the tests fail, nothing
+is deployed and the site keeps running the previous version.
 
-**Roll back:** Actions → open the last good run → **Re-run all jobs**. It
-rebuilds and deploys that older commit.
+**Roll back:** Actions → open the last good run → **Re-run all jobs**.
 
-**Without the pipeline** (e.g. GitHub is down), on the server:
-
-```bash
-cd ~/AideDesk
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-docker image prune -f
-```
+**Changed an environment variable?** ECS → Task definitions → `aidedesk` →
+**Create new revision** → edit → Create. Then the service → **Update** → latest
+revision → **Force new deployment** → Update.
 
 ## Shutting it all down
 
-Your tickets, users and chats live in MongoDB Atlas and are not affected. Only
-uploaded attachments (stored on the server) are lost.
+Your tickets, users and chats live in MongoDB Atlas and are not affected.
 
-1. GitHub → Settings → Secrets → delete `EC2_HOST` (deploys then skip
-   instead of failing).
-2. EC2 → Instances → `aidedesk` → **Instance state → Terminate**. This also
-   deletes its disk.
-3. EC2 → **Elastic IPs** → select → **Actions → Release**. An Elastic IP
-   that is not attached to anything is still billed — don't skip this.
-4. EC2 → **Volumes** and **Snapshots**: both should be empty. Delete
-   anything left.
-5. Atlas → Network Access → remove the server's IP.
-6. Optional: Account → **Close account**. A Free-plan account closes by itself.
+1. ECS → `aidedesk-cluster` → `aidedesk-service` → **Delete service**
+   (force delete).
+2. EC2 → **Load Balancers** → `aidedesk-alb` → **Delete**. This is the
+   biggest cost — don't skip it.
+3. EC2 → **Target Groups** → `aidedesk-tg` → **Delete**.
+4. ECS → **Clusters** → `aidedesk-cluster` → **Delete cluster**.
+5. ECR → `aidedesk` → **Delete**.
+6. CloudWatch → Log groups → `/ecs/aidedesk` → **Delete**.
+7. IAM → your user → Security credentials → **Deactivate**, then **Delete**
+   the access key. GitHub → delete the two AWS secrets (pushes then skip
+   deploying instead of failing).
+8. Remove the DNS records; delete the certificate and `aidedesk-sg` (both
+   free, just tidy).
+
+A Free-plan account closes by itself on its end date.
 
 ## Troubleshooting
 
-Pipeline problems show in the failed job's log (Actions tab → the red run).
+Pipeline errors are in the failed job's log (Actions tab). App errors are in
+ECS → `aidedesk-service` → **Logs**.
 
-| Symptom                                                    | Fix                                                                                         |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Deploy job: `Permission denied (publickey)`                | `EC2_SSH_KEY` is wrong — paste the whole `.pem` again, including the BEGIN/END lines        |
-| Deploy job: `Connection timed out` on port 22              | Wrong `EC2_HOST`, server stopped, or SSH isn't open to **Anywhere** in the security group   |
-| Deploy job: `cd: /home/ubuntu/AideDesk: No such file`      | First-boot setup didn't run — on the server: `curl -fsSL https://raw.githubusercontent.com/Webasif1/AideDesk/main/deploy/server-setup.sh \| sudo bash` |
-| Deploy job: "did not become healthy" + logs                | Read the printed logs — usually one of the rows below                                       |
-| `Refusing to start in production` in the logs              | It lists the missing variable — fix `Backend/.env` or `.env` on the server, then re-run the workflow |
-| MongoDB connection timeout                                 | The Elastic IP is missing from Atlas Network Access (step 6)                                 |
-| Browser says the site isn't secure / Caddy certificate errors | DNS doesn't point at the Elastic IP yet, or ports 80/443 aren't open in the security group |
-| Manual build stops with `exit code 137` / `Killed`         | Out of memory — check swap with `free -h`; run `sudo bash deploy/server-setup.sh` to add it |
-| `permission denied` talking to Docker                      | Close the browser terminal and connect again (the docker group applies on new logins)      |
-| Login succeeds but you're logged straight out              | You opened `http://` or the IP directly — use `https://<your-domain>`                        |
+| Symptom                                                        | Fix                                                                                       |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Build or deploy job: `AccessDenied` / `not authorized`         | The policy from step 3a is missing, or your resource names differ from the defaults (see "Names") |
+| Task stops with `CannotPullContainerError`                     | No image in ECR yet (step 3d), or **Public IP** was Off                                    |
+| Logs: `Refusing to start in production`                        | It names the missing variable — add it in a new task definition revision ("Changed an environment variable?") |
+| Logs: MongoDB connection timeout                               | Atlas Network Access must allow `0.0.0.0/0` (step 1)                                      |
+| Site shows `503`, target group says **unhealthy**              | The port 3000 rule in `aidedesk-sg` is missing (step 5), or the app crashed — check Logs |
+| Blank white page; console shows `ERR_CONNECTION_REFUSED` for `index-….js` | `FRONTEND_URL` isn't the address in your browser bar. No domain yet? Set `FRONTEND_URL` and `API_URL` to `http://<load balancer DNS name>` (works, but logins aren't encrypted) |
+| Logged in, then logged straight out / CORS errors              | You opened the load balancer's DNS name — use `https://aidedesk.yourdomain.com`, the same as `FRONTEND_URL` |
+| Certificate stuck on **Pending validation**                    | The ACM CNAME isn't at your DNS provider yet — some providers add the domain to the name automatically, so remove it if it's there twice |

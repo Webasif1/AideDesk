@@ -1,7 +1,0 @@
-# HTTPS in front of the app. {$DOMAIN} comes from docker-compose.prod.yml;
-# Caddy fetches and renews the certificate itself and redirects http → https.
-# reverse_proxy passes Socket.IO's WebSocket upgrades through unchanged.
-{$DOMAIN} {
-	encode zstd gzip
-	reverse_proxy app:3000
-}

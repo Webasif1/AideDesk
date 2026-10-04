@@ -72,6 +72,8 @@ app.use(
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
+        // null removes helmet's default; see config.HTTPS.
+        upgradeInsecureRequests: config.HTTPS ? [] : null,
       },
     },
     crossOriginResourcePolicy: { policy: "same-site" },

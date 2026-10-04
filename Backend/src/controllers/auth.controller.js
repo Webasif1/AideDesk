@@ -253,7 +253,7 @@ export const loginController = asyncHandler(async (req, res) => {
 export const logoutController = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: config.NODE_ENV === "production",
+    secure: config.HTTPS,
     sameSite: "strict",
   });
 
@@ -336,7 +336,7 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
   // Clear any active session so user must log in with new password
   res.clearCookie("token", {
     httpOnly: true,
-    secure: config.NODE_ENV === "production",
+    secure: config.HTTPS,
     sameSite: "strict"
   });
 

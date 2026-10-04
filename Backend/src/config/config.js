@@ -89,6 +89,13 @@ export const config = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null,
 };
 
+// Whether visitors reach the site over HTTPS. Secure cookies and the CSP's
+// upgrade-insecure-requests both assume it: on a plain-HTTP deployment (a load
+// balancer's DNS name with no certificate yet) the browser drops the login
+// cookie and rewrites every script and stylesheet URL to https://, which
+// leaves a blank page.
+config.HTTPS = config.FRONTEND_URL.startsWith("https://");
+
 // ── Production preflight ────────────────────────────────────────────────────
 // Defaults that are fine locally are dangerous once deployed: a fallback
 // FRONTEND_URL of localhost silently breaks CORS and every emailed link, and a
@@ -108,6 +115,14 @@ if (config.NODE_ENV === "production") {
   }
   if (/localhost|127\.0\.0\.1/.test(config.MONGO_URI || "")) {
     problems.push("MONGO_URI points at localhost.");
+  }
+
+  // Allowed so the site can be tried out before a domain and certificate
+  // exist, but logins then cross the internet in plain text.
+  if (!config.HTTPS) {
+    console.warn(
+      "⚠️  FRONTEND_URL is not https:// — passwords and session cookies are sent unencrypted.",
+    );
   }
 
   if (problems.length) {

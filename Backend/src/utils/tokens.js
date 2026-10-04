@@ -54,7 +54,7 @@ export const generateResetToken = userId => {
 const setTokenInCookies = (res, token) => {
   res.cookie('token', token, {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
+    secure: config.HTTPS,
     sameSite: 'strict',
     maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
   });

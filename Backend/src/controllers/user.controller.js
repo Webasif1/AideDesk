@@ -245,7 +245,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
   res.clearCookie('token', {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
+    secure: config.HTTPS,
     sameSite: 'strict',
   });
 
@@ -307,7 +307,7 @@ export const resetUserPassword = asyncHandler(async (req, res) => {
 
   res.clearCookie('token', {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
+    secure: config.HTTPS,
     sameSite: 'strict',
   });
 

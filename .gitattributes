@@ -1,5 +1,0 @@
-# Files that run on the Linux server must keep LF line endings, even when
-# checked out on Windows (core.autocrlf would otherwise turn them into CRLF
-# and break the script).
-*.sh text eol=lf
-deploy/Caddyfile text eol=lf
