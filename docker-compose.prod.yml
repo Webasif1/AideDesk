@@ -1,0 +1,55 @@
+# Production on one server (AWS EC2 — see DEPLOY.md): the app container plus
+# Caddy in front of it for HTTPS. Caddy gets and renews the TLS certificate for
+# $DOMAIN by itself. HTTPS is required, not optional: login cookies are Secure
+# in production and browsers drop them over plain http.
+#
+# DOMAIN is read from a .env file next to this one (DOMAIN=example.com):
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./Backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_URL: https://${DOMAIN:?Set DOMAIN in .env, e.g. DOMAIN=example.com}
+      API_URL: https://${DOMAIN}
+      # Visitors reach the app through Caddy — trust that one hop so the rate
+      # limiter sees each visitor's IP rather than Caddy's.
+      TRUST_PROXY: 1
+    volumes:
+      # Keep user-uploaded attachments across rebuilds.
+      - uploads:/app/uploads
+    logging: &logging
+      driver: json-file
+      options:
+        # Cap logs so they can't fill the server's small disk.
+        max-size: "10m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates live here; losing them means re-issuing on next start.
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logging
+
+volumes:
+  uploads:
+  caddy_data:
+  caddy_config:

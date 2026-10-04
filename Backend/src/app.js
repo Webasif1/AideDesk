@@ -32,6 +32,17 @@ import { errorHandler, notFoundHandler } from "./utils/errorHandler.js";
 const app = express();
 const __dirname = path.resolve();
 
+/**
+ * Behind a reverse proxy (Caddy in docker-compose.prod.yml) every request
+ * arrives from the proxy's address, so the rate limiter would put all visitors
+ * in one shared bucket. TRUST_PROXY is the number of proxy hops to trust for
+ * the real client IP. Unset by default: trusting X-Forwarded-For with no proxy
+ * in front lets a client spoof its IP past the limiter.
+ */
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", Number(process.env.TRUST_PROXY));
+}
+
 // ============================================
 // Middleware Configuration
 // ============================================
