@@ -4,9 +4,19 @@ One small EC2 server runs everything: the app container (API + React build) and
 Caddy in front of it for HTTPS. MongoDB Atlas, Pinecone, OpenRouter and Gemini
 stay where they are — the server only needs to reach them.
 
+A CI/CD pipeline ([.github/workflows/deploy.yml](.github/workflows/deploy.yml))
+ships every push to `main`:
+
+```
+git push → GitHub Actions: run tests → build Docker image → push to ghcr.io
+                                                                 ↓
+                         EC2 server: pull the new image → restart → health check
+```
+
 ## What it costs
 
-Prices are for `us-east-1`; other regions are close.
+Prices are for `us-east-1`; other regions are close. GitHub Actions and the
+GitHub container registry are free for public repos.
 
 | Item                     | Per month                                          |
 | ------------------------ | -------------------------------------------------- |
@@ -16,17 +26,17 @@ Prices are for `us-east-1`; other regions are close.
 | Data out                 | $0 for the first 100 GB                            |
 | **Total**                | **~$13 with t3.micro, ~$20 with t3.small**         |
 
+The image is built on GitHub, not on the server, so `t3.micro` is enough.
+`t3.small` gives more headroom if you can afford it.
+
 **Free plan** (Billing and Cost Management → Credits shows "Free plan
 status"): AWS never charges your card. When the credits run out or the plan's
 end date arrives, AWS stops everything and closes the account, keeping your
 data for 90 days in case you upgrade. The only way to get billed is to
 upgrade to the Paid plan yourself — so **never click "Upgrade plan"**, even
-when a page or email says you need it. You can skip step 8.
+when a page or email says you need it. You can skip step 9.
 
-If your plan ends in a few weeks, time runs out before money does: pick
-`t3.small` — the build is faster and doesn't lean on swap.
-
-**Paid plan:** AWS bills your card once credits are gone. Do step 8.
+**Paid plan:** AWS bills your card once credits are gone. Do step 9.
 
 > AWS gives extra credits for some first steps — setting up a budget and
 > launching an EC2 instance are among them. Check the **Explore AWS** panel on
@@ -36,7 +46,8 @@ If your plan ends in a few weeks, time runs out before money does: pick
 
 ## 1. Before you start
 
-- **Push this code to GitHub.** The server clones `main` from GitHub.
+- **Push this code to GitHub.** The server clones `main` from GitHub. Until
+  step 8 is done, the pipeline tests and builds but skips the deploy.
 - **Pick your region.** Use the same region as your MongoDB Atlas cluster
   (Atlas → your cluster → shows e.g. `AWS / N. Virginia (us-east-1)`). Use
   that region for every step below.
@@ -62,15 +73,15 @@ EC2 → **Launch instance**:
 | Setting            | Value                                                                       |
 | ------------------ | --------------------------------------------------------------------------- |
 | Name               | `aidedesk`                                                                  |
-| Image (AMI)        | **Ubuntu Server 24.04 LTS** (64-bit x86)                                    |
+| Image (AMI)        | **Ubuntu Server 24.04 LTS**, **64-bit (x86)** — not Arm; the pipeline builds x86 images |
 | Instance type      | **t3.micro** or **t3.small** (see costs) — on the Free plan it must show the "Free tier eligible" label |
-| Key pair           | Create new → download the `.pem` and keep it safe (backup way to log in)    |
-| Network settings   | Create security group, tick **Allow SSH**, **Allow HTTPS**, **Allow HTTP** — all from **Anywhere** |
+| Key pair           | **Create new key pair** → type RSA, format `.pem` → it downloads. Keep it safe: the pipeline logs in with it (step 8) |
+| Network settings   | Create security group, tick **Allow SSH**, **Allow HTTPS**, **Allow HTTP** — all from **Anywhere** (GitHub's servers connect from changing addresses) |
 | Storage            | **20** GiB **gp3**                                                          |
 | Advanced → User data | Paste the whole of [deploy/server-setup.sh](deploy/server-setup.sh)       |
 
-The user data installs Docker, adds 2 GB swap (the build needs more than the
-1 GB of RAM) and clones the repo. It runs by itself on first boot.
+The user data installs Docker, adds 2 GB swap and clones the repo. It runs by
+itself on first boot.
 
 ## 4. Fixed IP address
 
@@ -94,7 +105,9 @@ Pick one:
 Atlas → **Network Access** → **Add IP Address** → enter the Elastic IP →
 Confirm.
 
-## 7. Start the app
+## 7. Put your settings on the server
+
+The pipeline ships code, never secrets — those live only on the server.
 
 EC2 → select `aidedesk` → **Connect** → **EC2 Instance Connect** → Connect.
 A terminal opens in your browser. Run:
@@ -106,26 +119,34 @@ cloud-init status --wait
 cd ~/AideDesk
 
 # Your environment variables: paste the contents of your local Backend/.env,
-# then Ctrl+O, Enter, Ctrl+X to save. See the note below.
+# then Ctrl+O, Enter, Ctrl+X to save.
 nano Backend/.env
 
 # Your domain from step 5 (no https://)
 echo "DOMAIN=3-91-20-15.sslip.io" > .env
-
-# Build and start (first build takes ~5–10 minutes on a t3.micro)
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Watch it start; Ctrl+C to stop watching (the app keeps running)
-docker compose -f docker-compose.prod.yml logs -f
 ```
 
 You can paste your local `Backend/.env` exactly as it is. The compose file
 already sets `NODE_ENV=production`, `PORT`, `FRONTEND_URL`, `API_URL` and
 `TRUST_PROXY` for you.
 
-Open `https://<your-domain>` — done.
+## 8. Connect GitHub to the server (CI/CD)
 
-## 8. Kill switch: stop the server if real money starts being charged
+GitHub → your repo → **Settings** → **Secrets and variables** → **Actions** →
+**New repository secret**. Add two:
+
+| Name          | Value                                                                        |
+| ------------- | ---------------------------------------------------------------------------- |
+| `EC2_HOST`    | The Elastic IP from step 4, e.g. `3.91.20.15`                                 |
+| `EC2_SSH_KEY` | The whole `.pem` file from step 3 — open it in Notepad and copy everything, including the `-----BEGIN` and `-----END` lines |
+
+Then run the first deploy: repo → **Actions** → **CI/CD** → **Run workflow**
+→ Run. It takes a few minutes. When all three jobs (test, build, deploy) are
+green, open `https://<your-domain>` — done.
+
+From now on, every `git push` to `main` deploys by itself.
+
+## 9. Kill switch: stop the server if real money starts being charged
 
 **Paid plan only.** Skip this on the Free plan — AWS can't charge you there.
 
@@ -154,13 +175,19 @@ you're finished, do the full shutdown below.
 
 ## Updating the site
 
-After pushing new code to GitHub:
+Push to `main`. Watch it in the repo's **Actions** tab. If the tests fail,
+nothing is deployed and the live site keeps running the previous version.
+
+**Roll back:** Actions → open the last good run → **Re-run all jobs**. It
+rebuilds and deploys that older commit.
+
+**Without the pipeline** (e.g. GitHub is down), on the server:
 
 ```bash
 cd ~/AideDesk
 git pull
 docker compose -f docker-compose.prod.yml up -d --build
-docker image prune -f   # free disk space from old builds
+docker image prune -f
 ```
 
 ## Shutting it all down
@@ -168,22 +195,30 @@ docker image prune -f   # free disk space from old builds
 Your tickets, users and chats live in MongoDB Atlas and are not affected. Only
 uploaded attachments (stored on the server) are lost.
 
-1. EC2 → Instances → `aidedesk` → **Instance state → Terminate**. This also
+1. GitHub → Settings → Secrets → delete `EC2_HOST` (deploys then skip
+   instead of failing).
+2. EC2 → Instances → `aidedesk` → **Instance state → Terminate**. This also
    deletes its disk.
-2. EC2 → **Elastic IPs** → select → **Actions → Release**. An Elastic IP
+3. EC2 → **Elastic IPs** → select → **Actions → Release**. An Elastic IP
    that is not attached to anything is still billed — don't skip this.
-3. EC2 → **Volumes** and **Snapshots**: both should be empty. Delete
+4. EC2 → **Volumes** and **Snapshots**: both should be empty. Delete
    anything left.
-4. Atlas → Network Access → remove the server's IP.
-5. Optional: Account → **Close account**. A Free-plan account closes by itself.
+5. Atlas → Network Access → remove the server's IP.
+6. Optional: Account → **Close account**. A Free-plan account closes by itself.
 
 ## Troubleshooting
 
+Pipeline problems show in the failed job's log (Actions tab → the red run).
+
 | Symptom                                                    | Fix                                                                                         |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `Refusing to start in production` in the logs              | It lists the missing variable — fix `Backend/.env` or `.env`, then run `up -d` again         |
+| Deploy job: `Permission denied (publickey)`                | `EC2_SSH_KEY` is wrong — paste the whole `.pem` again, including the BEGIN/END lines        |
+| Deploy job: `Connection timed out` on port 22              | Wrong `EC2_HOST`, server stopped, or SSH isn't open to **Anywhere** in the security group   |
+| Deploy job: `cd: /home/ubuntu/AideDesk: No such file`      | First-boot setup didn't run — on the server: `curl -fsSL https://raw.githubusercontent.com/Webasif1/AideDesk/main/deploy/server-setup.sh \| sudo bash` |
+| Deploy job: "did not become healthy" + logs                | Read the printed logs — usually one of the rows below                                       |
+| `Refusing to start in production` in the logs              | It lists the missing variable — fix `Backend/.env` or `.env` on the server, then re-run the workflow |
 | MongoDB connection timeout                                 | The Elastic IP is missing from Atlas Network Access (step 6)                                 |
 | Browser says the site isn't secure / Caddy certificate errors | DNS doesn't point at the Elastic IP yet, or ports 80/443 aren't open in the security group |
-| Build stops with `exit code 137` / `Killed`                | Out of memory — check swap with `free -h`; re-run `sudo bash deploy/server-setup.sh`         |
+| Manual build stops with `exit code 137` / `Killed`         | Out of memory — check swap with `free -h`; run `sudo bash deploy/server-setup.sh` to add it |
 | `permission denied` talking to Docker                      | Close the browser terminal and connect again (the docker group applies on new logins)      |
 | Login succeeds but you're logged straight out              | You opened `http://` or the IP directly — use `https://<your-domain>`                        |

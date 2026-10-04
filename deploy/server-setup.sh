@@ -4,8 +4,9 @@
 # as root on first boot — or run it by hand with sudo. Safe to run twice.
 set -euo pipefail
 
-# 2 GB of swap: a t3.micro has 1 GB of RAM, and building the frontend image
-# (npm install + vite build) needs more than that.
+# 2 GB of swap: a t3.micro has 1 GB of RAM. The pipeline builds the image on
+# GitHub, but building on the server by hand (DEPLOY.md, "Without the
+# pipeline") needs more memory than that.
 if [ ! -f /swapfile ]; then
   fallocate -l 2G /swapfile
   chmod 600 /swapfile

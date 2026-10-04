@@ -3,10 +3,14 @@
 # $DOMAIN by itself. HTTPS is required, not optional: login cookies are Secure
 # in production and browsers drop them over plain http.
 #
-# DOMAIN is read from a .env file next to this one (DOMAIN=example.com):
+# DOMAIN is read from a .env file next to this one (DOMAIN=example.com).
+# Normally the CI/CD pipeline (.github/workflows/deploy.yml) builds the image
+# and starts it here. To build on the server by hand instead:
 #   docker compose -f docker-compose.prod.yml up -d --build
 services:
   app:
+    # Built and pushed by the pipeline; IMAGE_TAG pins the exact commit.
+    image: ghcr.io/webasif1/aidedesk:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
