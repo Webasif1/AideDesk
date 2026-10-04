@@ -8,18 +8,25 @@ stay where they are — the server only needs to reach them.
 
 Prices are for `us-east-1`; other regions are close.
 
-| Item                     | Per month                   |
-| ------------------------ | --------------------------- |
-| `t3.micro` server        | ~$7.60                      |
-| 20 GB disk (gp3)         | ~$1.60                      |
-| Elastic IP (public IPv4) | ~$3.65                      |
-| Data out                 | $0 for the first 100 GB     |
-| **Total**                | **~$13 → $100 lasts ~7 months** |
+| Item                     | Per month                                          |
+| ------------------------ | -------------------------------------------------- |
+| Server                   | `t3.micro` (1 GB RAM) ~$7.60, `t3.small` (2 GB) ~$15.20 |
+| 20 GB disk (gp3)         | ~$1.60                                             |
+| Elastic IP (public IPv4) | ~$3.65                                             |
+| Data out                 | $0 for the first 100 GB                            |
+| **Total**                | **~$13 with t3.micro, ~$20 with t3.small**         |
 
-If your account is on the AWS **Free plan**, it never charges you: it closes by
-itself when the credits run out or after 6 months, whichever comes first. On a
-**Paid plan** AWS bills your card once credits are gone — step 8 sets up an
-automatic stop for that case. Do it either way.
+**Free plan** (Billing and Cost Management → Credits shows "Free plan
+status"): AWS never charges your card. When the credits run out or the plan's
+end date arrives, AWS stops everything and closes the account, keeping your
+data for 90 days in case you upgrade. The only way to get billed is to
+upgrade to the Paid plan yourself — so **never click "Upgrade plan"**, even
+when a page or email says you need it. You can skip step 8.
+
+If your plan ends in a few weeks, time runs out before money does: pick
+`t3.small` — the build is faster and doesn't lean on swap.
+
+**Paid plan:** AWS bills your card once credits are gone. Do step 8.
 
 > AWS gives extra credits for some first steps — setting up a budget and
 > launching an EC2 instance are among them. Check the **Explore AWS** panel on
@@ -56,7 +63,7 @@ EC2 → **Launch instance**:
 | ------------------ | --------------------------------------------------------------------------- |
 | Name               | `aidedesk`                                                                  |
 | Image (AMI)        | **Ubuntu Server 24.04 LTS** (64-bit x86)                                    |
-| Instance type      | **t3.micro**                                                                |
+| Instance type      | **t3.micro** or **t3.small** (see costs) — on the Free plan it must show the "Free tier eligible" label |
 | Key pair           | Create new → download the `.pem` and keep it safe (backup way to log in)    |
 | Network settings   | Create security group, tick **Allow SSH**, **Allow HTTPS**, **Allow HTTP** — all from **Anywhere** |
 | Storage            | **20** GiB **gp3**                                                          |
@@ -119,6 +126,8 @@ already sets `NODE_ENV=production`, `PORT`, `FRONTEND_URL`, `API_URL` and
 Open `https://<your-domain>` — done.
 
 ## 8. Kill switch: stop the server if real money starts being charged
+
+**Paid plan only.** Skip this on the Free plan — AWS can't charge you there.
 
 **a. Role that lets Budgets stop the server.** IAM → **Roles** → **Create
 role** → **AWS service** → use case **Budgets** → attach the policy
