@@ -59,7 +59,7 @@ jobs:
           if [ -n "$KEY" ]; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::AWS_ACCESS_KEY_ID secret is not set yet, so nothing was built or deployed. See DEPLOY.md step 3."
+            echo "::notice::AWS_ACCESS_KEY_ID secret is not set yet, so nothing was built or deployed. See \"CI/CD: automatic deploys\" in DEPLOY.md."
           fi
 
   build:
@@ -123,7 +123,7 @@ jobs:
           if [ "$active" = "1" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Service $ECS_SERVICE isn't in cluster $ECS_CLUSTER yet. The image is in ECR, but nothing was deployed. See DEPLOY.md step 8."
+            echo "::notice::Service $ECS_SERVICE isn't in cluster $ECS_CLUSTER yet. The image is in ECR, but nothing was deployed. Check the AWS_REGION variable, or see DEPLOY.md step 10."
           fi
 
       # The task definition holds the environment variables, secrets included,
