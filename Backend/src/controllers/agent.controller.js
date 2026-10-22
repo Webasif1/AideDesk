@@ -386,7 +386,7 @@ const applyAgentAccountStatus = async ({ req, accountStatus, reason }) => {
       companyName: company?.name || "your support team",
       accountStatus,
       reason: trimmedReason,
-      loginUrl: `${config.FRONTEND_URL || "http://localhost:5173"}/login`,
+      loginUrl: `${config.FRONTEND_URL || "https://aidedesk.site"}/login`,
     }).catch((err) =>
       console.error("[agent] account status email failed:", err.message)
     );

@@ -78,7 +78,7 @@ export const sendAgentInviteEmail =  ({
   loginEmail,
   tempPassword,
   verifyLink,
-  frontendUrl = "http://localhost:5173",
+  frontendUrl = "https://aidedesk.site",
 }) => {
   const subject = `You"ve been added as a Support Agent — ${companyName}`;
   const loginUrl = `${frontendUrl}/login`;
@@ -271,7 +271,7 @@ export const sendCustomerInviteEmail =  ({
   loginEmail,
   tempPassword,
   loginUrl,
-  frontendUrl = "http://localhost:5173",
+  frontendUrl = "https://aidedesk.site/",
 }) => {
   const subject = `You"ve been added to ${companyName} Support Portal — AideDesk`;
   const changePasswordUrl = `${frontendUrl}/profile`;

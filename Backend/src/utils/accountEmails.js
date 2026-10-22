@@ -48,7 +48,7 @@ export const sendAccountStatusEmail = ({
   companyName = "your support team",
   accountStatus,
   reason,
-  loginUrl = "http://localhost:5173/customer/login",
+  loginUrl = "https://aidedesk.site/customer/login",
 }) => {
   const copy = NOTICE_COPY[accountStatus];
   const trimmedReason = (reason || "").trim();

@@ -110,7 +110,7 @@ export const getVerificationHTML = (title, message, isSuccess = true) => `
         </div>
         <h1>${title}</h1>
         <p>${message}</p>
-        <a href="${process.env.LOGIN_URL || "http://localhost:5173"}/login" class="btn">Go to Login</a>
+        <a href="${process.env.LOGIN_URL || "https://aidedesk.site"}/login" class="btn">Go to Login</a>
     </div>
 </body>
 </html>
